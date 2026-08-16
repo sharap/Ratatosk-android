@@ -1,6 +1,7 @@
 package chat.ratatosk.android.ui.chat
 
 import androidx.compose.foundation.Image
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -31,6 +32,15 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
+import kotlinx.coroutines.launch
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.luminance
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.util.MarkdownUtils
@@ -88,7 +98,8 @@ fun ChatScreen(
     }
 
     Scaffold(
-        topBar = {
+        containerColor = if (chatTheme.backgroundImageUri != null) Color.Transparent else MaterialTheme.colorScheme.background,
+        topBar = { 
             TopAppBar(
                 title = { 
                     Column(modifier = Modifier.clickable { onHeaderClick() }) {
@@ -106,7 +117,12 @@ fun ChatScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             )
         },
         bottomBar = {
@@ -143,13 +159,17 @@ fun ChatScreen(
         }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-            chatTheme.backgroundImageUri?.let { uri ->
+            chatTheme.backgroundImageUri?.let { uriString ->
                 Image(
-                    painter = rememberAsyncImagePainter(uri),
+                    painter = rememberAsyncImagePainter(
+                        model = coil.request.ImageRequest.Builder(LocalContext.current)
+                            .data(Uri.parse(uriString))
+                            .build()
+                    ),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
-                    alpha = 0.3f
+                    alpha = chatTheme.backgroundOpacity
                 )
             }
             
@@ -161,11 +181,11 @@ fun ChatScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(displayMessages, key = { it.msgId.toHexString() }) { msg ->
-                    val status = messageStatuses[msg.msgId.toHexString()]
+                    val status = messageStatuses[msg.msgId.toHexString()] ?: msg.status
                     Box(modifier = Modifier.fillMaxWidth().animateItem()) {
                         MessageBubble(
                             message = msg,
-                            outgoingColor = chatTheme.outgoingBubbleColor,
+                            outgoingColor = if (chatTheme.themeColor != Color.Unspecified) chatTheme.themeColor else MaterialTheme.colorScheme.primary,
                             status = status,
                             onRetry = { viewModel.resendMessage(chatId, msg.body) }
                         )
@@ -195,11 +215,48 @@ fun MessageBubble(
 ) {
     val alignment = if (message.mine) Alignment.CenterEnd else Alignment.CenterStart
     val bubbleColor = if (message.mine) outgoingColor else MaterialTheme.colorScheme.surfaceVariant
-    val contentColor = if (message.mine) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    val contentColor = if (message.mine) {
+        if (bubbleColor.luminance() > 0.5f) Color.Black else Color.White
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
     
-    val linkColor = MaterialTheme.colorScheme.primary
-    val annotatedBody = remember(message.body, linkColor) {
+    val linkColor = if (message.mine) contentColor else MaterialTheme.colorScheme.primary
+    val fullAnnotatedBody = remember(message.body, linkColor) {
         MarkdownUtils.parseMarkdown(message.body, linkColor)
+    }
+
+    var isExpanded by remember { mutableStateOf(false) }
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    
+    // Auto-scroll to top when expanded
+    LaunchedEffect(isExpanded) {
+        if (isExpanded) {
+            // Wait for recomposition and layout pass to finish
+            kotlinx.coroutines.yield()
+            bringIntoViewRequester.bringIntoView(Rect(0f, 0f, 10f, 10f))
+        }
+    }
+    
+    val threshold = 300
+    val isLong = message.body.length > threshold
+    val readMoreText = stringResource(R.string.read_more)
+
+    val annotatedBody = remember(fullAnnotatedBody, isExpanded, isLong, readMoreText, linkColor) {
+        if (isLong && !isExpanded) {
+            val safeThreshold = if (fullAnnotatedBody.length > threshold) threshold else fullAnnotatedBody.length
+            buildAnnotatedString {
+                append(fullAnnotatedBody.subSequence(0, safeThreshold))
+                append("... ")
+                pushStringAnnotation(tag = "EXPAND", annotation = "expand")
+                withStyle(style = SpanStyle(color = linkColor, fontWeight = FontWeight.Bold)) {
+                    append(readMoreText)
+                }
+                pop()
+            }
+        } else {
+            fullAnnotatedBody
+        }
     }
 
     var showMenu by remember { mutableStateOf(false) }
@@ -233,7 +290,9 @@ fun MessageBubble(
                     containerColor = bubbleColor,
                     contentColor = contentColor
                 ),
-                modifier = Modifier.widthIn(max = 280.dp)
+                modifier = Modifier
+                    .widthIn(max = 280.dp)
+                    .bringIntoViewRequester(bringIntoViewRequester)
             ) {
                 SelectionContainer {
                     Column(
@@ -253,23 +312,35 @@ fun MessageBubble(
                                 annotatedBody.getStringAnnotations(tag = "URL", start = offset, end = offset)
                                     .firstOrNull()?.let { annotation ->
                                         uriHandler.openUri(annotation.item)
+                                        return@ClickableText
                                     }
+                                
+                                annotatedBody.getStringAnnotations(tag = "EXPAND", start = offset, end = offset)
+                                    .firstOrNull()?.let {
+                                        isExpanded = true
+                                        return@ClickableText
+                                    }
+                                
+                                if (isLong) {
+                                    isExpanded = !isExpanded
+                                }
                             }
                         )
                         Row(
                             modifier = Modifier.align(Alignment.End),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             Text(
                                 text = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
                                     .format(java.util.Date(message.wallMs.toLong())),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = contentColor.copy(alpha = 0.6f)
+                                color = contentColor.copy(alpha = 0.8f)
                             )
                             
                             if (message.mine) {
-                                MessageStatusIcon(status, contentColor.copy(alpha = 0.6f))
+                                Spacer(modifier = Modifier.width(2.dp))
+                                MessageStatusIcon(status, contentColor)
                             }
                         }
                     }
@@ -312,7 +383,7 @@ fun MessageBubble(
 }
 
 @Composable
-fun MessageStatusIcon(status: FfiDeliveryStatus?, color: androidx.compose.ui.graphics.Color) {
+fun MessageStatusIcon(status: FfiDeliveryStatus?, color: Color) {
     val icon: ImageVector? = when (status) {
         FfiDeliveryStatus.PENDING -> Icons.Default.Schedule
         FfiDeliveryStatus.SENT -> Icons.Default.Done
@@ -321,17 +392,18 @@ fun MessageStatusIcon(status: FfiDeliveryStatus?, color: androidx.compose.ui.gra
         null -> null
     }
     
-    val tint = if (status == FfiDeliveryStatus.READ) {
-        MaterialTheme.colorScheme.primary // Use primary color for "Read"
-    } else {
-        color
+    val isLight = color.luminance() > 0.5f
+    val tint = when (status) {
+        FfiDeliveryStatus.READ -> if (isLight) Color(0xFF0288D1) else Color(0xFF40C4FF)
+        FfiDeliveryStatus.UNDELIVERABLE -> MaterialTheme.colorScheme.error
+        else -> color // Use full opacity for better visibility
     }
 
     icon?.let {
         Icon(
             imageVector = it,
             contentDescription = status?.name,
-            modifier = Modifier.size(12.dp),
+            modifier = Modifier.size(16.dp),
             tint = tint
         )
     }

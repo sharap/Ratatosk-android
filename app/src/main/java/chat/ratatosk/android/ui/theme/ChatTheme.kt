@@ -10,7 +10,9 @@ import androidx.compose.ui.unit.dp
 
 @Immutable
 data class ChatThemeData(
+    val themeColor: Color = Color.Unspecified,
     val backgroundImageUri: String? = null,
+    val backgroundOpacity: Float = 1.0f,
     val bubbleShape: Shape = RoundedCornerShape(16.dp),
     val incomingBubbleColor: Color = Color.Unspecified,
     val outgoingBubbleColor: Color = Color.Unspecified,

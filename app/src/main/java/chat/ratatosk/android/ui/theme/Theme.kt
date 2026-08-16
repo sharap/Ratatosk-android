@@ -9,7 +9,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+
+import androidx.compose.ui.graphics.luminance
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -38,14 +41,30 @@ fun RatatoskTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
+    themeColor: Color = Color.Unspecified,
     content: @Composable () -> Unit
 ) {
+    val context = LocalContext.current
     val colorScheme = when {
+        themeColor != Color.Unspecified -> {
+            val base = if (darkTheme) DarkColorScheme else LightColorScheme
+            val isNeutral = themeColor == Color.Black || themeColor == Color.White || themeColor == Color.Gray
+            val isDark = themeColor.luminance() < 0.5f
+            
+            base.copy(
+                primary = themeColor,
+                primaryContainer = if (isNeutral) {
+                    if (darkTheme) Color.DarkGray else Color.LightGray
+                } else themeColor,
+                onPrimaryContainer = if (isDark) Color.White else Color.Black,
+                secondary = themeColor.copy(alpha = 0.7f),
+                onPrimary = if (isDark) Color.White else Color.Black,
+                outline = themeColor.copy(alpha = 0.5f)
+            )
+        }
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }

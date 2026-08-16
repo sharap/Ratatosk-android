@@ -47,6 +47,8 @@
     <string name="change_background">Изменить фон</string>
     <string name="set_background">Установить фон</string>
     <string name="remove_background">Удалить фон</string>
+    <string name="theme_color">Цвет оформления</string>
+    <string name="background_opacity">Прозрачность фона</string>
     <string name="bubble_color">Цвет сообщений (исходящие)</string>
     <string name="error_core_unavailable">Нативное ядро недоступно: %1$s</string>
     <string name="error_db_locked">База данных заблокирована</string>
@@ -65,5 +67,14 @@
     <string name="share_contact">Поделиться контактом</string>
     <string name="fingerprint_title">Отпечаток (IK)</string>
     <string name="unverified">Не проверен</string>
+    <string name="edit_name">Изменить имя</string>
+    <string name="save">Сохранить</string>
+    <string name="name_restart_note">Примечание: Новое имя станет видимым для других после перезапуска приложения.</string>
     <string name="lan_permission_rationale">Для поиска и подключения к другим устройствам в вашей локальной сети Wi-Fi приложению Ratatosk требуется разрешение на поиск устройств поблизости. Это техническое требование Android, которое не используется для отслеживания вашего физического местоположения.</string>
+    <string name="privacy">Конфиденциальность</string>
+    <string name="notification_privacy">Уведомления</string>
+    <string name="show_sender_name">Показывать имя отправителя</string>
+    <string name="show_message_text">Показывать текст сообщения</string>
+    <string name="privacy_desc">Настройте, какая информация отображается в системных уведомлениях, когда приложение заблокировано или находится в фоне.</string>
+    <string name="read_more">ещё</string>
 </resources>

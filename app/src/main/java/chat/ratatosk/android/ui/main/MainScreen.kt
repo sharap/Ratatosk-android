@@ -81,10 +81,6 @@ fun MainScreen(
                 MainTab.CHATS -> ChatListScreen(
                     viewModel = viewModel,
                     onChatClick = onChatClick,
-                    onSettingsClick = { 
-                        // Settings is now a tab, but we could still have a button to jump there
-                        scope.launch { pagerState.animateScrollToPage(MainTab.SETTINGS.ordinal) }
-                    },
                     onScanClick = onScanClick
                 )
                 MainTab.CONTACTS -> ContactsScreen(
@@ -93,11 +89,7 @@ fun MainScreen(
                     onScanClick = onScanClick
                 )
                 MainTab.SETTINGS -> SettingsScreen(
-                    viewModel = viewModel,
-                    onBack = { 
-                        // In tab mode, back could mean go to chats
-                        scope.launch { pagerState.animateScrollToPage(MainTab.CHATS.ordinal) }
-                    }
+                    viewModel = viewModel
                 )
                 MainTab.PROFILE -> ProfileScreen(
                     viewModel = viewModel

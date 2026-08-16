@@ -1,18 +1,20 @@
 package chat.ratatosk.android.ui.settings
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,9 +31,11 @@ import uniffi.ratatosk_ffi.lanWarning
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(viewModel: RatatoskViewModel, onBack: () -> Unit) {
+fun SettingsScreen(viewModel: RatatoskViewModel) {
     val context = LocalContext.current
     val lanEnabled by viewModel.lanEnabled.collectAsState()
+    val showName by viewModel.notificationsShowName.collectAsState()
+    val showText by viewModel.notificationsShowText.collectAsState()
     var showLanWarning by remember { mutableStateOf(false) }
     var showPermissionRationale by remember { mutableStateOf(false) }
     val chatTheme by viewModel.chatTheme.collectAsState()
@@ -68,10 +72,18 @@ fun SettingsScreen(viewModel: RatatoskViewModel, onBack: () -> Unit) {
     }
 
     val imageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent()
+        ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
-            viewModel.updateChatTheme { it.copy(backgroundImageUri = it.toString()) }
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                android.util.Log.e("SettingsScreen", "Failed to take persistable permission", e)
+            }
+            viewModel.updateChatTheme { theme -> theme.copy(backgroundImageUri = it.toString()) }
         }
     }
 
@@ -79,11 +91,10 @@ fun SettingsScreen(viewModel: RatatoskViewModel, onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
             )
         }
     ) { innerPadding ->
@@ -115,6 +126,43 @@ fun SettingsScreen(viewModel: RatatoskViewModel, onBack: () -> Unit) {
             }
             
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+            Text(
+                text = stringResource(R.string.notification_privacy),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.privacy_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.setNotificationsShowName(!showName) }
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.show_sender_name))
+                Switch(checked = showName, onCheckedChange = { viewModel.setNotificationsShowName(it) })
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { viewModel.setNotificationsShowText(!showText) }
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.show_message_text))
+                Switch(checked = showText, onCheckedChange = { viewModel.setNotificationsShowText(it) })
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
             
             Text(
                 text = stringResource(R.string.chat_theme),
@@ -122,37 +170,63 @@ fun SettingsScreen(viewModel: RatatoskViewModel, onBack: () -> Unit) {
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(stringResource(R.string.bubble_color), style = MaterialTheme.typography.labelMedium)
-            val colors = listOf(
-                MaterialTheme.colorScheme.primaryContainer,
-                Color(0xFFE1F5FE),
-                Color(0xFFF1F8E9),
-                Color(0xFFFFF3E0),
-                Color(0xFFFCE4EC)
+            Text(stringResource(R.string.theme_color), style = MaterialTheme.typography.labelMedium)
+            val themeColors = listOf(
+                Color.Unspecified, // System Default (Dynamic)
+                Color.Gray,        // Neutral/Monochrome
+                Color(0xFF2196F3), // Blue
+                Color(0xFF4CAF50), // Green
+                Color(0xFFF44336), // Red
+                Color(0xFFFF9800), // Orange
+                Color(0xFF9C27B0), // Purple
+                Color(0xFF00BCD4)  // Cyan
             )
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 8.dp)) {
-                items(colors) { color ->
+                items(themeColors) { color ->
+                    val isSelected = chatTheme.themeColor == color
                     Box(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(CircleShape)
-                            .background(color)
+                            .background(if (color == Color.Unspecified) MaterialTheme.colorScheme.outline.copy(alpha = 0.3f) else color)
                             .clickable {
-                                viewModel.updateChatTheme { it.copy(outgoingBubbleColor = color) }
+                                viewModel.updateChatTheme { it.copy(themeColor = color) }
                             }
-                            .then(if (chatTheme.outgoingBubbleColor == color) Modifier.background(Color.Black.copy(0.1f)) else Modifier)
-                    )
+                            .then(if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape) else Modifier),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (color == Color.Unspecified) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.Settings,
+                                contentDescription = "Auto",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedButton(
-                onClick = { imageLauncher.launch("image/*") },
+                onClick = { imageLauncher.launch(arrayOf("image/*")) },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (chatTheme.backgroundImageUri != null) stringResource(R.string.change_background) else stringResource(R.string.set_background))
             }
+            
             if (chatTheme.backgroundImageUri != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "${stringResource(R.string.background_opacity)}: ${(chatTheme.backgroundOpacity * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelMedium
+                )
+                Slider(
+                    value = chatTheme.backgroundOpacity,
+                    onValueChange = { viewModel.updateChatTheme { theme -> theme.copy(backgroundOpacity = it) } },
+                    valueRange = 0f..1f
+                )
+
                 TextButton(onClick = { viewModel.updateChatTheme { it.copy(backgroundImageUri = null) } }) {
                     Text(stringResource(R.string.remove_background))
                 }

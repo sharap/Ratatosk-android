@@ -67,7 +67,31 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         initialValue = false
     )
 
+    val notificationsShowName = settingsRepository.notificationsShowName.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = true
+    )
+
+    val notificationsShowText = settingsRepository.notificationsShowText.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = true
+    )
+
     init {
+        // Monitor core initialization status (e.g. if service initialized it)
+        viewModelScope.launch {
+            while (true) {
+                if (!_isInitialized.value && RatatoskCore.isInitialized()) {
+                    android.util.Log.i("RatatoskVM", "Core initialized externally, setting up engine")
+                    _isInitialized.value = true
+                    setupEngine()
+                }
+                kotlinx.coroutines.delay(1000)
+            }
+        }
+
         val noticesResult = RatatoskCore.safeCall { honestNotices() }
         noticesResult.onSuccess {
             _honestNotices.value = it
@@ -345,6 +369,14 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun setDisplayName(name: String) {
+        viewModelScope.launch {
+            settingsRepository.setDisplayName(name)
+            _userName.value = name
+            android.util.Log.d("RatatoskVM", "Display name updated to: $name. Will be applied to core on next restart.")
+        }
+    }
+
     fun getContactByChatId(chatId: ByteArray): FfiContact? {
         val hexId = chatId.toHexString()
         return _contacts.value.find { it.chatId.toHexString() == hexId }
@@ -365,6 +397,18 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             val newData = update(chatTheme.value)
             settingsRepository.updateChatTheme(newData)
+        }
+    }
+
+    fun setNotificationsShowName(show: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setNotificationsShowName(show)
+        }
+    }
+
+    fun setNotificationsShowText(show: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setNotificationsShowText(show)
         }
     }
 }

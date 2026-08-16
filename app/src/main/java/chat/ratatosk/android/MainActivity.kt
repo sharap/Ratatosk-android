@@ -59,6 +59,7 @@ class MainActivity : ComponentActivity() {
             val isCoreReady by appViewModel.isInitialized.collectAsState()
             val hasAccount by appViewModel.accountExists.collectAsState()
             val currentError by appViewModel.error.collectAsState()
+            val chatTheme by appViewModel.chatTheme.collectAsState()
             val navController = rememberNavController()
 
             // Auto-request notifications only if account exists and not core-ready (e.g. unlock screen)
@@ -81,7 +82,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            RatatoskTheme {
+            // Start the core service if account exists to keep it running in background
+            LaunchedEffect(hasAccount) {
+                if (hasAccount) {
+                    val intent = Intent(this@MainActivity, RatatoskService::class.java)
+                    startForegroundService(intent)
+                }
+            }
+
+            RatatoskTheme(themeColor = chatTheme.themeColor) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (!isCoreReady) {
                         if (hasAccount) {
@@ -90,10 +99,6 @@ class MainActivity : ComponentActivity() {
                             OnboardingScreen(appViewModel)
                         }
                     } else {
-                        // Start the core service
-                        val intent = Intent(this, RatatoskService::class.java)
-                        startForegroundService(intent)
-                        
                         NavHost(navController = navController, startDestination = "main") {
                             composable("main") {
                                 MainScreen(

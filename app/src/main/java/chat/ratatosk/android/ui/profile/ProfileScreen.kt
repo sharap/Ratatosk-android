@@ -2,8 +2,11 @@ package chat.ratatosk.android.ui.profile
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +16,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
@@ -23,8 +27,12 @@ import qrcode.QRCode
 fun ProfileScreen(viewModel: RatatoskViewModel) {
     val fingerprint by viewModel.fingerprint.collectAsState()
     val userName by viewModel.userName.collectAsState()
+    val notices by viewModel.honestNotices.collectAsState()
     val clipboardManager = LocalClipboardManager.current
+    
     var showMyQr by remember { mutableStateOf(false) }
+    var showEditName by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -41,7 +49,8 @@ fun ProfileScreen(viewModel: RatatoskViewModel) {
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(16.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Surface(
@@ -60,20 +69,46 @@ fun ProfileScreen(viewModel: RatatoskViewModel) {
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            Text(
-                text = userName ?: "User",
-                style = MaterialTheme.typography.titleLarge
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = userName ?: "User",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = { 
+                    newName = userName ?: ""
+                    showEditName = true 
+                }) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit Name", modifier = Modifier.size(20.dp))
+                }
+            }
             
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = fingerprint ?: "Loading...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.outline
-            )
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
+            // Identity Card
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = stringResource(R.string.fingerprint_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = fingerprint ?: "Loading...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = {
+                            fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) }
+                        }) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -96,12 +131,74 @@ fun ProfileScreen(viewModel: RatatoskViewModel) {
                     },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(androidx.compose.material.icons.Icons.Default.ContentCopy, contentDescription = null)
+                    Icon(Icons.Default.ContentCopy, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.copy_link))
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Security Notices Section (§14)
+            Text(
+                text = stringResource(R.string.honest_notices_title),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.align(Alignment.Start)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            notices.forEach { notice ->
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Text(
+                        text = notice,
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
         }
+    }
+
+    if (showEditName) {
+        AlertDialog(
+            onDismissRequest = { showEditName = false },
+            title = { Text(stringResource(R.string.edit_name)) },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = newName,
+                        onValueChange = { newName = it },
+                        label = { Text(stringResource(R.string.enter_display_name)) },
+                        singleLine = true
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.name_restart_note),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (newName.isNotBlank()) {
+                        viewModel.setDisplayName(newName)
+                        showEditName = false
+                    }
+                }) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditName = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 
     if (showMyQr) {

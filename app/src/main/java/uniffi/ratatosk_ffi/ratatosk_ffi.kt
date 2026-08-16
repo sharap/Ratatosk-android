@@ -701,11 +701,15 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_lan_warning(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_max_avatar_bytes(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_no_pin_warning(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_eventobserver_on_event(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_add_contact(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_avatar_of(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_chat_id_for(
     ): Int
@@ -719,11 +723,15 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_messages(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_my_avatar(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_my_contact_uri(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_network_changed(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_send_text(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_avatar(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_lan_enabled(
     ): Int
@@ -766,6 +774,8 @@ internal object UniffiLib {
     ): Long
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_add_contact(`ptr`: Long,`uri`: RustBuffer.ByValue,`metInPerson`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_avatar_of(`ptr`: Long,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_chat_id_for(`ptr`: Long,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_contacts(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -778,11 +788,15 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_my_avatar(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_my_contact_uri(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_network_changed(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_send_text(`ptr`: Long,`chatId`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_avatar(`ptr`: Long,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_lan_enabled(`ptr`: Long,`enabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -794,6 +808,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_lan_warning(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_max_avatar_bytes(uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
     external fun uniffi_ratatosk_ffi_fn_func_no_pin_warning(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun ffi_ratatosk_ffi_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -924,6 +940,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_lan_warning() != 33547) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_max_avatar_bytes() != 56374) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_no_pin_warning() != 45718) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -931,6 +950,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_add_contact() != 48832) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_avatar_of() != 7705) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_chat_id_for() != 27868) {
@@ -951,6 +973,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_messages() != 26236) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_my_avatar() != 23525) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_my_contact_uri() != 60921) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -958,6 +983,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_send_text() != 54840) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_avatar() != 63479) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_lan_enabled() != 45701) {
@@ -1760,6 +1788,19 @@ public interface RatatoskClientInterface {
     fun `addContact`(`uri`: kotlin.String, `metInPerson`: kotlin.Boolean)
     
     /**
+     * Аватарка контакта.
+     *
+     * `None` означает «показывать нечего»: её нет **или контакт не сверен**.
+     * Различать эти два случая клиенту не нужно, а §4.2 в обоих требует
+     * одного и того же — заглушку.
+     *
+     * Правило показа живёт в ядре, а не здесь: §13.3 не разрешает
+     * протокольной логике подниматься выше этой границы. Клиент, который
+     * решил бы показать лицо несверенного, не смог бы — байтов не отдадут.
+     */
+    fun `avatarOf`(`peerIk`: kotlin.ByteArray): kotlin.ByteArray?
+    
+    /**
      * Идентификатор чата 1:1 с контактом.
      */
     fun `chatIdFor`(`peerIk`: kotlin.ByteArray): kotlin.ByteArray
@@ -1807,6 +1848,11 @@ public interface RatatoskClientInterface {
     fun `messages`(`chatId`: kotlin.ByteArray, `limit`: kotlin.UInt): List<FfiMessage>
     
     /**
+     * Своя аватарка, если она поставлена.
+     */
+    fun `myAvatar`(): kotlin.ByteArray?
+    
+    /**
      * Своя контакт-карточка как URI для QR (§4.1).
      */
     fun `myContactUri`(): kotlin.String
@@ -1831,6 +1877,25 @@ public interface RatatoskClientInterface {
      * Отправляет текст.
      */
     fun `sendText`(`chatId`: kotlin.ByteArray, `text`: kotlin.String)
+    
+    /**
+     * Ставит или снимает свою аватарку.
+     *
+     * `None` — снять. Байты — готовое изображение: PNG, JPEG или WebP,
+     * не больше [`max_avatar_bytes`]. Масштабирует и перекодирует **клиент**:
+     * декодер изображений — большая поверхность атаки, и в процессе,
+     * который держит ключи, ему делать нечего. Ядро проверяет ровно две
+     * вещи — длину и сигнатуру формата.
+     *
+     * Аватарка уходит **только сверенным контактам** (§4.2) и только прямым
+     * каналом: почта её не повезёт. Несверенные не получат ничего и не
+     * узнают, что она есть.
+     *
+     * Отдать её тому, чей отпечаток не сверен, значило бы отдать своё лицо
+     * тому, кто, может быть, не тот, за кого себя выдаёт, — а §4.2 ровно
+     * про эту возможность.
+     */
+    fun `setAvatar`(`bytes`: kotlin.ByteArray?)
     
     /**
      * Включает или выключает LAN (§5.1).
@@ -1985,6 +2050,32 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Аватарка контакта.
+     *
+     * `None` означает «показывать нечего»: её нет **или контакт не сверен**.
+     * Различать эти два случая клиенту не нужно, а §4.2 в обоих требует
+     * одного и того же — заглушку.
+     *
+     * Правило показа живёт в ядре, а не здесь: §13.3 не разрешает
+     * протокольной логике подниматься выше этой границы. Клиент, который
+     * решил бы показать лицо несверенного, не смог бы — байтов не отдадут.
+     */
+    @Throws(RatatoskException::class)override fun `avatarOf`(`peerIk`: kotlin.ByteArray): kotlin.ByteArray? {
+            return FfiConverterOptionalByteArray.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_avatar_of(
+        it,
+        
+        FfiConverterByteArray.lower(`peerIk`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Идентификатор чата 1:1 с контактом.
      */
     @Throws(RatatoskException::class)override fun `chatIdFor`(`peerIk`: kotlin.ByteArray): kotlin.ByteArray {
@@ -2107,6 +2198,23 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Своя аватарка, если она поставлена.
+     */
+    @Throws(RatatoskException::class)override fun `myAvatar`(): kotlin.ByteArray? {
+            return FfiConverterOptionalByteArray.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_my_avatar(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Своя контакт-карточка как URI для QR (§4.1).
      */override fun `myContactUri`(): kotlin.String {
             return FfiConverterString.lift(
@@ -2161,6 +2269,37 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         
         FfiConverterByteArray.lower(`chatId`),
         FfiConverterString.lower(`text`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Ставит или снимает свою аватарку.
+     *
+     * `None` — снять. Байты — готовое изображение: PNG, JPEG или WebP,
+     * не больше [`max_avatar_bytes`]. Масштабирует и перекодирует **клиент**:
+     * декодер изображений — большая поверхность атаки, и в процессе,
+     * который держит ключи, ему делать нечего. Ядро проверяет ровно две
+     * вещи — длину и сигнатуру формата.
+     *
+     * Аватарка уходит **только сверенным контактам** (§4.2) и только прямым
+     * каналом: почта её не повезёт. Несверенные не получат ничего и не
+     * узнают, что она есть.
+     *
+     * Отдать её тому, чей отпечаток не сверен, значило бы отдать своё лицо
+     * тому, кто, может быть, не тот, за кого себя выдаёт, — а §4.2 ровно
+     * про эту возможность.
+     */
+    @Throws(RatatoskException::class)override fun `setAvatar`(`bytes`: kotlin.ByteArray?)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_avatar(
+        it,
+        
+        FfiConverterOptionalByteArray.lower(`bytes`),_status)
 }
     }
     
@@ -2300,6 +2439,16 @@ data class FfiContact (
      * Виден ли контакт в локальной сети прямо сейчас (§5.1).
      */
     var `seenOnLan`: kotlin.Boolean
+    , 
+    /**
+     * Есть ли аватарка, которую **можно показать**.
+     *
+     * Учитывает §4.2: у несверенного контакта картинка может лежать
+     * в хранилище, но здесь всё равно `false`. Само изображение —
+     * [`RatatoskClient::avatar_of`]; здесь только признак, чтобы список
+     * чатов не тянул по тридцать килобайт на строку.
+     */
+    var `hasAvatar`: kotlin.Boolean
     
 ){
     
@@ -2322,6 +2471,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterString.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
         )
     }
 
@@ -2331,7 +2481,8 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterString.allocationSize(value.`fingerprint`) +
             FfiConverterString.allocationSize(value.`displayName`) +
             FfiConverterBoolean.allocationSize(value.`verified`) +
-            FfiConverterBoolean.allocationSize(value.`seenOnLan`)
+            FfiConverterBoolean.allocationSize(value.`seenOnLan`) +
+            FfiConverterBoolean.allocationSize(value.`hasAvatar`)
     )
 
     override fun write(value: FfiContact, buf: ByteBuffer) {
@@ -2341,6 +2492,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterString.write(value.`displayName`, buf)
             FfiConverterBoolean.write(value.`verified`, buf)
             FfiConverterBoolean.write(value.`seenOnLan`, buf)
+            FfiConverterBoolean.write(value.`hasAvatar`, buf)
     }
 }
 
@@ -2553,6 +2705,25 @@ sealed class FfiEvent {
     }
     
     /**
+     * У контакта появилась, сменилась или исчезла аватарка.
+     *
+     * Байты событием не едут: они большие, а событие может ждать в очереди.
+     * Клиент забирает их через [`RatatoskClient::avatar_of`], когда дойдёт
+     * до отрисовки, и обновляет свой кэш по этому событию.
+     */
+    data class AvatarChanged(
+        /**
+         * Чья.
+         */
+        val `peerIk`: kotlin.ByteArray) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
      * Изменился состав группы.
      */
     data class GroupMembershipChanged(
@@ -2610,10 +2781,13 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterString.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            4 -> FfiEvent.GroupMembershipChanged(
+            4 -> FfiEvent.AvatarChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            5 -> FfiEvent.HonestNotice(
+            5 -> FfiEvent.GroupMembershipChanged(
+                FfiConverterByteArray.read(buf),
+                )
+            6 -> FfiEvent.HonestNotice(
                 FfiConverterString.read(buf),
                 )
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
@@ -2643,6 +2817,13 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 4UL
                 + FfiConverterString.allocationSize(value.`fingerprint`)
                 + FfiConverterBoolean.allocationSize(value.`verified`)
+            )
+        }
+        is FfiEvent.AvatarChanged -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`peerIk`)
             )
         }
         is FfiEvent.GroupMembershipChanged -> {
@@ -2681,13 +2862,18 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterBoolean.write(value.`verified`, buf)
                 Unit
             }
-            is FfiEvent.GroupMembershipChanged -> {
+            is FfiEvent.AvatarChanged -> {
                 buf.putInt(4)
+                FfiConverterByteArray.write(value.`peerIk`, buf)
+                Unit
+            }
+            is FfiEvent.GroupMembershipChanged -> {
+                buf.putInt(5)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
             is FfiEvent.HonestNotice -> {
-                buf.putInt(5)
+                buf.putInt(6)
                 FfiConverterString.write(value.`text`, buf)
                 Unit
             }
@@ -2818,6 +3004,38 @@ public object FfiConverterOptionalString: FfiConverterRustBuffer<kotlin.String?>
         } else {
             buf.put(1)
             FfiConverterString.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalByteArray: FfiConverterRustBuffer<kotlin.ByteArray?> {
+    override fun read(buf: ByteBuffer): kotlin.ByteArray? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterByteArray.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.ByteArray?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterByteArray.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.ByteArray?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterByteArray.write(value, buf)
         }
     }
 }
@@ -2973,6 +3191,23 @@ public object FfiConverterSequenceTypeFfiMessage: FfiConverterRustBuffer<List<Ff
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_func_lan_warning(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Наибольший размер аватарки в байтах.
+         *
+         * Функция на границе, а не число в клиенте: масштабирует изображение клиент,
+         * и предел, записанный у него отдельно, однажды разойдётся с ядром — тогда
+         * пользователь получит отказ уже после того, как выбрал фотографию.
+         */ fun `maxAvatarBytes`(): kotlin.UInt {
+            return FfiConverterUInt.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_max_avatar_bytes(
     
         _status)
 }

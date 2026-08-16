@@ -47,6 +47,8 @@
     <string name="change_background">Change Background</string>
     <string name="set_background">Set Background Image</string>
     <string name="remove_background">Remove Background</string>
+    <string name="theme_color">Theme Color</string>
+    <string name="background_opacity">Background Opacity</string>
     <string name="bubble_color">Bubble Color (Outgoing)</string>
     <string name="error_core_unavailable">Native core unavailable: %1$s</string>
     <string name="error_db_locked">Database is locked</string>
@@ -65,5 +67,14 @@
     <string name="share_contact">Share Contact</string>
     <string name="fingerprint_title">Fingerprint (IK)</string>
     <string name="unverified">Unverified</string>
+    <string name="edit_name">Edit Name</string>
+    <string name="save">Save</string>
+    <string name="name_restart_note">Note: Name change will be visible to others after app restart.</string>
     <string name="lan_permission_rationale">To find and connect with other devices on your local Wi-Fi network, Ratatosk needs permission to scan for nearby devices. This is a technical requirement of Android and does not track your physical location.</string>
+    <string name="privacy">Privacy</string>
+    <string name="notification_privacy">Notification Privacy</string>
+    <string name="show_sender_name">Show sender name</string>
+    <string name="show_message_text">Show message text</string>
+    <string name="privacy_desc">Control what information is shown in system notifications when the app is locked or in background.</string>
+    <string name="read_more">more</string>
 </resources>

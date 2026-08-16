@@ -27,31 +27,33 @@ object RatatoskCore : EventObserver {
 
     @Throws(RatatoskException::class)
     fun initialize(context: Context, pin: String?, displayName: String): RatatoskClient {
-        android.util.Log.d("RatatoskCore", "Initialize called. Current client: ${if (client != null) "ACTIVE" else "NULL"}")
-        
-        val currentClient = client
-        if (currentClient != null) {
-            android.util.Log.d("RatatoskCore", "Returning existing client")
-            return currentClient
-        }
-        
-        return try {
-            val dbFile = File(context.filesDir, "ratatosk.db")
-            android.util.Log.d("RatatoskCore", "Opening database at: ${dbFile.absolutePath}")
-            dbFile.parentFile?.mkdirs()
+        synchronized(this) {
+            android.util.Log.d("RatatoskCore", "Initialize called. Current client: ${if (client != null) "ACTIVE" else "NULL"}")
             
-            val newClient = RatatoskClient.open(dbFile.absolutePath, pin, displayName)
-            android.util.Log.d("RatatoskCore", "Native client opened successfully")
+            val currentClient = client
+            if (currentClient != null) {
+                android.util.Log.d("RatatoskCore", "Returning existing client")
+                return currentClient
+            }
             
-            newClient.setObserver(this)
-            newClient.networkChanged() // Kickstart discovery
-            client = newClient
-            nativeError = null 
-            newClient
-        } catch (t: Throwable) {
-            android.util.Log.e("RatatoskCore", "Failed to initialize native core", t)
-            nativeError = t
-            throw t
+            return try {
+                val dbFile = File(context.filesDir, "ratatosk.db")
+                android.util.Log.d("RatatoskCore", "Opening database at: ${dbFile.absolutePath}")
+                dbFile.parentFile?.mkdirs()
+                
+                val newClient = RatatoskClient.open(dbFile.absolutePath, pin, displayName)
+                android.util.Log.d("RatatoskCore", "Native client opened successfully")
+                
+                newClient.setObserver(this)
+                newClient.networkChanged() // Kickstart discovery
+                client = newClient
+                nativeError = null 
+                newClient
+            } catch (t: Throwable) {
+                android.util.Log.e("RatatoskCore", "Failed to initialize native core", t)
+                nativeError = t
+                throw t
+            }
         }
     }
 
