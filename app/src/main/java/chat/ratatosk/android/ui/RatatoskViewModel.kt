@@ -9,6 +9,7 @@ import chat.ratatosk.android.data.SettingsRepository
 import chat.ratatosk.android.ui.theme.ChatThemeData
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import uniffi.ratatosk_ffi.*
@@ -27,6 +28,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     private val _messageStatuses = MutableStateFlow<Map<String, FfiDeliveryStatus>>(emptyMap())
     val messageStatuses = _messageStatuses.asStateFlow()
+
+    private val _repliedMessages = MutableStateFlow<Map<String, FfiMessage?>>(emptyMap())
+    val repliedMessages = _repliedMessages.asStateFlow()
 
     private val _unreadCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val unreadCounts = _unreadCounts.asStateFlow()
@@ -52,8 +56,20 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _fingerprint = MutableStateFlow<String?>(null)
     val fingerprint = _fingerprint.asStateFlow()
 
+    private val _maxAvatarBytes = MutableStateFlow<Int>(128 * 1024) // Default fallback
+    val maxAvatarBytes = _maxAvatarBytes.asStateFlow()
+
     private val _userName = MutableStateFlow<String?>(null)
     val userName = _userName.asStateFlow()
+
+    private val _myAvatar = MutableStateFlow<ByteArray?>(null)
+    val myAvatar = _myAvatar.asStateFlow()
+
+    private val _contactAvatars = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
+    val contactAvatars = _contactAvatars.asStateFlow()
+
+    private val _pendingAvatarUri = MutableStateFlow<android.net.Uri?>(null)
+    val pendingAvatarUri = _pendingAvatarUri.asStateFlow()
 
     val chatTheme = settingsRepository.chatTheme.stateIn(
         scope = viewModelScope,
@@ -123,8 +139,19 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             _fingerprint.value = client.fingerprint()
             android.util.Log.d("RatatoskVM", "Identity loaded: ${_fingerprint.value}")
             
+            _maxAvatarBytes.value = maxAvatarBytes().toInt()
+
             viewModelScope.launch {
                 _userName.value = settingsRepository.displayName.first()
+            }
+
+            // Load own avatar
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    _myAvatar.value = client.myAvatar()
+                } catch (e: Exception) {
+                    android.util.Log.e("RatatoskVM", "Failed to load my avatar", e)
+                }
             }
 
             refreshContacts()
@@ -168,7 +195,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun refreshContacts() {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
                 val list = RatatoskCore.getClient().contacts()
                 _contacts.value = list
@@ -180,12 +207,30 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun loadMessages(chatId: ByteArray) {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+    fun loadMessages(chatId: ByteArray, limit: Int? = null) {
+        val chatIdHex = chatId.toHexString()
+        val currentSize = _messages.value[chatIdHex]?.size ?: 0
+        
+        if (limit != null && limit <= currentSize) {
+            android.util.Log.d("RatatoskVM", "loadMessages: already have $currentSize messages, requested $limit. Skipping redundant load.")
+            return
+        }
+
+        val targetLimit = limit ?: if (currentSize > 0) currentSize else 100
+        android.util.Log.d("RatatoskVM", "loadMessages for $chatIdHex, targetLimit: $targetLimit (current size: $currentSize)")
+        
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                val msgs = RatatoskCore.getClient().messages(chatId, 100u)
-                _messages.update { it + (chatId.toHexString() to msgs) }
+                if (!RatatoskCore.isInitialized()) {
+                    android.util.Log.e("RatatoskVM", "loadMessages failed: Core not initialized")
+                    return@launch
+                }
+                val msgs = RatatoskCore.getClient().messages(chatId, maxOf(targetLimit, 1).toUInt())
+                android.util.Log.d("RatatoskVM", "Core returned ${msgs.size} messages for $chatIdHex (requested: $targetLimit)")
+                
+                _messages.update { it + (chatIdHex to msgs) }
             } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to load messages for $chatIdHex", e)
                 viewModelScope.launch {
                     _error.value = "Failed to load messages: ${e.message}"
                 }
@@ -267,6 +312,38 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             is FfiEvent.GroupMembershipChanged -> {
                 android.util.Log.i("RatatoskVM", "Group membership changed for: ${event.chatId.toHexString()}")
                 refreshContacts()
+            }
+            is FfiEvent.MessagesDeleted -> {
+                val hexId = event.chatId.toHexString()
+                android.util.Log.i("RatatoskVM", "Messages deleted in chat: $hexId. IDs: ${event.msgIds.size}")
+                loadMessages(event.chatId)
+            }
+            is FfiEvent.MessageEdited -> {
+                val hexId = event.chatId.toHexString()
+                android.util.Log.i("RatatoskVM", "Message edited in chat: $hexId. Msg: ${event.msgId.toHexString()}")
+                loadMessages(event.chatId)
+            }
+            is FfiEvent.ReactionChanged -> {
+                val hexId = event.chatId.toHexString()
+                android.util.Log.i("RatatoskVM", "Reaction changed in chat: $hexId. Msg: ${event.msgId.toHexString()}")
+                loadMessages(event.chatId)
+            }
+            is FfiEvent.AvatarChanged -> {
+                val ikHex = event.peerIk.toHexString()
+                android.util.Log.i("RatatoskVM", "Avatar changed for contact: $ikHex")
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        val bytes = RatatoskCore.getClient().avatarOf(event.peerIk)
+                        if (bytes != null) {
+                            _contactAvatars.update { it + (ikHex to bytes) }
+                        } else {
+                            _contactAvatars.update { it - ikHex }
+                        }
+                        refreshContacts() // Update hasAvatar flag
+                    } catch (e: Exception) {
+                        android.util.Log.e("RatatoskVM", "Failed to fetch avatar for $ikHex", e)
+                    }
+                }
             }
             else -> {
                 android.util.Log.d("RatatoskVM", "Ignored or unhandled event: $event")
@@ -393,6 +470,139 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun revokeVerification(peerIk: ByteArray) {
+        viewModelScope.launch {
+            try {
+                RatatoskCore.getClient().revokeVerification(peerIk)
+                refreshContacts()
+            } catch (e: Exception) {
+                _error.value = "Failed to revoke verification: ${e.message}"
+            }
+        }
+    }
+
+    fun setLocalName(peerIk: ByteArray, name: String?) {
+        viewModelScope.launch {
+            try {
+                RatatoskCore.getClient().setLocalName(peerIk, name)
+                refreshContacts()
+            } catch (e: Exception) {
+                _error.value = "Failed to set local name: ${e.message}"
+            }
+        }
+    }
+
+    fun deleteContact(peerIk: ByteArray, purgeHistory: Boolean) {
+        viewModelScope.launch {
+            try {
+                RatatoskCore.getClient().deleteContact(peerIk, purgeHistory)
+                refreshContacts()
+            } catch (e: Exception) {
+                _error.value = "Failed to delete contact: ${e.message}"
+            }
+        }
+    }
+
+    fun deleteMessages(chatId: ByteArray, msgIds: List<ByteArray>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().deleteMessages(chatId, msgIds)
+                loadMessages(chatId)
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to delete messages", e)
+            }
+        }
+    }
+
+    fun retractMessages(chatId: ByteArray, msgIds: List<ByteArray>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().retractMessages(chatId, msgIds)
+                loadMessages(chatId)
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to retract messages", e)
+            }
+        }
+    }
+
+    fun clearChat(chatId: ByteArray) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().clearChat(chatId)
+                loadMessages(chatId)
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to clear chat", e)
+            }
+        }
+    }
+
+    fun editMessage(chatId: ByteArray, msgId: ByteArray, text: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().editMessage(chatId, msgId, text)
+                loadMessages(chatId)
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to edit message", e)
+            }
+        }
+    }
+
+    fun setReaction(chatId: ByteArray, msgId: ByteArray, emoji: String?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().setReaction(chatId, msgId, emoji)
+                loadMessages(chatId)
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to set reaction", e)
+            }
+        }
+    }
+
+    fun forwardMessages(chatId: ByteArray, msgIds: List<ByteArray>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().forwardMessages(chatId, msgIds)
+                loadMessages(chatId)
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to forward messages", e)
+            }
+        }
+    }
+
+    fun reply(chatId: ByteArray, replyTo: ByteArray, text: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().reply(chatId, replyTo, text)
+                loadMessages(chatId)
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to reply", e)
+            }
+        }
+    }
+
+    fun getMessage(msgId: ByteArray): FfiMessage? {
+        val hexId = msgId.toHexString()
+        _repliedMessages.value[hexId]?.let { return it }
+        
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val msg = RatatoskCore.getClient().message(msgId)
+                _repliedMessages.update { it + (hexId to msg) }
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to fetch single message $hexId", e)
+            }
+        }
+        return null
+    }
+
+    fun getRetractionNotice(): String {
+        return try {
+            retractionNotice()
+        } catch (e: Exception) {
+            "Are you sure you want to retract selected messages?"
+        }
+    }
+
     fun updateChatTheme(update: (ChatThemeData) -> ChatThemeData) {
         viewModelScope.launch {
             val newData = update(chatTheme.value)
@@ -410,5 +620,39 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             settingsRepository.setNotificationsShowText(show)
         }
+    }
+
+    fun setPendingAvatarUri(uri: android.net.Uri?) {
+        _pendingAvatarUri.value = uri
+    }
+
+    fun setAvatar(bytes: ByteArray?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().setAvatar(bytes)
+                _myAvatar.value = bytes
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to set avatar", e)
+                viewModelScope.launch { _error.value = "Failed to set avatar: ${e.message}" }
+            }
+        }
+    }
+
+    fun getAvatarOf(peerIk: ByteArray): ByteArray? {
+        val ikHex = peerIk.toHexString()
+        _contactAvatars.value[ikHex]?.let { return it }
+        
+        // If not in cache, try to fetch it
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val bytes = RatatoskCore.getClient().avatarOf(peerIk)
+                if (bytes != null) {
+                    _contactAvatars.update { it + (ikHex to bytes) }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to background fetch avatar for $ikHex", e)
+            }
+        }
+        return null
     }
 }

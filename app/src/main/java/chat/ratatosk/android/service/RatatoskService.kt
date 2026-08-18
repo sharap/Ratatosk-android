@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.wifi.WifiManager
@@ -189,7 +190,7 @@ class RatatoskService : Service() {
             }
 
             val title = if (showName) {
-                contact?.displayName ?: getString(R.string.chat)
+                contact?.let { it.localName ?: it.displayName } ?: getString(R.string.chat)
             } else {
                 getString(R.string.app_name)
             }
@@ -220,8 +221,18 @@ class RatatoskService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
+            val avatarBitmap = if (showName && contact != null) {
+                try {
+                    if (RatatoskCore.isInitialized()) {
+                        val bytes = RatatoskCore.getClient().avatarOf(contact.peerIk)
+                        bytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+                    } else null
+                } catch (e: Exception) { null }
+            } else null
+
             val notification = NotificationCompat.Builder(this@RatatoskService, MESSAGE_CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
+                .setLargeIcon(avatarBitmap)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)

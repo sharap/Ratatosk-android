@@ -15,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.components.AddContactDialog
+import chat.ratatosk.android.ui.components.Avatar
+import chat.ratatosk.android.util.toHexString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,6 +26,7 @@ fun ContactsScreen(
     onScanClick: () -> Unit
 ) {
     val contacts by viewModel.contacts.collectAsState()
+    val contactAvatars by viewModel.contactAvatars.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -76,7 +79,8 @@ fun ContactsScreen(
                         ListItem(
                             headlineContent = { 
                                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                                    Text(contact.displayName, modifier = Modifier.weight(1f))
+                                    val name = contact.localName ?: contact.displayName
+                                    Text(name, modifier = Modifier.weight(1f))
                                     if (contact.seenOnLan) {
                                         Surface(
                                             modifier = Modifier.size(8.dp),
@@ -86,17 +90,21 @@ fun ContactsScreen(
                                     }
                                 }
                             },
-                            supportingContent = { Text(contact.fingerprint) },
-                            leadingContent = {
-                                Surface(
-                                    modifier = Modifier.size(40.dp),
-                                    shape = androidx.compose.foundation.shape.CircleShape,
-                                    color = MaterialTheme.colorScheme.secondaryContainer
-                                ) {
-                                    Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
-                                        Text(contact.displayName.take(1))
+                            supportingContent = { 
+                                Column {
+                                    if (contact.localName != null) {
+                                        Text(contact.displayName, style = MaterialTheme.typography.labelSmall)
                                     }
+                                    Text(contact.fingerprint)
                                 }
+                            },
+                            leadingContent = {
+                                val ikHex = contact.peerIk.toHexString()
+                                val avatarBytes = contactAvatars[ikHex] ?: viewModel.getAvatarOf(contact.peerIk)
+                                Avatar(
+                                    avatarBytes = avatarBytes,
+                                    name = contact.localName ?: contact.displayName
+                                )
                             },
                             trailingContent = {
                                 if (contact.verified) {

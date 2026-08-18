@@ -33,7 +33,8 @@ fun MainScreen(
     viewModel: RatatoskViewModel,
     onChatClick: (ByteArray) -> Unit,
     onContactClick: (ByteArray) -> Unit,
-    onScanClick: () -> Unit
+    onScanClick: () -> Unit,
+    onCropAvatar: () -> Unit
 ) {
     val tabs = MainTab.entries
     val pagerState = rememberPagerState(pageCount = { tabs.size })
@@ -92,7 +93,8 @@ fun MainScreen(
                     viewModel = viewModel
                 )
                 MainTab.PROFILE -> ProfileScreen(
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    onCropAvatar = onCropAvatar
                 )
             }
         }

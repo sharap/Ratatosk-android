@@ -29,6 +29,7 @@ import chat.ratatosk.android.ui.onboarding.OnboardingScreen
 import chat.ratatosk.android.ui.unlock.UnlockScreen
 import chat.ratatosk.android.ui.main.MainScreen
 import chat.ratatosk.android.ui.chat.ChatScreen
+import chat.ratatosk.android.ui.profile.AvatarCropScreen
 import chat.ratatosk.android.ui.contacts.ContactDetailsScreen
 import chat.ratatosk.android.ui.theme.RatatoskTheme
 import chat.ratatosk.android.util.hexToByteArray
@@ -111,7 +112,17 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onScanClick = {
                                         navController.navigate("scanner")
+                                    },
+                                    onCropAvatar = {
+                                        navController.navigate("crop")
                                     }
+                                )
+                            }
+                            composable("crop") {
+                                AvatarCropScreen(
+                                    viewModel = appViewModel,
+                                    onDone = { navController.popBackStack() },
+                                    onBack = { navController.popBackStack() }
                                 )
                             }
                             composable("chat/{chatId}") { backStackEntry ->
