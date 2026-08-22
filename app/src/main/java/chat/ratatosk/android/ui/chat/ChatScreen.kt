@@ -1,5 +1,8 @@
 package chat.ratatosk.android.ui.chat
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -9,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,8 +59,9 @@ import chat.ratatosk.android.util.MarkdownUtils
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
 import coil.compose.rememberAsyncImagePainter
-import uniffi.ratatosk_ffi.FfiDeliveryStatus
-import uniffi.ratatosk_ffi.FfiMessage
+import org.ratatosk.core.FfiDeliveryStatus
+import org.ratatosk.core.FfiFile
+import org.ratatosk.core.FfiMessage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +75,7 @@ fun ChatScreen(
     var editingMessage by remember { mutableStateOf<FfiMessage?>(null) }
     var replyingTo by remember { mutableStateOf<FfiMessage?>(null) }
     var showForwardDialog by remember { mutableStateOf<List<ByteArray>?>(null) }
+    var attachedFiles by remember { mutableStateOf<List<java.io.File>>(emptyList()) }
     
     val chatTheme by viewModel.chatTheme.collectAsState()
     val allMessages by viewModel.messages.collectAsState()
@@ -81,6 +87,8 @@ fun ChatScreen(
     val messages = allMessages[chatIdHex] ?: emptyList()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val contact = remember(contacts, chatIdHex) {
         contacts.find { it.chatId.toHexString() == chatIdHex }
@@ -90,10 +98,26 @@ fun ChatScreen(
     var pendingScrollToId by remember { mutableStateOf<String?>(null) }
     var showChatMenu by remember { mutableStateOf(false) }
     var showClearChatDialog by remember { mutableStateOf(false) }
+    
+    var isSearchMode by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val searchResults by viewModel.searchResults.collectAsState()
+    val isSearching by viewModel.isSearching.collectAsState()
 
     val displayMessages = remember(messages) { messages.reversed() }
 
-    var previousIndex by remember { mutableStateOf(0) }
+    val fileLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris ->
+        if (uris.isNotEmpty()) {
+            val copiedFiles = uris.mapNotNull { uri ->
+                chat.ratatosk.android.util.FileUtils.copyUriToInternalStorage(context, uri)
+            }
+            attachedFiles = attachedFiles + copiedFiles
+        }
+    }
+
+    var previousIndex by remember { mutableIntStateOf(0) }
     var previousOffset by remember { mutableStateOf(0) }
     var lastDirectionIsUp by remember { mutableStateOf(false) }
 
@@ -200,7 +224,14 @@ fun ChatScreen(
     // Auto-scroll and mark as read when new messages arrive
     LaunchedEffect(displayMessages.size) {
         if (displayMessages.isNotEmpty()) {
-            listState.animateScrollToItem(0)
+            val lastMsg = displayMessages.firstOrNull()
+            // Auto-scroll ONLY if we were already at bottom or if it's our own message
+            // Use a small threshold for "at bottom" to be more reliable
+            val nearBottom = listState.firstVisibleItemIndex <= 1
+            
+            if (nearBottom || lastMsg?.mine == true) {
+                listState.animateScrollToItem(0)
+            }
             
             // Mark the newest incoming message as read
             displayMessages.firstOrNull { !it.mine }?.let { lastPeerMsg ->
@@ -211,148 +242,254 @@ fun ChatScreen(
 
     Scaffold(
         containerColor = if (chatTheme.backgroundImageUri != null) Color.Transparent else MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = { 
-            TopAppBar(
-                title = { 
-                    Row(
-                        modifier = Modifier.clickable { onHeaderClick() },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        contact?.let {
-                            Avatar(
-                                avatarBytes = it.peerIk.toHexString().let { ik -> contactAvatars[ik] } ?: viewModel.getAvatarOf(it.peerIk),
-                                name = it.localName ?: it.displayName,
-                                size = 32.dp
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Column {
-                            Text(contact?.let { it.localName ?: it.displayName } ?: stringResource(R.string.chat))
-                            if (contact?.seenOnLan == true) {
-                                Text(
-                                    text = stringResource(R.string.online_lan),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
+            Column {
+                TopAppBar(
+                    title = { 
+                        if (isSearchMode) {
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = {
+                                    searchQuery = it
+                                    viewModel.searchMessages(chatId, it)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                placeholder = { Text(stringResource(R.string.search)) },
+                                singleLine = true,
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
                                 )
+                            )
+                        } else {
+                            Row(
+                                modifier = Modifier.clickable { onHeaderClick() },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                contact?.let {
+                                    Avatar(
+                                        avatarBytes = it.peerIk.toHexString().let { ik -> contactAvatars[ik] } ?: viewModel.getAvatarOf(it.peerIk),
+                                        name = it.localName ?: it.displayName,
+                                        size = 32.dp
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                Column {
+                                    Text(contact?.let { it.localName ?: it.displayName } ?: stringResource(R.string.chat))
+                                    if (contact?.seenOnLan == true) {
+                                        Text(
+                                            text = stringResource(R.string.online_lan),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
                             }
                         }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showChatMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-                    }
-                    DropdownMenu(
-                        expanded = showChatMenu,
-                        onDismissRequest = { showChatMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.clear_chat)) },
-                            onClick = {
-                                showChatMenu = false
-                                showClearChatDialog = true
-                            },
-                            leadingIcon = { Icon(Icons.Default.DeleteSweep, contentDescription = null) }
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    },
+                    navigationIcon = {
+                        if (isSearchMode) {
+                            IconButton(onClick = { 
+                                isSearchMode = false
+                                searchQuery = ""
+                                viewModel.clearSearch()
+                            }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel search")
+                            }
+                        } else {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
+                        }
+                    },
+                    actions = {
+                        if (!isSearchMode) {
+                            IconButton(onClick = { isSearchMode = true }) {
+                                Icon(Icons.Default.Search, contentDescription = "Search")
+                            }
+                            IconButton(onClick = { showChatMenu = true }) {
+                                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                            }
+                        } else if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { 
+                                searchQuery = ""
+                                viewModel.clearSearch()
+                            }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            }
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showChatMenu,
+                            onDismissRequest = { showChatMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.clear_chat)) },
+                                onClick = {
+                                    showChatMenu = false
+                                    showClearChatDialog = true
+                                },
+                                leadingIcon = { Icon(Icons.Default.DeleteSweep, contentDescription = null) }
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
-            )
+
+                val torStatus by viewModel.torStatus.collectAsState()
+                val torEnabled by viewModel.torEnabled.collectAsState()
+                
+                if (torEnabled && torStatus != null && torStatus!!.fraction < 1.0f) {
+                    LinearProgressIndicator(
+                        progress = { torStatus!!.fraction },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        trackColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                }
+            }
         },
         bottomBar = {
-            Surface(tonalElevation = 2.dp) {
-                Column {
-                    replyingTo?.let { reply ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                val allContacts by viewModel.contacts.collectAsState()
-                                val replyName = if (reply.mine) "You" else {
-                                    val replyContactObj = allContacts.find { it.chatId.toHexString() == chatIdHex }
-                                    replyContactObj?.localName ?: replyContactObj?.displayName ?: "User"
+            if (!isSearchMode) {
+                Surface(tonalElevation = 2.dp) {
+                    Column {
+                        replyingTo?.let { reply ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                                    .padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    val allContacts by viewModel.contacts.collectAsState()
+                                    val replyName = if (reply.mine) "You" else {
+                                        val replyContactObj = allContacts.find { it.chatId.toHexString() == chatIdHex }
+                                        replyContactObj?.localName ?: replyContactObj?.displayName ?: "User"
+                                    }
+                                    Text(
+                                        text = stringResource(R.string.replying_to, replyName),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        text = reply.body.take(100) + if (reply.body.length > 100) "..." else "",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
                                 }
-                                Text(
-                                    text = stringResource(R.string.replying_to, replyName),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = reply.body.take(100) + if (reply.body.length > 100) "..." else "",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                                )
-                            }
-                            IconButton(onClick = { replyingTo = null }) {
-                                Icon(Icons.Default.Close, contentDescription = "Cancel")
+                                IconButton(onClick = { replyingTo = null }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Cancel")
+                                }
                             }
                         }
-                    }
 
-                    Row(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .imePadding(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = text,
-                            onValueChange = { text = it },
-                            modifier = Modifier.weight(1f),
-                            placeholder = { Text(if (editingMessage != null) stringResource(R.string.edit) else stringResource(R.string.message)) },
-                            maxLines = 4,
-                            leadingIcon = if (editingMessage != null) {
-                                {
-                                    IconButton(onClick = {
-                                        editingMessage = null
-                                        text = ""
-                                    }) {
-                                        Icon(Icons.Default.Close, contentDescription = "Cancel")
+                        if (attachedFiles.isNotEmpty()) {
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(attachedFiles) { file ->
+                                    Box(modifier = Modifier.size(60.dp)) {
+                                        val isImage = file.extension.lowercase() in listOf("jpg", "jpeg", "png", "webp")
+                                        if (isImage) {
+                                            Image(
+                                                painter = rememberAsyncImagePainter(file),
+                                                contentDescription = null,
+                                                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(4.dp)),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                        } else {
+                                            Surface(
+                                                modifier = Modifier.fillMaxSize(),
+                                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                                shape = RoundedCornerShape(4.dp)
+                                            ) {
+                                                Icon(Icons.Default.InsertDriveFile, contentDescription = null, modifier = Modifier.padding(16.dp))
+                                            }
+                                        }
+                                        IconButton(
+                                            onClick = { attachedFiles = attachedFiles - file },
+                                            modifier = Modifier.align(Alignment.TopEnd).size(20.dp).offset(x = 8.dp, y = (-8).dp)
+                                        ) {
+                                            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.error) {
+                                                Icon(Icons.Default.Close, contentDescription = "Remove", tint = Color.White, modifier = Modifier.padding(2.dp))
+                                            }
+                                        }
                                     }
                                 }
-                            } else null
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        IconButton(
-                            onClick = {
-                                if (text.isNotBlank()) {
-                                    val currentEditing = editingMessage
-                                    val currentReply = replyingTo
-                                    if (currentEditing != null) {
-                                        viewModel.editMessage(chatId, currentEditing.msgId, text)
-                                        editingMessage = null
-                                    } else if (currentReply != null) {
-                                        viewModel.reply(chatId, currentReply.msgId, text)
-                                        replyingTo = null
-                                    } else {
-                                        viewModel.sendText(chatId, text)
-                                    }
-                                    text = ""
-                                }
-                            },
-                            enabled = text.isNotBlank()
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                                .imePadding(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            if (editingMessage != null) {
-                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.save))
-                            } else {
-                                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.send))
+                            OutlinedTextField(
+                                value = text,
+                                onValueChange = { text = it },
+                                modifier = Modifier.weight(1f),
+                                placeholder = { Text(if (editingMessage != null) stringResource(R.string.edit) else stringResource(R.string.message)) },
+                                maxLines = 4,
+                                leadingIcon = if (editingMessage != null) {
+                                    {
+                                        IconButton(onClick = {
+                                            editingMessage = null
+                                            text = ""
+                                        }) {
+                                            Icon(Icons.Default.Close, contentDescription = "Cancel")
+                                        }
+                                    }
+                                } else null,
+                                trailingIcon = {
+                                    IconButton(onClick = { fileLauncher.launch("*/*") }) {
+                                        Icon(Icons.Default.AttachFile, contentDescription = "Attach")
+                                    }
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(
+                                onClick = {
+                                    if (text.isNotBlank() || attachedFiles.isNotEmpty()) {
+                                        val currentEditing = editingMessage
+                                        val currentReply = replyingTo
+                                        if (attachedFiles.isNotEmpty()) {
+                                            viewModel.sendFiles(chatId, attachedFiles, text)
+                                            attachedFiles = emptyList()
+                                        } else if (currentEditing != null) {
+                                            viewModel.editMessage(chatId, currentEditing.msgId, text)
+                                            editingMessage = null
+                                        } else if (currentReply != null) {
+                                            viewModel.reply(chatId, currentReply.msgId, text)
+                                            replyingTo = null
+                                        } else {
+                                            viewModel.sendText(chatId, text)
+                                        }
+                                        text = ""
+                                    }
+                                },
+                                enabled = text.isNotBlank() || attachedFiles.isNotEmpty()
+                            ) {
+                                if (editingMessage != null) {
+                                    Icon(Icons.Default.Check, contentDescription = stringResource(R.string.save))
+                                } else {
+                                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.send))
+                                }
                             }
                         }
                     }
@@ -375,49 +512,93 @@ fun ChatScreen(
                 )
             }
             
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                reverseLayout = true,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(displayMessages, key = { it.msgId.toHexString() }) { msg ->
-                    val status = messageStatuses[msg.msgId.toHexString()] ?: msg.status
-                    Box(modifier = Modifier.fillMaxWidth().animateItem()) {
-                        MessageBubble(
-                            message = msg,
-                            outgoingColor = if (chatTheme.themeColor != Color.Unspecified) chatTheme.themeColor else MaterialTheme.colorScheme.primary,
-                            status = status,
-                            onRetry = { viewModel.resendMessage(chatId, msg.body) },
-                            onDelete = { viewModel.deleteMessages(chatId, listOf(msg.msgId)) },
-                            onRetract = { viewModel.retractMessages(chatId, listOf(msg.msgId)) },
-                            onEdit = { 
-                                editingMessage = msg
-                                text = msg.body
-                            },
-                            onReply = { replyingTo = msg },
-                            onForward = { showForwardDialog = listOf(msg.msgId) },
-                            onReaction = { emoji -> viewModel.setReaction(chatId, msg.msgId, emoji) },
-                            onReplyClick = { replyId ->
-                                val hex = replyId.toHexString()
-                                android.util.Log.d("ChatScreen", "Reply clicked! Target hex: $hex")
-                                pendingScrollToId = hex
-                            },
-                            retractionNotice = { viewModel.getRetractionNotice() },
-                            getRepliedMessage = { id -> viewModel.getMessage(id) },
-                            isHighlighted = highlightedMsgId == msg.msgId.toHexString()
-                        )
+            if (isSearchMode && searchQuery.isNotEmpty()) {
+                if (isSearching) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                } else if (searchResults.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(stringResource(R.string.no_results), style = MaterialTheme.typography.bodyLarge)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(searchResults) { msg ->
+                            Box(modifier = Modifier.fillMaxWidth().clickable {
+                                isSearchMode = false
+                                searchQuery = ""
+                                viewModel.clearSearch()
+                                pendingScrollToId = msg.msgId.toHexString()
+                            }) {
+                                MessageBubble(
+                                    message = msg,
+                                    viewModel = viewModel,
+                                    chatId = chatId,
+                                    snackbarHostState = snackbarHostState,
+                                    outgoingColor = if (chatTheme.themeColor != Color.Unspecified) chatTheme.themeColor else MaterialTheme.colorScheme.primary,
+                                    status = messageStatuses[msg.msgId.toHexString()] ?: msg.status,
+                                    onReplyClick = {},
+                                    isHighlighted = false,
+                                    // Disable actions in search results for simplicity
+                                    onRetry = {}, onDelete = {}, onRetract = {}, onEdit = {}, onReply = {}, onForward = {}, onReaction = { _ -> },
+                                    retractionNotice = { "" }, getRepliedMessage = { null }
+                                )
+                            }
+                        }
                     }
                 }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    reverseLayout = true,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(displayMessages, key = { it.msgId.toHexString() }) { msg ->
+                        val status = messageStatuses[msg.msgId.toHexString()] ?: msg.status
+                        Box(modifier = Modifier.fillMaxWidth().animateItem()) {
+                            MessageBubble(
+                                message = msg,
+                                viewModel = viewModel,
+                                chatId = chatId,
+                                snackbarHostState = snackbarHostState,
+                                outgoingColor = if (chatTheme.themeColor != Color.Unspecified) chatTheme.themeColor else MaterialTheme.colorScheme.primary,
+                                status = status,
+                                onRetry = { viewModel.resendMessage(chatId, msg.body) },
+                                onDelete = { viewModel.deleteMessages(chatId, listOf(msg.msgId)) },
+                                onRetract = { viewModel.retractMessages(chatId, listOf(msg.msgId)) },
+                                onEdit = { 
+                                    editingMessage = msg
+                                    text = msg.body
+                                },
+                                onReply = { replyingTo = msg },
+                                onForward = { showForwardDialog = listOf(msg.msgId) },
+                                onReaction = { emoji -> viewModel.setReaction(chatId, msg.msgId, emoji) },
+                                onReplyClick = { replyId ->
+                                    val hex = replyId.toHexString()
+                                    android.util.Log.d("ChatScreen", "Reply clicked! Target hex: $hex")
+                                    pendingScrollToId = hex
+                                },
+                                retractionNotice = { viewModel.getRetractionNotice() },
+                                getRepliedMessage = { id -> viewModel.getMessage(id) },
+                                isHighlighted = highlightedMsgId == msg.msgId.toHexString()
+                            )
+                        }
+                    }
 
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = stringResource(R.string.encrypted_connection),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                text = stringResource(R.string.encrypted_connection),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
                     }
                 }
             }
@@ -533,6 +714,9 @@ fun ChatScreen(
 @Composable
 fun MessageBubble(
     message: FfiMessage,
+    viewModel: RatatoskViewModel,
+    chatId: ByteArray,
+    snackbarHostState: SnackbarHostState,
     outgoingColor: androidx.compose.ui.graphics.Color,
     status: FfiDeliveryStatus?,
     onRetry: () -> Unit,
@@ -626,6 +810,7 @@ fun MessageBubble(
     var showRetractDialog by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
     val uriHandler = LocalUriHandler.current
+    val scope = rememberCoroutineScope()
     
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
 
@@ -720,7 +905,7 @@ fun MessageBubble(
                             Box(
                                 modifier = Modifier
                                     .width(2.dp)
-                                    .fillMaxHeight()
+                                    .height(IntrinsicSize.Max)
                                     .background(linkColor)
                                     .align(Alignment.CenterVertically)
                             )
@@ -734,6 +919,17 @@ fun MessageBubble(
                             )
                         }
                     }
+
+                    message.sharedContact?.let { sharedContact ->
+                        SharedContactCard(
+                            sharedContact = sharedContact,
+                            onAdd = { viewModel.addSharedContact(message.msgId) },
+                            contentColor = contentColor,
+                            linkColor = linkColor
+                        )
+                    }
+
+                    FileAttachment(message.files, viewModel, chatId, snackbarHostState, contentColor, linkColor)
 
                     if (message.forwarded) {
                         Text(
@@ -771,7 +967,11 @@ fun MessageBubble(
                         
                         if (message.mine) {
                             Spacer(modifier = Modifier.width(2.dp))
-                            MessageStatusIcon(status, contentColor)
+                            MessageStatusIcon(status, contentColor, onWaitingClick = {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(viewModel.getWaitingNotice())
+                                }
+                            })
                         }
                     }
                 }
@@ -949,7 +1149,77 @@ fun MessageBubble(
 }
 
 @Composable
-fun MessageStatusIcon(status: FfiDeliveryStatus?, color: Color) {
+fun SharedContactCard(
+    sharedContact: org.ratatosk.core.FfiSharedContact,
+    onAdd: () -> Unit,
+    contentColor: Color,
+    linkColor: Color
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(contentColor.copy(alpha = 0.1f))
+            .padding(8.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.AccountCircle,
+                contentDescription = null,
+                tint = linkColor,
+                modifier = Modifier.size(40.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = sharedContact.displayName,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = contentColor
+                )
+                Text(
+                    text = sharedContact.fingerprint,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = contentColor.copy(alpha = 0.6f)
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        if (sharedContact.mine) {
+            Text(
+                text = stringResource(R.string.this_is_you),
+                style = MaterialTheme.typography.labelMedium,
+                color = contentColor.copy(alpha = 0.6f),
+                modifier = Modifier.align(Alignment.End)
+            )
+        } else if (sharedContact.alreadyKnown) {
+            Text(
+                text = stringResource(R.string.already_in_contacts),
+                style = MaterialTheme.typography.labelMedium,
+                color = contentColor.copy(alpha = 0.6f),
+                modifier = Modifier.align(Alignment.End)
+            )
+        } else {
+            Button(
+                onClick = onAdd,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = linkColor,
+                    contentColor = if (linkColor.luminance() > 0.5f) Color.Black else Color.White
+                )
+            ) {
+                Icon(Icons.Default.PersonAdd, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.add_contact))
+            }
+        }
+    }
+}
+
+@Composable
+fun MessageStatusIcon(status: FfiDeliveryStatus?, color: Color, onWaitingClick: () -> Unit = {}) {
     val icon: ImageVector? = when (status) {
         FfiDeliveryStatus.PENDING -> Icons.Default.HourglassTop
         FfiDeliveryStatus.WAITING -> Icons.Default.Schedule
@@ -971,8 +1241,199 @@ fun MessageStatusIcon(status: FfiDeliveryStatus?, color: Color) {
         Icon(
             imageVector = it,
             contentDescription = status?.name,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(16.dp).then(
+                if (status == FfiDeliveryStatus.WAITING) Modifier.clickable { onWaitingClick() } else Modifier
+            ),
             tint = tint
         )
+    }
+}
+
+@Composable
+fun FileAttachment(
+    files: List<FfiFile>,
+    viewModel: RatatoskViewModel,
+    chatId: ByteArray,
+    snackbarHostState: SnackbarHostState,
+    contentColor: Color,
+    linkColor: Color
+) {
+    files.forEach { file ->
+        val progress by viewModel.fileProgress.collectAsState()
+        val activeJobs by viewModel.activeJobsFlow.collectAsState()
+        val fileIdHex = file.fileId.toHexString()
+        val isExportingActive = activeJobs.contains(fileIdHex)
+        val currentProgress = progress[fileIdHex] ?: (if (file.complete) 1f else if (file.receivedChunks > 0UL) file.receivedChunks.toFloat() / file.chunkTotal.toFloat() else 0f)
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(contentColor.copy(alpha = 0.1f))
+                .padding(8.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.InsertDriveFile,
+                    contentDescription = null,
+                    tint = linkColor,
+                    modifier = Modifier.size(32.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = file.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        color = contentColor
+                    )
+                    Text(
+                        text = formatFileSize(file.sizeBytes),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = contentColor.copy(alpha = 0.6f)
+                    )
+                    if (!file.incoming && !file.complete) {
+                        Text(
+                            text = if (currentProgress > 0) {
+                                stringResource(R.string.peer_downloading, (currentProgress * 100).toInt())
+                            } else {
+                                stringResource(R.string.waiting_for_peer)
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = linkColor
+                        )
+                    }
+                }
+                
+                if (file.incoming && !file.accepted && !file.complete) {
+                    Row {
+                        IconButton(onClick = { viewModel.declineFile(chatId, file.fileId) }) {
+                            Icon(Icons.Default.Close, contentDescription = "Decline", tint = MaterialTheme.colorScheme.error)
+                        }
+                        IconButton(onClick = { viewModel.acceptFile(chatId, file.fileId) }) {
+                            Icon(Icons.Default.Download, contentDescription = "Accept", tint = linkColor)
+                        }
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (isExportingActive) {
+                            Box(contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(
+                                    progress = { currentProgress },
+                                    modifier = Modifier.size(32.dp),
+                                    strokeWidth = 2.dp,
+                                    color = linkColor
+                                )
+                                IconButton(
+                                    onClick = { viewModel.cancelFileJob(file.fileId) },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Cancel",
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        } else {
+                            if (!file.complete) {
+                                CircularProgressIndicator(
+                                    progress = { currentProgress },
+                                    modifier = Modifier.size(24.dp).padding(4.dp),
+                                    strokeWidth = 2.dp,
+                                    color = linkColor
+                                )
+                            }
+                            
+                            if (file.complete || !file.incoming) {
+                                IconButton(onClick = {
+                                    val tempDir = java.io.File(context.cacheDir, "temp_open")
+                                    tempDir.mkdirs()
+                                    val dest = java.io.File(tempDir, file.name)
+                                    
+                                    viewModel.saveFile(file, dest) { savedFile ->
+                                        try {
+                                            val uri = androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.provider", savedFile)
+                                            val mimeType = if (file.name.endsWith(".apk", ignoreCase = true)) {
+                                                "application/vnd.android.package-archive"
+                                            } else {
+                                                context.contentResolver.getType(uri) ?: "*/*"
+                                            }
+                                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                setDataAndType(uri, mimeType)
+                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                if (mimeType == "application/vnd.android.package-archive") {
+                                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                                }
+                                            }
+                                            context.startActivity(intent)
+                                        } catch (e: Exception) {
+                                            android.util.Log.e("ChatScreen", "Failed to open file", e)
+                                            scope.launch { snackbarHostState.showSnackbar("Failed to open file: ${e.message}") }
+                                        }
+                                    }
+                                }) {
+                                    Icon(Icons.Default.OpenInNew, contentDescription = "Open", tint = linkColor)
+                                }
+
+                                val savedMsgTemplate = stringResource(R.string.file_saved)
+                                IconButton(onClick = {
+                                    viewModel.downloadFile(file) { path ->
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(savedMsgTemplate.format(path))
+                                        }
+                                    }
+                                }) {
+                                    Icon(Icons.Default.Save, contentDescription = "Save", tint = linkColor)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (file.hasPreview) {
+                 val previewBytes = viewModel.getFilePreview(file.fileId)
+                 Box(
+                     modifier = Modifier
+                         .fillMaxWidth()
+                         .heightIn(min = 100.dp, max = 300.dp)
+                         .padding(top = 8.dp)
+                         .clip(RoundedCornerShape(4.dp))
+                         .background(contentColor.copy(alpha = 0.05f)),
+                     contentAlignment = Alignment.Center
+                 ) {
+                     if (previewBytes != null) {
+                         Image(
+                             painter = rememberAsyncImagePainter(previewBytes),
+                             contentDescription = null,
+                             modifier = Modifier.fillMaxSize(),
+                             contentScale = ContentScale.Fit
+                         )
+                     } else {
+                         CircularProgressIndicator(
+                             modifier = Modifier.size(20.dp),
+                             strokeWidth = 2.dp,
+                             color = linkColor.copy(alpha = 0.5f)
+                         )
+                     }
+                 }
+            }
+        }
+    }
+}
+
+fun formatFileSize(bytes: ULong): String {
+    val b = bytes.toDouble()
+    return when {
+        b < 1024 -> "%.0f B".format(java.util.Locale.US, b)
+        b < 1024 * 1024 -> "%.1f KB".format(java.util.Locale.US, b / 1024)
+        b < 1024 * 1024 * 1024 -> "%.1f MB".format(java.util.Locale.US, b / (1024 * 1024))
+        else -> "%.1f GB".format(java.util.Locale.US, b / (1024 * 1024 * 1024))
     }
 }

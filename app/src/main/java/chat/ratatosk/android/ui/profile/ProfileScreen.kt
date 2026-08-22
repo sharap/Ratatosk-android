@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -40,6 +41,10 @@ fun ProfileScreen(
     val userName by viewModel.userName.collectAsState()
     val notices by viewModel.honestNotices.collectAsState()
     val myAvatar by viewModel.myAvatar.collectAsState()
+    val torEnabled by viewModel.torEnabled.collectAsState()
+    val onionAddress by viewModel.onionAddress.collectAsState()
+    val cardVersion by viewModel.cardVersion.collectAsState()
+    val myContactUri by viewModel.myContactUri.collectAsState()
     val clipboardManager = LocalClipboardManager.current
     
     var showMyQr by remember { mutableStateOf(false) }
@@ -123,10 +128,45 @@ fun ProfileScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f)
                         )
+                        if (cardVersion != null) {
+                            Text(
+                                text = "v$cardVersion",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                        }
                         IconButton(onClick = {
                             fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) }
                         }) {
                             Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
+                        }
+                    }
+                }
+            }
+
+            if (torEnabled) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Onion Address",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = onionAddress ?: "Waiting for Tor...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (onionAddress != null) {
+                                IconButton(onClick = {
+                                    clipboardManager.setText(AnnotatedString(onionAddress!!))
+                                }) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
+                                }
+                            }
                         }
                     }
                 }
@@ -149,7 +189,8 @@ fun ProfileScreen(
 
                 OutlinedButton(
                     onClick = {
-                        viewModel.getMyContactUri()?.let { uri ->
+                        viewModel.getMyContactUri()
+                        myContactUri?.let { uri ->
                             clipboardManager.setText(AnnotatedString(uri))
                         }
                     },
@@ -159,6 +200,18 @@ fun ProfileScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.copy_link))
                 }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            OutlinedButton(
+                onClick = { viewModel.logout() },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Icon(Icons.Default.Logout, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Switch Account")
             }
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -226,7 +279,10 @@ fun ProfileScreen(
     }
 
     if (showMyQr) {
-        val myUri = viewModel.getMyContactUri() ?: ""
+        LaunchedEffect(Unit) {
+            viewModel.getMyContactUri()
+        }
+        val myUri = myContactUri ?: ""
         AlertDialog(
             onDismissRequest = { showMyQr = false },
             title = { Text(stringResource(R.string.my_qr_code)) },

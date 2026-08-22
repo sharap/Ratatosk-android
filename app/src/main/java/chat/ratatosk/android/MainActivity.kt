@@ -11,11 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
@@ -27,6 +23,7 @@ import chat.ratatosk.android.service.RatatoskService
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.onboarding.OnboardingScreen
 import chat.ratatosk.android.ui.unlock.UnlockScreen
+import chat.ratatosk.android.ui.unlock.AccountSelectionScreen
 import chat.ratatosk.android.ui.main.MainScreen
 import chat.ratatosk.android.ui.chat.ChatScreen
 import chat.ratatosk.android.ui.profile.AvatarCropScreen
@@ -58,15 +55,24 @@ class MainActivity : ComponentActivity() {
         setContent {
             val appViewModel: RatatoskViewModel = viewModel()
             val isCoreReady by appViewModel.isInitialized.collectAsState()
-            val hasAccount by appViewModel.accountExists.collectAsState()
+            val accounts by appViewModel.availableAccounts.collectAsState()
             val currentError by appViewModel.error.collectAsState()
             val chatTheme by appViewModel.chatTheme.collectAsState()
             val navController = rememberNavController()
 
-            // Auto-request notifications only if account exists and not core-ready (e.g. unlock screen)
-            // or if core is ready. New users will see the button on onboarding.
-            LaunchedEffect(hasAccount) {
-                if (hasAccount && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val selectedAccount by appViewModel.selectedAccount.collectAsState()
+            val isCreatingNewAccount by appViewModel.isCreatingNewAccount.collectAsState()
+
+            // Set initial selection if only one account exists
+            LaunchedEffect(accounts) {
+                if (accounts.size == 1 && selectedAccount == null && !isCreatingNewAccount && !isCoreReady) {
+                    appViewModel.selectAccount(accounts.first())
+                }
+            }
+
+            // Auto-request notifications
+            LaunchedEffect(accounts) {
+                if (accounts.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                         requestPermissionsLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
                     }
@@ -83,9 +89,9 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // Start the core service if account exists to keep it running in background
-            LaunchedEffect(hasAccount) {
-                if (hasAccount) {
+            // Start the core service
+            LaunchedEffect(accounts) {
+                if (accounts.isNotEmpty()) {
                     val intent = Intent(this@MainActivity, RatatoskService::class.java)
                     startForegroundService(intent)
                 }
@@ -94,10 +100,27 @@ class MainActivity : ComponentActivity() {
             RatatoskTheme(themeColor = chatTheme.themeColor) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (!isCoreReady) {
-                        if (hasAccount) {
-                            UnlockScreen(appViewModel)
-                        } else {
-                            OnboardingScreen(appViewModel)
+                        when {
+                            isCreatingNewAccount || accounts.isEmpty() -> {
+                                OnboardingScreen(
+                                    viewModel = appViewModel,
+                                    onBack = if (accounts.isNotEmpty()) { { appViewModel.setCreatingNewAccount(false) } } else null
+                                )
+                            }
+                            selectedAccount == null -> {
+                                AccountSelectionScreen(
+                                    viewModel = appViewModel,
+                                    onSelect = { appViewModel.selectAccount(it) },
+                                    onCreateNew = { appViewModel.setCreatingNewAccount(true) }
+                                )
+                            }
+                            else -> {
+                                UnlockScreen(
+                                    viewModel = appViewModel,
+                                    account = selectedAccount!!,
+                                    onBack = { appViewModel.selectAccount(null) }
+                                )
+                            }
                         }
                     } else {
                         NavHost(navController = navController, startDestination = "main") {
@@ -171,7 +194,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    // Global Error Overlay (if core fails after initialization)
+                    // Global Error Overlay
                     if (isCoreReady && currentError != null) {
                         AlertDialog(
                             onDismissRequest = { /* Don't dismiss critical errors */ },
@@ -179,7 +202,7 @@ class MainActivity : ComponentActivity() {
                             text = { Text(currentError ?: "") },
                             confirmButton = {
                                 Button(onClick = { 
-                                    // Maybe retry or exit
+                                    appViewModel.clearError()
                                 }) {
                                     Text(stringResource(R.string.retry))
                                 }

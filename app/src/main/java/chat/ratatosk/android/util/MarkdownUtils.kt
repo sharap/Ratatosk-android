@@ -36,6 +36,16 @@ object MarkdownUtils {
         }
     }
 
+    fun formatForNotification(text: String, spoilerPlaceholder: String): String {
+        // Replace spoilers first
+        val noSpoilers = text.replace(Regex("\\|\\|.+?\\|\\|"), "[$spoilerPlaceholder]")
+        
+        // Very basic markdown stripping (bold, italic, strikethrough)
+        return noSpoilers
+            .replace(Regex("\\*\\*|__|\\*|_|~~"), "")
+            .trim()
+    }
+
     private class ComposeAnnotatedStringVisitor(
         private val builder: AnnotatedString.Builder,
         private val linkColor: Color

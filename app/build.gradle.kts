@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.navigation.compose)
+    implementation("androidx.documentfile:documentfile:1.0.1")
     implementation(libs.commonmark)
     implementation(libs.commonmark.autolink)
     implementation(libs.commonmark.strikethrough)
@@ -94,7 +95,7 @@ val buildRustCore = tasks.register<Exec>("buildRustCore") {
         "-t", "x86_64",
         "-t", "arm64-v8a",
         "-o", jniLibsDir.absolutePath,
-        "build", "-p", "ratatosk-ffi", "--lib"
+        "build", "--release", "-p", "ratatosk-ffi", "--lib", "--features", "tor"
     )
     
     inputs.dir(rustProjectDir.resolve("crates"))
@@ -103,7 +104,7 @@ val buildRustCore = tasks.register<Exec>("buildRustCore") {
 
 val buildRustHost = tasks.register<Exec>("buildRustHost") {
     workingDir = rustProjectDir
-    commandLine("cargo", "build", "-p", "ratatosk-ffi", "--lib")
+    commandLine("cargo", "build", "-p", "ratatosk-ffi", "--lib", "--features", "tor")
     
     inputs.dir(rustProjectDir.resolve("crates"))
     outputs.file(rustProjectDir.resolve("target/debug/libratatosk_ffi.so"))

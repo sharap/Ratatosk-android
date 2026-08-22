@@ -12,7 +12,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -27,18 +29,23 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
-import uniffi.ratatosk_ffi.lanWarning
+import kotlinx.coroutines.launch
+import org.ratatosk.core.lanWarning
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(viewModel: RatatoskViewModel) {
     val context = LocalContext.current
     val lanEnabled by viewModel.lanEnabled.collectAsState()
+    val torEnabled by viewModel.torEnabled.collectAsState()
     val showName by viewModel.notificationsShowName.collectAsState()
     val showText by viewModel.notificationsShowText.collectAsState()
     var showLanWarning by remember { mutableStateOf(false) }
     var showPermissionRationale by remember { mutableStateOf(false) }
     val chatTheme by viewModel.chatTheme.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
     val permissionsToRequest = remember {
         val list = mutableListOf<String>()
@@ -87,7 +94,20 @@ fun SettingsScreen(viewModel: RatatoskViewModel) {
         }
     }
 
+    val folderLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let {
+            context.contentResolver.takePersistableUriPermission(
+                it,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            viewModel.setDownloadDirUri(it)
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.settings)) },
@@ -98,7 +118,12 @@ fun SettingsScreen(viewModel: RatatoskViewModel) {
             )
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding).padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp)
+                .verticalScroll(scrollState)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -122,6 +147,30 @@ fun SettingsScreen(viewModel: RatatoskViewModel) {
                             viewModel.setLanEnabled(false)
                         }
                     }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Enable Tor",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "Routes your traffic through the Tor network for improved anonymity",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = torEnabled,
+                    onCheckedChange = { viewModel.setTorEnabled(it) }
                 )
             }
             
@@ -160,6 +209,95 @@ fun SettingsScreen(viewModel: RatatoskViewModel) {
             ) {
                 Text(stringResource(R.string.show_message_text))
                 Switch(checked = showText, onCheckedChange = { viewModel.setNotificationsShowText(it) })
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+            Text(
+                text = stringResource(R.string.file_attachments),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.auto_accept_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            val autoAcceptLimit by viewModel.autoAcceptLimit.collectAsState()
+            val limits = listOf(
+                0UL to stringResource(R.string.limit_never),
+                1024UL * 1024UL to stringResource(R.string.limit_1mb),
+                1024UL * 1024UL * 10UL to stringResource(R.string.limit_10mb),
+                1024UL * 1024UL * 100UL to stringResource(R.string.limit_100mb),
+                null to stringResource(R.string.limit_always)
+            )
+
+            var showLimitMenu by remember { mutableStateOf(false) }
+
+            Box {
+                OutlinedButton(
+                    onClick = { showLimitMenu = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val currentLabel = limits.find { it.first == autoAcceptLimit }?.second ?: stringResource(R.string.limit_never)
+                    Text("${stringResource(R.string.auto_accept_limit)}: $currentLabel")
+                }
+                DropdownMenu(
+                    expanded = showLimitMenu,
+                    onDismissRequest = { showLimitMenu = false }
+                ) {
+                    limits.forEach { (limit, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                viewModel.setAutoAcceptLimit(limit)
+                                showLimitMenu = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            val downloadDirUri by viewModel.downloadDirUri.collectAsState()
+            OutlinedButton(
+                onClick = { folderLauncher.launch(null) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                val folderName = if (downloadDirUri != null) {
+                    val doc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, android.net.Uri.parse(downloadDirUri!!))
+                    doc?.name ?: stringResource(R.string.settings) // Fallback label
+                } else "Downloads/ratatosk"
+                Text("${stringResource(R.string.save_folder)}: $folderName")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = {
+                    viewModel.sweepOrphanFiles { swept ->
+                        val resultText = context.getString(
+                            R.string.sweep_result,
+                            swept.bytes.toString(),
+                            swept.files.toString(),
+                            swept.chunks.toString()
+                        )
+                        scope.launch {
+                            snackbarHostState.showSnackbar(resultText)
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(stringResource(R.string.sweep_orphaned))
+                    Text(
+                        stringResource(R.string.sweep_orphaned_desc),
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))

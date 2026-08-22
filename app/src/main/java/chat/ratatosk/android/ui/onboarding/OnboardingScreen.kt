@@ -32,7 +32,10 @@ import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
 
 @Composable
-fun OnboardingScreen(viewModel: RatatoskViewModel) {
+fun OnboardingScreen(
+    viewModel: RatatoskViewModel,
+    onBack: (() -> Unit)? = null
+) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var displayName by remember { mutableStateOf("") }
@@ -176,11 +179,20 @@ fun OnboardingScreen(viewModel: RatatoskViewModel) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { viewModel.initialize(pin.takeIf { it.isNotEmpty() }, displayName.takeIf { it.isNotEmpty() } ?: "User") },
+            onClick = { 
+                viewModel.initialize(displayName, pin.takeIf { it.isNotEmpty() }, displayName) 
+            },
             modifier = Modifier.fillMaxWidth(),
             enabled = displayName.isNotBlank()
         ) {
             Text(stringResource(R.string.generate_identity))
+        }
+
+        if (onBack != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(onClick = onBack) {
+                Text(stringResource(R.string.cancel))
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))

@@ -1,10 +1,13 @@
 package chat.ratatosk.android.core
 
 import android.content.Context
-import uniffi.ratatosk_ffi.EventObserver
-import uniffi.ratatosk_ffi.FfiEvent
-import uniffi.ratatosk_ffi.RatatoskClient
-import uniffi.ratatosk_ffi.RatatoskException
+import org.ratatosk.core.EventObserver
+import org.ratatosk.core.FfiEvent
+import org.ratatosk.core.RatatoskClient
+import org.ratatosk.core.RatatoskException
+import org.ratatosk.core.AccountRegistry
+import org.ratatosk.core.FfiAccount
+import chat.ratatosk.android.util.toHexString
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.channels.BufferOverflow
@@ -13,9 +16,14 @@ import java.io.File
 object RatatoskCore : EventObserver {
     @Volatile
     private var client: RatatoskClient? = null
+
+    @Volatile
+    private var registry: AccountRegistry? = null
     
     @Volatile
     private var nativeError: Throwable? = null
+
+    private var activeAccountIdHex: String? = null
 
     // Use a buffer with replay to ensure UI doesn't miss events during transitions
     private val _events = MutableSharedFlow<FfiEvent>(
@@ -26,39 +34,89 @@ object RatatoskCore : EventObserver {
     val events = _events.asSharedFlow()
 
     @Throws(RatatoskException::class)
-    fun initialize(context: Context, pin: String?, displayName: String): RatatoskClient {
+    fun initializeRegistry(context: Context): AccountRegistry {
         synchronized(this) {
-            android.util.Log.d("RatatoskCore", "Initialize called. Current client: ${if (client != null) "ACTIVE" else "NULL"}")
+            registry?.let { return it }
+            val root = File(context.filesDir, "ratatosk_root")
+            root.mkdirs()
+            val newRegistry = AccountRegistry.open(root.absolutePath)
+            registry = newRegistry
+            return newRegistry
+        }
+    }
+
+    @Throws(RatatoskException::class)
+    fun initialize(accountId: ByteArray, pin: String?, deviceKey: ByteArray? = null, displayName: String): RatatoskClient {
+        synchronized(this) {
+            val accountIdHex = accountId.toHexString()
+            android.util.Log.d("RatatoskCore", "Initialize called for account: $accountIdHex. Current client: ${if (client != null) "ACTIVE" else "NULL"}")
             
-            val currentClient = client
-            if (currentClient != null) {
-                android.util.Log.d("RatatoskCore", "Returning existing client")
-                return currentClient
+            if (client != null && activeAccountIdHex == accountIdHex) {
+                android.util.Log.d("RatatoskCore", "Returning existing client for same account")
+                return client!!
             }
+
+            // Close existing client if switching accounts
+            client?.destroy()
+            client = null
             
             return try {
-                val dbFile = File(context.filesDir, "ratatosk.db")
-                android.util.Log.d("RatatoskCore", "Opening database at: ${dbFile.absolutePath}")
-                dbFile.parentFile?.mkdirs()
-                
-                val newClient = RatatoskClient.open(dbFile.absolutePath, pin, displayName)
+                val reg = registry ?: throw IllegalStateException("Registry not initialized")
+                val newClient = reg.openAccount(accountId, pin, deviceKey, displayName)
                 android.util.Log.d("RatatoskCore", "Native client opened successfully")
                 
                 newClient.setObserver(this)
                 newClient.networkChanged() // Kickstart discovery
+                
+                // §5.1: Announce this account in LAN
+                reg.setForeground(accountId)
+                
                 client = newClient
+                activeAccountIdHex = accountIdHex
                 nativeError = null 
                 newClient
             } catch (t: Throwable) {
-                android.util.Log.e("RatatoskCore", "Failed to initialize native core", t)
+                android.util.Log.e("RatatoskCore", "Failed to initialize native core for account $accountIdHex", t)
                 nativeError = t
                 throw t
             }
         }
     }
 
+    fun setForeground(accountId: ByteArray?) {
+        registry?.setForeground(accountId)
+    }
+
+    fun findHidden(pin: String): ByteArray? {
+        return registry?.findHidden(pin)
+    }
+
+    fun createHidden(): ByteArray {
+        val reg = registry ?: throw IllegalStateException("Registry not initialized")
+        return reg.createHidden()
+    }
+
+    fun createAccount(label: String): FfiAccount {
+        val reg = registry ?: throw IllegalStateException("Registry not initialized")
+        return reg.create(label)
+    }
+
+    fun logout() {
+        synchronized(this) {
+            registry?.setForeground(null)
+            client?.destroy()
+            client = null
+            activeAccountIdHex = null
+        }
+    }
+
     override fun onEvent(`event`: FfiEvent) {
-        android.util.Log.d("RatatoskCore", "Event from native: $`event`")
+        android.util.Log.e("RatatoskCore", "RECEIVING EVENT: $`event`")
+        if (`event` is FfiEvent.TorStatus) {
+            android.util.Log.i("RatatoskCore", "Tor status: [${(`event`.fraction * 100).toInt()}%] ${`event`.note}${`event`.blocked?.let { " (BLOCKED: $it)" } ?: ""}")
+        } else {
+            android.util.Log.d("RatatoskCore", "Event from native: $`event`")
+        }
         val success = _events.tryEmit(`event`)
         if (!success) {
             android.util.Log.w("RatatoskCore", "Event buffer full, event might be delayed or dropped!")
@@ -73,9 +131,17 @@ object RatatoskCore : EventObserver {
     
     fun isInitialized(): Boolean = client != null
 
-    fun accountExists(context: Context): Boolean {
-        val dbFile = File(context.filesDir, "ratatosk.db")
-        return dbFile.exists()
+    fun getActiveAccountId(): String? = activeAccountIdHex
+
+    fun listAccounts(): List<FfiAccount> {
+        return registry?.list() ?: emptyList()
+    }
+
+    fun anyAccountExists(context: Context): Boolean {
+        val root = File(context.filesDir, "ratatosk_root")
+        if (!root.exists()) return false
+        // Basic check for files in root
+        return root.list()?.isNotEmpty() ?: false
     }
 
     fun getNativeError(): Throwable? = nativeError

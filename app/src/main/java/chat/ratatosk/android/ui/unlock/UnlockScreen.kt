@@ -10,9 +10,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
+import org.ratatosk.core.FfiAccount
 
 @Composable
-fun UnlockScreen(viewModel: RatatoskViewModel) {
+fun UnlockScreen(
+    viewModel: RatatoskViewModel,
+    account: FfiAccount,
+    onBack: () -> Unit
+) {
     var pin by remember { mutableStateOf("") }
     val error by viewModel.error.collectAsState()
 
@@ -24,7 +29,7 @@ fun UnlockScreen(viewModel: RatatoskViewModel) {
         verticalArrangement = Arrangement.Center) {
         
         Text(
-            text = stringResource(R.string.welcome_back),
+            text = "Unlock ${account.label}",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
@@ -58,10 +63,16 @@ fun UnlockScreen(viewModel: RatatoskViewModel) {
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { viewModel.unlock(pin.takeIf { it.isNotEmpty() }) },
+            onClick = { viewModel.unlock(account, pin.takeIf { it.isNotEmpty() }) },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.unlock))
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextButton(onClick = onBack) {
+            Text(stringResource(R.string.switch_account))
         }
     }
 }

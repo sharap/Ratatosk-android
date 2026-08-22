@@ -1,12 +1,16 @@
 package chat.ratatosk.android.ui.contacts
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.QrCode
@@ -31,8 +35,8 @@ import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.components.Avatar
 import chat.ratatosk.android.util.toHexString
 import qrcode.QRCode
-import uniffi.ratatosk_ffi.deletionNotice
-import uniffi.ratatosk_ffi.revocationNotice
+import org.ratatosk.core.deletionNotice
+import org.ratatosk.core.revocationNotice
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,10 +53,10 @@ fun ContactDetailsScreen(
     }
     
     val clipboardManager = LocalClipboardManager.current
-    var showQrDialog by remember { mutableStateOf(false) }
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showRevokeDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showShareToChatDialog by remember { mutableStateOf(false) }
     
     var editNameText by remember { mutableStateOf("") }
     var purgeHistoryOnDelete by remember { mutableStateOf(true) }
@@ -236,16 +240,8 @@ fun ContactDetailsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(stringResource(R.string.share_contact))
-                            Row {
-                                IconButton(onClick = { showQrDialog = true }) {
-                                    Icon(Icons.Default.QrCode, contentDescription = "Show QR")
-                                }
-                                IconButton(onClick = {
-                                    val uri = "ratatosk:${contact.peerIk.toHexString()}"
-                                    clipboardManager.setText(AnnotatedString(uri))
-                                }) {
-                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy Link")
-                                }
+                            IconButton(onClick = { showShareToChatDialog = true }) {
+                                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Share to Chat")
                             }
                         }
                     }
@@ -349,37 +345,34 @@ fun ContactDetailsScreen(
         )
     }
 
-    if (showQrDialog && contact != null) {
-        val contactUri = "ratatosk:${contact.peerIk.toHexString()}"
+    if (showShareToChatDialog && contact != null) {
+        val allContacts by viewModel.contacts.collectAsState()
         AlertDialog(
-            onDismissRequest = { showQrDialog = false },
-            title = { Text(stringResource(R.string.share_contact)) },
+            onDismissRequest = { showShareToChatDialog = false },
+            title = { Text(stringResource(R.string.share_to)) },
             text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    val qrCode = QRCode(contactUri).render().nativeImage() as android.graphics.Bitmap
-                    Image(
-                        bitmap = qrCode.asImageBitmap(),
-                        contentDescription = "Contact QR Code",
-                        modifier = Modifier.size(200.dp)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = contactUri,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                    items(allContacts.filter { it.chatId.toHexString() != contact.chatId.toHexString() }) { target ->
+                        ListItem(
+                            headlineContent = { Text(target.localName ?: target.displayName) },
+                            leadingContent = {
+                                Avatar(
+                                    avatarBytes = contactAvatars[target.peerIk.toHexString()] ?: viewModel.getAvatarOf(target.peerIk),
+                                    name = target.localName ?: target.displayName
+                                )
+                            },
+                            modifier = Modifier.clickable {
+                                viewModel.shareContact(target.chatId, contact.peerIk)
+                                showShareToChatDialog = false
+                            }
+                        )
+                    }
                 }
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    clipboardManager.setText(AnnotatedString(contactUri))
-                }) {
-                    Text(stringResource(R.string.copy))
-                }
-            },
+            confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showQrDialog = false }) {
-                    Text(stringResource(R.string.close))
+                TextButton(onClick = { showShareToChatDialog = false }) {
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )

@@ -20,6 +20,7 @@ import chat.ratatosk.android.MainActivity
 import chat.ratatosk.android.R
 import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.data.SettingsRepository
+import chat.ratatosk.android.util.MarkdownUtils
 import chat.ratatosk.android.util.toHexString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +30,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import uniffi.ratatosk_ffi.FfiEvent
+import org.ratatosk.core.FfiEvent
 
 class RatatoskService : Service() {
     private var multicastLock: WifiManager.MulticastLock? = null
@@ -65,20 +66,8 @@ class RatatoskService : Service() {
             acquire()
         }
 
-        // Try to auto-initialize if account exists and core is not ready
-        serviceScope.launch {
-            if (!RatatoskCore.isInitialized() && RatatoskCore.accountExists(this@RatatoskService)) {
-                try {
-                    val settings = SettingsRepository(this@RatatoskService)
-                    val displayName = settings.displayName.first() ?: "User"
-                    android.util.Log.i("RatatoskService", "Auto-initializing core for $displayName")
-                    // Try with null PIN (if DB is not encrypted)
-                    RatatoskCore.initialize(this@RatatoskService, null, displayName)
-                } catch (e: Exception) {
-                    android.util.Log.w("RatatoskService", "Auto-initialization failed (likely requires PIN): ${e.message}")
-                }
-            }
-        }
+        // Auto-initialization is disabled in multi-account mode to avoid ambiguity.
+        // The core will be initialized by the ViewModel when an account is selected.
 
         // Listen to core events for notifications
         RatatoskCore.events
@@ -175,11 +164,12 @@ class RatatoskService : Service() {
 
     private fun showIncomingMessageNotification(event: FfiEvent.MessageReceived) {
         val chatIdHex = event.chatId.toHexString()
+        val accountId = RatatoskCore.getActiveAccountId() ?: return
         
         serviceScope.launch {
             val settings = SettingsRepository(this@RatatoskService)
-            val showName = settings.notificationsShowName.first()
-            val showText = settings.notificationsShowText.first()
+            val showName = settings.getNotificationsShowName(accountId).first()
+            val showText = settings.getNotificationsShowText(accountId).first()
 
             val contact = try {
                 if (RatatoskCore.isInitialized()) {
@@ -199,8 +189,9 @@ class RatatoskService : Service() {
                 try {
                     if (RatatoskCore.isInitialized()) {
                         // Get last message to get the body
-                        RatatoskCore.getClient().messages(event.chatId, 1u).firstOrNull { it.msgId.contentEquals(event.msgId) }?.body
+                        val rawBody = RatatoskCore.getClient().messages(event.chatId, 1u).firstOrNull { it.msgId.contentEquals(event.msgId) }?.body
                             ?: getString(R.string.message)
+                        MarkdownUtils.formatForNotification(rawBody, getString(R.string.spoiler))
                     } else {
                         getString(R.string.message)
                     }

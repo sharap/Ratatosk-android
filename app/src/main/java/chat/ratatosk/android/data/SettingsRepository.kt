@@ -17,22 +17,68 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 class SettingsRepository(private val context: Context) {
     private object Keys {
         val LAN_ENABLED = booleanPreferencesKey("lan_enabled")
+        val TOR_ENABLED = booleanPreferencesKey("tor_enabled")
         val THEME_COLOR = longPreferencesKey("theme_color")
         val BACKGROUND_IMAGE_URI = stringPreferencesKey("background_image_uri")
         val BACKGROUND_OPACITY = longPreferencesKey("background_opacity") // Stored as Long(bits) or scaled Int
         val DISPLAY_NAME = stringPreferencesKey("display_name")
         val NOTIFICATIONS_SHOW_NAME = booleanPreferencesKey("notifications_show_name")
         val NOTIFICATIONS_SHOW_TEXT = booleanPreferencesKey("notifications_show_text")
+        val DOWNLOAD_DIR_URI = stringPreferencesKey("download_dir_uri")
+        val ACCOUNTS_MAP = stringPreferencesKey("accounts_map")
     }
 
-    val displayName: Flow<String?> = context.dataStore.data.map { it[Keys.DISPLAY_NAME] }
-
-    val notificationsShowName: Flow<Boolean> = context.dataStore.data.map { it[Keys.NOTIFICATIONS_SHOW_NAME] ?: true }
-    val notificationsShowText: Flow<Boolean> = context.dataStore.data.map { it[Keys.NOTIFICATIONS_SHOW_TEXT] ?: true }
-
-    val lanEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[Keys.LAN_ENABLED] ?: false
+    val accountsMap: Flow<Map<String, String>> = context.dataStore.data.map { preferences ->
+        val raw = preferences[Keys.ACCOUNTS_MAP] ?: ""
+        if (raw.isEmpty()) emptyMap()
+        else {
+            raw.split(";").filter { it.contains(":") }.associate { 
+                val parts = it.split(":", limit = 2)
+                parts[0] to parts[1]
+            }
+        }
     }
+
+    suspend fun registerAccount(accountId: String, displayName: String) {
+        context.dataStore.edit { preferences ->
+            // Migration: if this is the first registration and we have old global settings, move them to 'default'
+            if (accountId == "default" && preferences[stringPreferencesKey("display_name")] != null) {
+                val oldName = preferences[stringPreferencesKey("display_name")] ?: displayName
+                val oldLan = preferences[booleanPreferencesKey("lan_enabled")] ?: false
+                val oldNotifName = preferences[booleanPreferencesKey("notifications_show_name")] ?: true
+                val oldNotifText = preferences[booleanPreferencesKey("notifications_show_text")] ?: true
+                val oldDownload = preferences[stringPreferencesKey("download_dir_uri")]
+
+                preferences[stringPreferencesKey(accountKey("default", "display_name"))] = oldName
+                preferences[booleanPreferencesKey(accountKey("default", "lan_enabled"))] = oldLan
+                preferences[booleanPreferencesKey(accountKey("default", "notifications_show_name"))] = oldNotifName
+                preferences[booleanPreferencesKey(accountKey("default", "notifications_show_text"))] = oldNotifText
+                if (oldDownload != null) preferences[stringPreferencesKey(accountKey("default", "download_dir_uri"))] = oldDownload
+                
+                // Remove old keys to avoid double migration
+                preferences.remove(stringPreferencesKey("display_name"))
+                // ... (removing others is safer but let's keep it simple)
+            }
+
+            val current = preferences[Keys.ACCOUNTS_MAP] ?: ""
+            val accounts = current.split(";").filter { it.isNotBlank() }.toMutableList()
+            val entry = "$accountId:$displayName"
+            if (!accounts.any { it.startsWith("$accountId:") }) {
+                accounts.add(entry)
+                preferences[Keys.ACCOUNTS_MAP] = accounts.joinToString(";")
+            }
+            preferences[stringPreferencesKey(accountKey(accountId, "display_name"))] = displayName
+        }
+    }
+
+    private fun accountKey(accountId: String, key: String) = "${accountId}_$key"
+
+    fun getDisplayName(accountId: String): Flow<String?> = context.dataStore.data.map { it[stringPreferencesKey(accountKey(accountId, "display_name"))] }
+    fun getNotificationsShowName(accountId: String): Flow<Boolean> = context.dataStore.data.map { it[booleanPreferencesKey(accountKey(accountId, "notifications_show_name"))] ?: true }
+    fun getNotificationsShowText(accountId: String): Flow<Boolean> = context.dataStore.data.map { it[booleanPreferencesKey(accountKey(accountId, "notifications_show_text"))] ?: true }
+    fun getDownloadDirUri(accountId: String): Flow<String?> = context.dataStore.data.map { it[stringPreferencesKey(accountKey(accountId, "download_dir_uri"))] }
+    fun getLanEnabled(accountId: String): Flow<Boolean> = context.dataStore.data.map { it[booleanPreferencesKey(accountKey(accountId, "lan_enabled"))] ?: false }
+    fun getTorEnabled(accountId: String): Flow<Boolean> = context.dataStore.data.map { it[booleanPreferencesKey(accountKey(accountId, "tor_enabled"))] ?: false }
 
     val chatTheme: Flow<ChatThemeData> = context.dataStore.data.map { preferences ->
         ChatThemeData(
@@ -42,22 +88,39 @@ class SettingsRepository(private val context: Context) {
         )
     }
 
-    suspend fun setLanEnabled(enabled: Boolean) {
+    suspend fun setLanEnabled(accountId: String, enabled: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[Keys.LAN_ENABLED] = enabled
+            preferences[booleanPreferencesKey(accountKey(accountId, "lan_enabled"))] = enabled
         }
     }
 
-    suspend fun setDisplayName(name: String) {
-        context.dataStore.edit { it[Keys.DISPLAY_NAME] = name }
+    suspend fun setTorEnabled(accountId: String, enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[booleanPreferencesKey(accountKey(accountId, "tor_enabled"))] = enabled
+        }
     }
 
-    suspend fun setNotificationsShowName(show: Boolean) {
-        context.dataStore.edit { it[Keys.NOTIFICATIONS_SHOW_NAME] = show }
+    suspend fun setDisplayName(accountId: String, name: String) {
+        context.dataStore.edit { it[stringPreferencesKey(accountKey(accountId, "display_name"))] = name }
     }
 
-    suspend fun setNotificationsShowText(show: Boolean) {
-        context.dataStore.edit { it[Keys.NOTIFICATIONS_SHOW_TEXT] = show }
+    suspend fun setNotificationsShowName(accountId: String, show: Boolean) {
+        context.dataStore.edit { it[booleanPreferencesKey(accountKey(accountId, "notifications_show_name"))] = show }
+    }
+
+    suspend fun setNotificationsShowText(accountId: String, show: Boolean) {
+        context.dataStore.edit { it[booleanPreferencesKey(accountKey(accountId, "notifications_show_text"))] = show }
+    }
+
+    suspend fun setDownloadDirUri(accountId: String, uri: String?) {
+        context.dataStore.edit { preferences ->
+            val key = stringPreferencesKey(accountKey(accountId, "download_dir_uri"))
+            if (uri != null) {
+                preferences[key] = uri
+            } else {
+                preferences.remove(key)
+            }
+        }
     }
 
     suspend fun updateChatTheme(data: ChatThemeData) {
