@@ -66,8 +66,10 @@ class RatatoskService : Service() {
             acquire()
         }
 
-        // Auto-initialization is disabled in multi-account mode to avoid ambiguity.
-        // The core will be initialized by the ViewModel when an account is selected.
+        // Recovery: if service was killed and restarted but process lived, auto-unlock
+        if (!RatatoskCore.isInitialized()) {
+            RatatoskCore.tryAutoInitialize()
+        }
 
         // Listen to core events for notifications
         RatatoskCore.events
@@ -153,12 +155,21 @@ class RatatoskService : Service() {
     }
 
     private fun createServiceNotification(): Notification {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         return NotificationCompat.Builder(this, SERVICE_CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
             .setContentText("Ratatosk core is active")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
+            .setContentIntent(pendingIntent)
             .build()
     }
 

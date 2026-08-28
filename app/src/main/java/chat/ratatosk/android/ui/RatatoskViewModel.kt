@@ -97,6 +97,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _activeContactIdFlow = MutableStateFlow<ByteArray?>(null)
     val activeContactIdFlow = _activeContactIdFlow.asStateFlow()
 
+    private val _activeMediaFile = MutableStateFlow<FfiFile?>(null)
+    val activeMediaFile = _activeMediaFile.asStateFlow()
+
+    private val _mediaExportedPath = MutableStateFlow<String?>(null)
+    val mediaExportedPath = _mediaExportedPath.asStateFlow()
+
     private var activeChatId: String? = null
 
     private val _honestNotices = MutableStateFlow<List<String>>(emptyList())
@@ -1060,6 +1066,35 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     fun setActiveContact(chatId: ByteArray?) {
         _activeContactIdFlow.value = chatId
+    }
+
+    fun setActiveMediaFile(file: FfiFile?) {
+        _activeMediaFile.value = file
+    }
+
+    fun openMedia(file: FfiFile, cacheDir: java.io.File) {
+        _activeMediaFile.value = file
+        _mediaExportedPath.value = null
+        
+        val mediaDir = java.io.File(cacheDir, "media_viewer")
+        mediaDir.mkdirs()
+        val dest = java.io.File(mediaDir, "${file.fileId.toHexString()}_${file.name}")
+        
+        if (dest.exists() && dest.length() == file.sizeBytes.toLong()) {
+            _mediaExportedPath.value = dest.absolutePath
+            return
+        }
+        
+        saveFile(file, dest) { savedFile ->
+            if (_activeMediaFile.value?.fileId?.contentEquals(file.fileId) == true) {
+                _mediaExportedPath.value = savedFile.absolutePath
+            }
+        }
+    }
+
+    fun closeMedia() {
+        _activeMediaFile.value = null
+        _mediaExportedPath.value = null
     }
 
     fun updateChatTheme(updater: (ChatThemeData) -> ChatThemeData) {

@@ -62,6 +62,7 @@ import chat.ratatosk.android.ui.components.Avatar
 import chat.ratatosk.android.util.MarkdownUtils
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
+import chat.ratatosk.android.util.FileUtils
 import coil.compose.rememberAsyncImagePainter
 import org.ratatosk.core.FfiDeliveryStatus
 import org.ratatosk.core.FfiFile
@@ -1260,9 +1261,30 @@ fun FileAttachment(
         val currentProgress = progress[fileIdHex] ?: (if (file.complete) 1f else if (file.receivedChunks > 0UL) file.receivedChunks.toFloat() / file.chunkTotal.toFloat() else 0f)
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
-        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clip(RoundedCornerShape(8.dp)).background(contentColor.copy(alpha = 0.1f)).padding(8.dp)) {
+        val isMedia = FileUtils.isImage(file.name) || FileUtils.isVideo(file.name) || FileUtils.isAudio(file.name)
+        
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(contentColor.copy(alpha = 0.1f))
+            .clickable(enabled = file.complete || !file.incoming) {
+                if (isMedia) {
+                    viewModel.openMedia(file, context.cacheDir)
+                }
+            }
+            .padding(8.dp)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.InsertDriveFile, contentDescription = null, tint = linkColor, modifier = Modifier.size(32.dp))
+                Icon(
+                    imageVector = if (FileUtils.isImage(file.name)) Icons.Default.Image 
+                                 else if (FileUtils.isVideo(file.name)) Icons.Default.Movie
+                                 else if (FileUtils.isAudio(file.name)) Icons.Default.Audiotrack
+                                 else Icons.Default.InsertDriveFile, 
+                    contentDescription = null, 
+                    tint = linkColor, 
+                    modifier = Modifier.size(32.dp)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = file.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, color = contentColor)
@@ -1307,7 +1329,19 @@ fun FileAttachment(
             }
             if (file.hasPreview) {
                  val previewBytes = viewModel.getFilePreview(file.fileId)
-                 Box(modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp, max = 300.dp).padding(top = 8.dp).clip(RoundedCornerShape(4.dp)).background(contentColor.copy(alpha = 0.05f)), contentAlignment = Alignment.Center) {
+                 Box(modifier = Modifier
+                     .fillMaxWidth()
+                     .heightIn(min = 100.dp, max = 300.dp)
+                     .padding(top = 8.dp)
+                     .clip(RoundedCornerShape(4.dp))
+                     .background(contentColor.copy(alpha = 0.05f))
+                     .clickable(enabled = file.complete || !file.incoming) {
+                         if (isMedia) {
+                             viewModel.openMedia(file, context.cacheDir)
+                         }
+                     }, 
+                     contentAlignment = Alignment.Center
+                 ) {
                      if (previewBytes != null) { Image(painter = rememberAsyncImagePainter(previewBytes), contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Fit) }
                      else { CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = linkColor.copy(alpha = 0.5f)) }
                  }

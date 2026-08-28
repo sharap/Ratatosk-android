@@ -25,6 +25,15 @@ object RatatoskCore : EventObserver {
 
     private var activeAccountIdHex: String? = null
 
+    // Session credentials stored ONLY in RAM
+    private data class SessionCredentials(
+        val accountId: ByteArray,
+        val pin: String?,
+        val deviceKey: ByteArray?,
+        val displayName: String
+    )
+    private var sessionCredentials: SessionCredentials? = null
+
     // Use a buffer with replay to ensure UI doesn't miss events during transitions
     private val _events = MutableSharedFlow<FfiEvent>(
         replay = 20, 
@@ -71,6 +80,9 @@ object RatatoskCore : EventObserver {
                 // §5.1: Announce this account in LAN
                 reg.setForeground(accountId)
                 
+                // Save credentials for auto-recovery (in-RAM only)
+                sessionCredentials = SessionCredentials(accountId, pin, deviceKey, displayName)
+                
                 client = newClient
                 activeAccountIdHex = accountIdHex
                 nativeError = null 
@@ -107,6 +119,18 @@ object RatatoskCore : EventObserver {
             client?.destroy()
             client = null
             activeAccountIdHex = null
+            sessionCredentials = null
+        }
+    }
+
+    fun tryAutoInitialize(): RatatoskClient? {
+        val creds = sessionCredentials ?: return null
+        return try {
+            android.util.Log.i("RatatoskCore", "Attempting auto-reinitialization for account: ${creds.accountId.toHexString()}")
+            initialize(creds.accountId, creds.pin, creds.deviceKey, creds.displayName)
+        } catch (e: Exception) {
+            android.util.Log.e("RatatoskCore", "Auto-reinitialization failed", e)
+            null
         }
     }
 

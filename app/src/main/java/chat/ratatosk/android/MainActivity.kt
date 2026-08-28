@@ -31,6 +31,7 @@ import chat.ratatosk.android.ui.main.MainScreen
 import chat.ratatosk.android.ui.chat.ChatScreen
 import chat.ratatosk.android.ui.profile.AvatarCropScreen
 import chat.ratatosk.android.ui.contacts.ContactDetailsScreen
+import chat.ratatosk.android.ui.media.MediaViewerScreen
 import chat.ratatosk.android.ui.theme.RatatoskTheme
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
@@ -191,6 +192,15 @@ class MainActivity : ComponentActivity() {
                                         appViewModel.setActiveContact(null)
                                         appViewModel.setActiveChat(it)
                                     }
+                                )
+                            }
+
+                            // Media Overlay
+                            val activeMediaFile by appViewModel.activeMediaFile.collectAsState()
+                            if (activeMediaFile != null) {
+                                MediaViewerScreen(
+                                    viewModel = appViewModel,
+                                    onClose = { appViewModel.closeMedia() }
                                 )
                             }
                         }

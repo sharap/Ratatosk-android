@@ -57,4 +57,29 @@ object FileUtils {
             else -> "%.1f GB".format(java.util.Locale.US, b / (1024 * 1024 * 1024))
         }
     }
+
+    fun getMimeType(fileName: String): String {
+        val extension = fileName.substringAfterLast('.', "").lowercase()
+        return when (extension) {
+            "jpg", "jpeg" -> "image/jpeg"
+            "png" -> "image/png"
+            "webp" -> "image/webp"
+            "gif" -> "image/gif"
+            "mp4" -> "video/mp4"
+            "webm" -> "video/webm"
+            "mkv" -> "video/x-matroska"
+            "mp3" -> "audio/mpeg"
+            "ogg" -> "audio/ogg"
+            "wav" -> "audio/wav"
+            "flac" -> "audio/flac"
+            "pdf" -> "application/pdf"
+            "txt" -> "text/plain"
+            "apk" -> "application/vnd.android.package-archive"
+            else -> "*/*"
+        }
+    }
+
+    fun isImage(fileName: String): Boolean = getMimeType(fileName).startsWith("image/")
+    fun isVideo(fileName: String): Boolean = getMimeType(fileName).startsWith("video/")
+    fun isAudio(fileName: String): Boolean = getMimeType(fileName).startsWith("audio/")
 }
