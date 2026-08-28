@@ -9,10 +9,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -62,6 +65,8 @@ class MainActivity : ComponentActivity() {
 
             val selectedAccount by appViewModel.selectedAccount.collectAsState()
             val isCreatingNewAccount by appViewModel.isCreatingNewAccount.collectAsState()
+            val activeChatId by appViewModel.activeChatIdFlow.collectAsState()
+            val activeContactId by appViewModel.activeContactIdFlow.collectAsState()
 
             // Set initial selection if only one account exists
             LaunchedEffect(accounts) {
@@ -83,7 +88,7 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(pendingChatId, isCoreReady) {
                 if (isCoreReady) {
                     pendingChatId?.let { chatId ->
-                        navController.navigate("chat/$chatId")
+                        appViewModel.setActiveChat(chatId.hexToByteArray())
                         pendingChatId = null
                     }
                 }
@@ -123,72 +128,69 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     } else {
-                        NavHost(navController = navController, startDestination = "main") {
-                            composable("main") {
-                                MainScreen(
-                                    viewModel = appViewModel,
-                                    onChatClick = { chatId ->
-                                        navController.navigate("chat/${chatId.toHexString()}")
-                                    },
-                                    onContactClick = { chatId ->
-                                        navController.navigate("contact/${chatId.toHexString()}")
-                                    },
-                                    onScanClick = {
-                                        navController.navigate("scanner")
-                                    },
-                                    onCropAvatar = {
-                                        navController.navigate("crop")
-                                    }
-                                )
-                            }
-                            composable("crop") {
-                                AvatarCropScreen(
-                                    viewModel = appViewModel,
-                                    onDone = { navController.popBackStack() },
-                                    onBack = { navController.popBackStack() }
-                                )
-                            }
-                            composable("chat/{chatId}") { backStackEntry ->
-                                val chatIdHex = backStackEntry.arguments?.getString("chatId") ?: ""
-                                val chatId = try {
-                                    chatIdHex.hexToByteArray()
-                                } catch (e: Exception) {
-                                    byteArrayOf()
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            NavHost(
+                                navController = navController, 
+                                startDestination = "main",
+                                modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                            ) {
+                                composable("main") {
+                                    MainScreen(
+                                        viewModel = appViewModel,
+                                        onChatClick = { chatId ->
+                                            appViewModel.setActiveChat(chatId)
+                                        },
+                                        onContactClick = { chatId ->
+                                            appViewModel.setActiveContact(chatId)
+                                        },
+                                        onScanClick = {
+                                            navController.navigate("scanner")
+                                        },
+                                        onCropAvatar = {
+                                            navController.navigate("crop")
+                                        }
+                                    )
                                 }
+                                composable("crop") {
+                                    AvatarCropScreen(
+                                        viewModel = appViewModel,
+                                        onDone = { navController.popBackStack() },
+                                        onBack = { navController.popBackStack() }
+                                    )
+                                }
+                                composable("scanner") {
+                                    chat.ratatosk.android.ui.qr.QRScannerScreen(
+                                        onResult = { uri ->
+                                            navController.popBackStack()
+                                            appViewModel.addContact(uri, metInPerson = true)
+                                        },
+                                        onBack = { navController.popBackStack() }
+                                    )
+                                }
+                            }
+
+                            // Chat Overlay
+                            if (activeChatId != null) {
                                 ChatScreen(
                                     viewModel = appViewModel,
-                                    chatId = chatId,
-                                    onBack = { navController.popBackStack() },
+                                    chatId = activeChatId!!,
+                                    onBack = { appViewModel.setActiveChat(null) },
                                     onHeaderClick = {
-                                        navController.navigate("contact/${chatIdHex}")
+                                        appViewModel.setActiveContact(activeChatId!!)
                                     }
                                 )
                             }
-                            composable("contact/{chatId}") { backStackEntry ->
-                                val chatIdHex = backStackEntry.arguments?.getString("chatId") ?: ""
-                                val chatId = try {
-                                    chatIdHex.hexToByteArray()
-                                } catch (e: Exception) {
-                                    byteArrayOf()
-                                }
+
+                            // Contact Details Overlay
+                            if (activeContactId != null) {
                                 ContactDetailsScreen(
                                     viewModel = appViewModel,
-                                    chatId = chatId,
-                                    onBack = { navController.popBackStack() },
+                                    chatId = activeContactId!!,
+                                    onBack = { appViewModel.setActiveContact(null) },
                                     onChatClick = {
-                                        navController.navigate("chat/${chatIdHex}") {
-                                            popUpTo("main")
-                                        }
+                                        appViewModel.setActiveContact(null)
+                                        appViewModel.setActiveChat(it)
                                     }
-                                )
-                            }
-                            composable("scanner") {
-                                chat.ratatosk.android.ui.qr.QRScannerScreen(
-                                    onResult = { uri ->
-                                        navController.popBackStack()
-                                        appViewModel.addContact(uri, metInPerson = true)
-                                    },
-                                    onBack = { navController.popBackStack() }
                                 )
                             }
                         }

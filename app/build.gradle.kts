@@ -95,7 +95,7 @@ val buildRustCore = tasks.register<Exec>("buildRustCore") {
         "-t", "x86_64",
         "-t", "arm64-v8a",
         "-o", jniLibsDir.absolutePath,
-        "build", "--release", "-p", "ratatosk-ffi", "--lib", "--features", "tor"
+        "build", "--release", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail"
     )
     
     inputs.dir(rustProjectDir.resolve("crates"))
@@ -104,10 +104,10 @@ val buildRustCore = tasks.register<Exec>("buildRustCore") {
 
 val buildRustHost = tasks.register<Exec>("buildRustHost") {
     workingDir = rustProjectDir
-    commandLine("cargo", "build", "-p", "ratatosk-ffi", "--lib", "--features", "tor")
+    commandLine("cargo", "build", "--release", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail")
     
     inputs.dir(rustProjectDir.resolve("crates"))
-    outputs.file(rustProjectDir.resolve("target/debug/libratatosk_ffi.so"))
+    outputs.file(rustProjectDir.resolve("target/release/libratatosk_ffi.so"))
 }
 
 tasks.register<Exec>("generateUniFFIBindings") {

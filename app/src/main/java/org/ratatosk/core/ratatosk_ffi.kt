@@ -707,11 +707,15 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_file_source_gone_notice(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_file_waiting_text(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_forward_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_honest_notices(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_lan_warning(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_mail_file_limit_bytes(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_max_avatar_bytes(
     ): Int
@@ -785,7 +789,11 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_clear_chat(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_clear_mail_account(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_contacts(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_mail_account(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_decline_file(
     ): Int
@@ -798,6 +806,10 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fingerprint(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_forward_messages(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mail_account(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mail_status(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mark_read(
     ): Int
@@ -837,17 +849,25 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_avatar(
     ): Int
-    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_lan_enabled(
-    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_local_name(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_mail_account(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_observer(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_reaction(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_transport_enabled(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_share_contact(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_sweep_orphan_files(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_tor_status(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_transport_enabled(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_transport_ready(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_constructor_accountregistry_open(
     ): Int
@@ -940,8 +960,12 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_clear_chat(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_clear_mail_account(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_contacts(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_mail_account(`ptr`: Long,`url`: RustBuffer.ByValue,`viaTor`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_decline_file(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_delete_contact(`ptr`: Long,`peerIk`: RustBuffer.ByValue,`purgeHistory`: Byte,uniffi_out_err: UniffiRustCallStatus, 
@@ -954,6 +978,10 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_forward_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_mail_account(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_mail_status(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_mark_read(`ptr`: Long,`chatId`: RustBuffer.ByValue,`upTo`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_mark_verified(`ptr`: Long,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -992,18 +1020,26 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_avatar(`ptr`: Long,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_lan_enabled(`ptr`: Long,`enabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
-    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_local_name(`ptr`: Long,`peerIk`: RustBuffer.ByValue,`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_mail_account(`ptr`: Long,`address`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,`imapHost`: RustBuffer.ByValue,`imapPort`: Short,`smtpHost`: RustBuffer.ByValue,`smtpPort`: Short,`viaTor`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_observer(`ptr`: Long,`observer`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_reaction(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgId`: RustBuffer.ByValue,`emoji`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_transport_enabled(`ptr`: Long,`transport`: RustBuffer.ByValue,`enabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_share_contact(`ptr`: Long,`chatId`: RustBuffer.ByValue,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_sweep_orphan_files(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_tor_status(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_transport_enabled(`ptr`: Long,`transport`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_transport_ready(`ptr`: Long,`transport`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
     external fun uniffi_ratatosk_ffi_fn_func_chunk_bytes(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     external fun uniffi_ratatosk_ffi_fn_func_default_auto_accept_bytes(uniffi_out_err: UniffiRustCallStatus, 
@@ -1016,12 +1052,16 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_file_source_gone_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_file_waiting_text(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_forward_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_honest_notices(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_lan_warning(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_mail_file_limit_bytes(uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
     external fun uniffi_ratatosk_ffi_fn_func_max_avatar_bytes(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     external fun uniffi_ratatosk_ffi_fn_func_max_edit_age_ms(uniffi_out_err: UniffiRustCallStatus, 
@@ -1185,6 +1225,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_file_source_gone_notice() != 44972) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_file_waiting_text() != 50839) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_forward_notice() != 40090) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1192,6 +1235,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_lan_warning() != 33547) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_mail_file_limit_bytes() != 243) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_max_avatar_bytes() != 56374) {
@@ -1302,7 +1348,13 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_clear_chat() != 2164) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_clear_mail_account() != 55958) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_contacts() != 31413) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_mail_account() != 44026) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_decline_file() != 62089) {
@@ -1321,6 +1373,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_forward_messages() != 50510) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mail_account() != 18859) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mail_status() != 59089) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mark_read() != 43072) {
@@ -1380,10 +1438,10 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_avatar() != 63479) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_lan_enabled() != 45701) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_local_name() != 62950) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_local_name() != 62950) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_mail_account() != 20283) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_observer() != 31702) {
@@ -1392,10 +1450,22 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_reaction() != 42931) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_transport_enabled() != 64975) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_share_contact() != 14077) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_sweep_orphan_files() != 48344) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_tor_status() != 20711) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_transport_enabled() != 24805) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_transport_ready() != 48477) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_constructor_accountregistry_open() != 25485) {
@@ -1590,6 +1660,33 @@ private class JavaLangRefCleanable(
     val cleanable: java.lang.ref.Cleaner.Cleanable
 ) : UniffiCleaner.Cleanable {
     override fun clean() = cleanable.clean()
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterUShort: FfiConverter<UShort, Short> {
+    override fun lift(value: Short): UShort {
+        return value.toUShort()
+    }
+
+    fun lift(value: Int): UShort {
+        return value.toUShort()
+    }
+
+    override fun read(buf: ByteBuffer): UShort {
+        return lift(buf.getShort())
+    }
+
+    override fun lower(value: UShort): Short {
+        return value.toShort()
+    }
+
+    override fun allocationSize(value: UShort) = 2UL
+
+    override fun write(value: UShort, buf: ByteBuffer) {
+        buf.putShort(value.toShort())
+    }
 }
 
 /**
@@ -3319,9 +3416,40 @@ public interface RatatoskClientInterface {
     fun `clearChat`(`chatId`: kotlin.ByteArray)
     
     /**
+     * Убирает почтовый ящик (§5.3).
+     *
+     * Почта перестаёт быть ступенью §5.4, а chatmail-адрес снимается
+     * с карточки (§4.3): обещать путь, которого нет, нельзя.
+     */
+    fun `clearMailAccount`()
+    
+    /**
      * Список контактов.
      */
     fun `contacts`(): List<FfiContact>
+    
+    /**
+     * Просит chatmail-сервер завести **новый** ящик (§5.3).
+     *
+     * `url` — ссылка вида `https://chatmail.example/new`; такие же в ходу
+     * у Delta Chat. Сервер отвечает готовыми адресом и паролем,
+     * персональных данных не спрашивая.
+     *
+     * Ссылка обязана быть `https` — иначе отказ, и отказ немедленный:
+     * по `http` пароль приехал бы открытым текстом любому на пути.
+     *
+     * `via_tor` относится **и к самой регистрации, и к заведённому ящику**.
+     * Разделять их нельзя: сходить за паролем напрямую, а письма возить
+     * через Tor значит один раз показать серверу IP и связать его
+     * с адресом навсегда.
+     *
+     * Функция возвращается сразу — поход в сеть идёт своим чередом. Исход
+     * приходит событием: [`FfiEvent::MailAccountReady`] с новым адресом
+     * либо [`FfiEvent::MailAccountFailed`] с причиной. Второе показать
+     * обязательно: человек нажал «завести почту» и молчание прочтёт
+     * как поломку приложения.
+     */
+    fun `createMailAccount`(`url`: kotlin.String, `viaTor`: kotlin.Boolean)
     
     /**
      * Отказывается от входящего файла.
@@ -3396,6 +3524,28 @@ public interface RatatoskClientInterface {
      * пересланное — отдельный кадр.
      */
     fun `forwardMessages`(`chatId`: kotlin.ByteArray, `msgIds`: List<kotlin.ByteArray>)
+    
+    /**
+     * Настройки почтового ящика, если он заведён (§5.3).
+     *
+     * **Вместе с паролем**, и это не оплошность. Пароль мог выдать сервер
+     * при регистрации, и человек не видел его никогда; не показав, мы
+     * оставили бы его без единственного способа войти в свою же почту
+     * с другого устройства или после переустановки. Показывать его в UI
+     * стоит по нажатию, а не постоянно, — но иметь возможность обязан.
+     */
+    fun `mailAccount`(): FfiMailAccount?
+    
+    /**
+     * Что происходит с почтой прямо сейчас (§5.3).
+     *
+     * Один запрос вместо четырёх: включена ли, есть ли ящик, вошли ли,
+     * а если нет — почему. Собирать это из отдельных ответов клиенту
+     * пришлось бы самому, и первая же сборка разошлась бы с правдой
+     * в состоянии «включена, ящик есть, но сервер не пустил» — самом
+     * непонятном из всех.
+     */
+    fun `mailStatus`(): FfiMailStatus
     
     /**
      * Сообщает, что пользователь дочитал чат до этого сообщения (§9.4).
@@ -3658,13 +3808,6 @@ public interface RatatoskClientInterface {
     fun `setAvatar`(`bytes`: kotlin.ByteArray?)
     
     /**
-     * Включает или выключает LAN (§5.1).
-     *
-     * Перед включением клиент обязан показать [`lan_warning`].
-     */
-    fun `setLanEnabled`(`enabled`: kotlin.Boolean)
-    
-    /**
      * Подписывает контакт своим именем — или снимает подпись (`None`).
      *
      * Имя **локальное**: по проводу не едет никогда и собеседнику неизвестно.
@@ -3676,6 +3819,29 @@ public interface RatatoskClientInterface {
      * имел в виду именно это. Предел длины — [`max_local_name_chars`].
      */
     fun `setLocalName`(`peerIk`: kotlin.ByteArray, `name`: kotlin.String?)
+    
+    /**
+     * Записывает настройки существующего почтового ящика (§5.3).
+     *
+     * Первый из двух способов обзавестись почтой; второй —
+     * [`RatatoskClient::create_mail_account`]. Спросить, какой из них,
+     * клиент обязан при включении почты: у человека либо уже есть ящик,
+     * либо нет ничего.
+     *
+     * `imap_host` и `smtp_host` пустые означают «взять из домена адреса»,
+     * порты `0` — «стандартные». Chatmail-серверы устроены именно так,
+     * и заставлять человека вводить четыре строки ради этого незачем.
+     *
+     * `via_tor` — выбор пути, и клиент обязан назвать его цену **до**
+     * переключения: выключив Tor, человек показывает серверу свой IP,
+     * а вместе с адресом ящика это привязка переписки к линии связи.
+     * Содержимого писем сервер не видит в любом случае (§5.3).
+     *
+     * Настройки **хранит ядро** и переживают перезапуск вместе с паролем:
+     * база зашифрована ключом §8.6. Клиенту дублировать их у себя не нужно
+     * и не следует.
+     */
+    fun `setMailAccount`(`address`: kotlin.String, `password`: kotlin.String, `imapHost`: kotlin.String, `imapPort`: kotlin.UShort, `smtpHost`: kotlin.String, `smtpPort`: kotlin.UShort, `viaTor`: kotlin.Boolean)
     
     /**
      * Подписывает UI на события.
@@ -3694,6 +3860,21 @@ public interface RatatoskClientInterface {
      * прислать текст, который не выглядит сообщением.
      */
     fun `setReaction`(`chatId`: kotlin.ByteArray, `msgId`: kotlin.ByteArray, `emoji`: kotlin.String?)
+    
+    /**
+     * Включает или выключает транспорт (§5.4).
+     *
+     * Одна ручка на все транспорты: их станет больше, и по ручке на каждый
+     * означало бы новую функцию на границе §13.3 при каждом добавлении.
+     *
+     * Перед включением LAN клиент обязан показать [`lan_warning`].
+     *
+     * Выбор **хранит ядро** и переживает перезапуск. Клиенту дублировать его
+     * в своих настройках не нужно и не следует: два экземпляра одной правды
+     * однажды разойдутся, и разойдутся молча. Прочитать текущее состояние —
+     * [`RatatoskClient::transport_enabled`].
+     */
+    fun `setTransportEnabled`(`transport`: FfiTransport, `enabled`: kotlin.Boolean)
     
     /**
      * Отправляет в чат карточку контакта (§4.1, дополнение).
@@ -3730,6 +3911,31 @@ public interface RatatoskClientInterface {
      * из UI-потока.
      */
     fun `sweepOrphanFiles`(): FfiSwept
+    
+    /**
+     * Что Tor сказал о себе последним (§5.2).
+     *
+     * `None` означает «новостей не было»: транспорт не поднимался — либо
+     * выключен, либо ещё не начинал. Отличить это от «поднимается» можно
+     * по [`RatatoskClient::transport_enabled`], и различие стоит показывать:
+     * выключенный Tor — выбор человека, а молчащий — повод для тревоги.
+     */
+    fun `torStatus`(): FfiTorStatus?
+    
+    /**
+     * Включён ли транспорт прямо сейчас (§5.4).
+     */
+    fun `transportEnabled`(`transport`: FfiTransport): kotlin.Boolean
+    
+    /**
+     * **Работает** ли транспорт прямо сейчас (§5.4).
+     *
+     * Не то же, что включён, и разницу надо показывать человеку: между
+     * «включил Tor» и «Tor работает» лежат десятки секунд bootstrap
+     * и публикации сервиса, и всё это время §5.4 его не выбирает.
+     * «Поднимается» — правда, «не работает» — нет.
+     */
+    fun `transportReady`(`transport`: FfiTransport): kotlin.Boolean
     
     companion object
 }
@@ -4035,6 +4241,25 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Убирает почтовый ящик (§5.3).
+     *
+     * Почта перестаёт быть ступенью §5.4, а chatmail-адрес снимается
+     * с карточки (§4.3): обещать путь, которого нет, нельзя.
+     */
+    @Throws(RatatoskException::class)override fun `clearMailAccount`()
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_clear_mail_account(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    /**
      * Список контактов.
      */
     @Throws(RatatoskException::class)override fun `contacts`(): List<FfiContact> {
@@ -4048,6 +4273,42 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
     }
     )
     }
+    
+
+    
+    /**
+     * Просит chatmail-сервер завести **новый** ящик (§5.3).
+     *
+     * `url` — ссылка вида `https://chatmail.example/new`; такие же в ходу
+     * у Delta Chat. Сервер отвечает готовыми адресом и паролем,
+     * персональных данных не спрашивая.
+     *
+     * Ссылка обязана быть `https` — иначе отказ, и отказ немедленный:
+     * по `http` пароль приехал бы открытым текстом любому на пути.
+     *
+     * `via_tor` относится **и к самой регистрации, и к заведённому ящику**.
+     * Разделять их нельзя: сходить за паролем напрямую, а письма возить
+     * через Tor значит один раз показать серверу IP и связать его
+     * с адресом навсегда.
+     *
+     * Функция возвращается сразу — поход в сеть идёт своим чередом. Исход
+     * приходит событием: [`FfiEvent::MailAccountReady`] с новым адресом
+     * либо [`FfiEvent::MailAccountFailed`] с причиной. Второе показать
+     * обязательно: человек нажал «завести почту» и молчание прочтёт
+     * как поломку приложения.
+     */
+    @Throws(RatatoskException::class)override fun `createMailAccount`(`url`: kotlin.String, `viaTor`: kotlin.Boolean)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_mail_account(
+        it,
+        
+        FfiConverterString.lower(`url`),
+        FfiConverterBoolean.lower(`viaTor`),_status)
+}
+    }
+    
     
 
     
@@ -4198,6 +4459,52 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 }
     }
     
+    
+
+    
+    /**
+     * Настройки почтового ящика, если он заведён (§5.3).
+     *
+     * **Вместе с паролем**, и это не оплошность. Пароль мог выдать сервер
+     * при регистрации, и человек не видел его никогда; не показав, мы
+     * оставили бы его без единственного способа войти в свою же почту
+     * с другого устройства или после переустановки. Показывать его в UI
+     * стоит по нажатию, а не постоянно, — но иметь возможность обязан.
+     */
+    @Throws(RatatoskException::class)override fun `mailAccount`(): FfiMailAccount? {
+            return FfiConverterOptionalTypeFfiMailAccount.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_mail_account(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Что происходит с почтой прямо сейчас (§5.3).
+     *
+     * Один запрос вместо четырёх: включена ли, есть ли ящик, вошли ли,
+     * а если нет — почему. Собирать это из отдельных ответов клиенту
+     * пришлось бы самому, и первая же сборка разошлась бы с правдой
+     * в состоянии «включена, ящик есть, но сервер не пустил» — самом
+     * непонятном из всех.
+     */
+    @Throws(RatatoskException::class)override fun `mailStatus`(): FfiMailStatus {
+            return FfiConverterTypeFfiMailStatus.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_mail_status(
+        it,
+        _status)
+}
+    }
+    )
+    }
     
 
     
@@ -4706,25 +5013,6 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
-     * Включает или выключает LAN (§5.1).
-     *
-     * Перед включением клиент обязан показать [`lan_warning`].
-     */
-    @Throws(RatatoskException::class)override fun `setLanEnabled`(`enabled`: kotlin.Boolean)
-        = 
-    callWithHandle {
-    uniffiRustCallWithError(RatatoskException) { _status ->
-    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_lan_enabled(
-        it,
-        
-        FfiConverterBoolean.lower(`enabled`),_status)
-}
-    }
-    
-    
-
-    
-    /**
      * Подписывает контакт своим именем — или снимает подпись (`None`).
      *
      * Имя **локальное**: по проводу не едет никогда и собеседнику неизвестно.
@@ -4744,6 +5032,47 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         
         FfiConverterByteArray.lower(`peerIk`),
         FfiConverterOptionalString.lower(`name`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Записывает настройки существующего почтового ящика (§5.3).
+     *
+     * Первый из двух способов обзавестись почтой; второй —
+     * [`RatatoskClient::create_mail_account`]. Спросить, какой из них,
+     * клиент обязан при включении почты: у человека либо уже есть ящик,
+     * либо нет ничего.
+     *
+     * `imap_host` и `smtp_host` пустые означают «взять из домена адреса»,
+     * порты `0` — «стандартные». Chatmail-серверы устроены именно так,
+     * и заставлять человека вводить четыре строки ради этого незачем.
+     *
+     * `via_tor` — выбор пути, и клиент обязан назвать его цену **до**
+     * переключения: выключив Tor, человек показывает серверу свой IP,
+     * а вместе с адресом ящика это привязка переписки к линии связи.
+     * Содержимого писем сервер не видит в любом случае (§5.3).
+     *
+     * Настройки **хранит ядро** и переживают перезапуск вместе с паролем:
+     * база зашифрована ключом §8.6. Клиенту дублировать их у себя не нужно
+     * и не следует.
+     */
+    @Throws(RatatoskException::class)override fun `setMailAccount`(`address`: kotlin.String, `password`: kotlin.String, `imapHost`: kotlin.String, `imapPort`: kotlin.UShort, `smtpHost`: kotlin.String, `smtpPort`: kotlin.UShort, `viaTor`: kotlin.Boolean)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_mail_account(
+        it,
+        
+        FfiConverterString.lower(`address`),
+        FfiConverterString.lower(`password`),
+        FfiConverterString.lower(`imapHost`),
+        FfiConverterUShort.lower(`imapPort`),
+        FfiConverterString.lower(`smtpHost`),
+        FfiConverterUShort.lower(`smtpPort`),
+        FfiConverterBoolean.lower(`viaTor`),_status)
 }
     }
     
@@ -4787,6 +5116,34 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         FfiConverterByteArray.lower(`chatId`),
         FfiConverterByteArray.lower(`msgId`),
         FfiConverterOptionalString.lower(`emoji`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Включает или выключает транспорт (§5.4).
+     *
+     * Одна ручка на все транспорты: их станет больше, и по ручке на каждый
+     * означало бы новую функцию на границе §13.3 при каждом добавлении.
+     *
+     * Перед включением LAN клиент обязан показать [`lan_warning`].
+     *
+     * Выбор **хранит ядро** и переживает перезапуск. Клиенту дублировать его
+     * в своих настройках не нужно и не следует: два экземпляра одной правды
+     * однажды разойдутся, и разойдутся молча. Прочитать текущее состояние —
+     * [`RatatoskClient::transport_enabled`].
+     */
+    @Throws(RatatoskException::class)override fun `setTransportEnabled`(`transport`: FfiTransport, `enabled`: kotlin.Boolean)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_transport_enabled(
+        it,
+        
+        FfiConverterTypeFfiTransport.lower(`transport`),
+        FfiConverterBoolean.lower(`enabled`),_status)
 }
     }
     
@@ -4847,6 +5204,69 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
     UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_sweep_orphan_files(
         it,
         _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Что Tor сказал о себе последним (§5.2).
+     *
+     * `None` означает «новостей не было»: транспорт не поднимался — либо
+     * выключен, либо ещё не начинал. Отличить это от «поднимается» можно
+     * по [`RatatoskClient::transport_enabled`], и различие стоит показывать:
+     * выключенный Tor — выбор человека, а молчащий — повод для тревоги.
+     */
+    @Throws(RatatoskException::class)override fun `torStatus`(): FfiTorStatus? {
+            return FfiConverterOptionalTypeFfiTorStatus.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_tor_status(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Включён ли транспорт прямо сейчас (§5.4).
+     */
+    @Throws(RatatoskException::class)override fun `transportEnabled`(`transport`: FfiTransport): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_transport_enabled(
+        it,
+        
+        FfiConverterTypeFfiTransport.lower(`transport`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * **Работает** ли транспорт прямо сейчас (§5.4).
+     *
+     * Не то же, что включён, и разницу надо показывать человеку: между
+     * «включил Tor» и «Tor работает» лежат десятки секунд bootstrap
+     * и публикации сервиса, и всё это время §5.4 его не выбирает.
+     * «Поднимается» — правда, «не работает» — нет.
+     */
+    @Throws(RatatoskException::class)override fun `transportReady`(`transport`: FfiTransport): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_transport_ready(
+        it,
+        
+        FfiConverterTypeFfiTransport.lower(`transport`),_status)
 }
     }
     )
@@ -4995,6 +5415,90 @@ public object FfiConverterTypeFfiAccount: FfiConverterRustBuffer<FfiAccount> {
 
 
 /**
+ * Сколько кадров от этого источника отброшено (§7.3).
+ *
+ * Не показатель для списка контактов, а строка на экране «почему
+ * не доходит». Считалось это с самого начала и не показывалось никому,
+ * а между тем это **единственный** признак того, что кто-то шлёт
+ * на устройство мусор от имени контакта: в переписке такие кадры
+ * не появляются — они отбрасываются до неё.
+ *
+ * Счётчики живут в памяти и обнуляются перезапуском: это наблюдение
+ * за происходящим сейчас, а не улика. Ноль — обычное состояние; всплеск
+ * стоит показать, но не как ошибку приложения.
+ */
+data class FfiAnomalies (
+    /**
+     * Кадры с неизвестным `session_id`.
+     *
+     * Самая безобидная строка: так выглядит собеседник, переустановивший
+     * клиент, — его кадры зашифрованы сессией, которой у нас больше нет.
+     */
+    val `unknownSession`: kotlin.ULong
+    , 
+    /**
+     * Кадры, не прошедшие проверку тега.
+     */
+    val `badTag`: kotlin.ULong
+    , 
+    /**
+     * Кадры с непонятным содержимым.
+     */
+    val `malformed`: kotlin.ULong
+    , 
+    /**
+     * Повторно предъявленные рукопожатия.
+     */
+    val `handshakeReplay`: kotlin.ULong
+    , 
+    /**
+     * Всего.
+     */
+    val `total`: kotlin.ULong
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiAnomalies: FfiConverterRustBuffer<FfiAnomalies> {
+    override fun read(buf: ByteBuffer): FfiAnomalies {
+        return FfiAnomalies(
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiAnomalies) = (
+            FfiConverterULong.allocationSize(value.`unknownSession`) +
+            FfiConverterULong.allocationSize(value.`badTag`) +
+            FfiConverterULong.allocationSize(value.`malformed`) +
+            FfiConverterULong.allocationSize(value.`handshakeReplay`) +
+            FfiConverterULong.allocationSize(value.`total`)
+    )
+
+    override fun write(value: FfiAnomalies, buf: ByteBuffer) {
+            FfiConverterULong.write(value.`unknownSession`, buf)
+            FfiConverterULong.write(value.`badTag`, buf)
+            FfiConverterULong.write(value.`malformed`, buf)
+            FfiConverterULong.write(value.`handshakeReplay`, buf)
+            FfiConverterULong.write(value.`total`, buf)
+    }
+}
+
+
+
+/**
  * Контакт в том виде, в каком его показывает UI.
  */
 data class FfiContact (
@@ -5035,6 +5539,14 @@ data class FfiContact (
     , 
     /**
      * Виден ли контакт в локальной сети прямо сейчас (§5.1).
+     *
+     * То же самое, что `addressable` у ступени LAN в `reachability`, —
+     * и оставлено намеренно: это самый частый вопрос списка контактов
+     * («кто рядом»), и заставлять его искать нужную ступень в массиве
+     * значило бы менять удобство на стройность.
+     *
+     * **Не то же, что «есть связь».** Маяк говорит «устройство в эфире»;
+     * установлена ли сессия, отвечает `direct_channel`.
      */
     val `seenOnLan`: kotlin.Boolean
     , 
@@ -5047,6 +5559,59 @@ data class FfiContact (
      * чатов не тянул по тридцать килобайт на строку.
      */
     val `hasAvatar`: kotlin.Boolean
+    , 
+    /**
+     * Onion-адрес из карточки (§5.2). `None` — адреса нет.
+     *
+     * Показывать его в списке контактов незачем — это пятьдесят шесть
+     * знаков, — а на карточке человека есть зачем: по нему видно, чем
+     * до него вообще можно достучаться.
+     */
+    val `onion`: kotlin.String?
+    , 
+    /**
+     * Chatmail-адрес из карточки (§5.3). `None` — адреса нет.
+     *
+     * Отвечает на вопрос, который иначе не задать: дойдёт ли до человека
+     * сообщение, пока он не в сети. Без почтового адреса — **нет**, и это
+     * стоит сказать до того, как человек напишет и станет ждать.
+     */
+    val `chatmail`: kotlin.String?
+    , 
+    /**
+     * Версия карточки, монотонная (§4.3).
+     *
+     * Диагностика: по ней видно, доехало ли до нас обновление адресов.
+     * В списке контактов ей делать нечего.
+     */
+    val `cardVersion`: kotlin.ULong
+    , 
+    /**
+     * Когда контакт добавили, мс от эпохи.
+     */
+    val `addedMs`: kotlin.ULong
+    , 
+    /**
+     * Куда сейчас уйдёт сообщение этому человеку и почему не дальше.
+     */
+    val `reachability`: FfiReachability
+    , 
+    /**
+     * Живой прямой канал, если он есть (§5.4).
+     *
+     * **Не то же, что `seen_on_lan`.** Маяк говорит «устройство в эфире»,
+     * а это — «сессия установлена, кадры пойдут сейчас». Между ними
+     * рукопожатие, и на медленном канале это заметные секунды.
+     *
+     * Пусто при работающей почте — обычное дело, а не беда: почта прямым
+     * каналом не бывает по устройству, и квитанций (§9.4) по ней нет.
+     */
+    val `directChannel`: FfiTransport?
+    , 
+    /**
+     * Отброшенные кадры от этого источника (§7.3).
+     */
+    val `anomalies`: FfiAnomalies
     
 ){
     
@@ -5071,6 +5636,13 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterTypeFfiReachability.read(buf),
+            FfiConverterOptionalTypeFfiTransport.read(buf),
+            FfiConverterTypeFfiAnomalies.read(buf),
         )
     }
 
@@ -5082,7 +5654,14 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterOptionalString.allocationSize(value.`localName`) +
             FfiConverterBoolean.allocationSize(value.`verified`) +
             FfiConverterBoolean.allocationSize(value.`seenOnLan`) +
-            FfiConverterBoolean.allocationSize(value.`hasAvatar`)
+            FfiConverterBoolean.allocationSize(value.`hasAvatar`) +
+            FfiConverterOptionalString.allocationSize(value.`onion`) +
+            FfiConverterOptionalString.allocationSize(value.`chatmail`) +
+            FfiConverterULong.allocationSize(value.`cardVersion`) +
+            FfiConverterULong.allocationSize(value.`addedMs`) +
+            FfiConverterTypeFfiReachability.allocationSize(value.`reachability`) +
+            FfiConverterOptionalTypeFfiTransport.allocationSize(value.`directChannel`) +
+            FfiConverterTypeFfiAnomalies.allocationSize(value.`anomalies`)
     )
 
     override fun write(value: FfiContact, buf: ByteBuffer) {
@@ -5094,6 +5673,13 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterBoolean.write(value.`verified`, buf)
             FfiConverterBoolean.write(value.`seenOnLan`, buf)
             FfiConverterBoolean.write(value.`hasAvatar`, buf)
+            FfiConverterOptionalString.write(value.`onion`, buf)
+            FfiConverterOptionalString.write(value.`chatmail`, buf)
+            FfiConverterULong.write(value.`cardVersion`, buf)
+            FfiConverterULong.write(value.`addedMs`, buf)
+            FfiConverterTypeFfiReachability.write(value.`reachability`, buf)
+            FfiConverterOptionalTypeFfiTransport.write(value.`directChannel`, buf)
+            FfiConverterTypeFfiAnomalies.write(value.`anomalies`, buf)
     }
 }
 
@@ -5204,6 +5790,223 @@ public object FfiConverterTypeFfiFile: FfiConverterRustBuffer<FfiFile> {
             FfiConverterULong.write(value.`receivedChunks`, buf)
             FfiConverterULong.write(value.`chunkTotal`, buf)
             FfiConverterBoolean.write(value.`hasPreview`, buf)
+    }
+}
+
+
+
+/**
+ * Настройки почтового ящика в том виде, в каком их показывает UI (§5.3).
+ *
+ * Пароль здесь открытой строкой, и по-другому нельзя: его либо ввёл сам
+ * человек, либо выдал сервер — и во втором случае это единственное место,
+ * где он может его увидеть. Прятать его от владельца значило бы запереть
+ * его в собственной почте.
+ */
+data class FfiMailAccount (
+    /**
+     * Адрес вида `a7f3k9@chatmail.example`. Он же логин.
+     */
+    val `address`: kotlin.String
+    , 
+    /**
+     * Пароль.
+     */
+    val `password`: kotlin.String
+    , 
+    /**
+     * Имя IMAP-сервера.
+     */
+    val `imapHost`: kotlin.String
+    , 
+    /**
+     * Порт IMAP.
+     */
+    val `imapPort`: kotlin.UShort
+    , 
+    /**
+     * Имя SMTP-сервера.
+     */
+    val `smtpHost`: kotlin.String
+    , 
+    /**
+     * Порт SMTP.
+     */
+    val `smtpPort`: kotlin.UShort
+    , 
+    /**
+     * Идёт ли почта через Tor.
+     */
+    val `viaTor`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiMailAccount: FfiConverterRustBuffer<FfiMailAccount> {
+    override fun read(buf: ByteBuffer): FfiMailAccount {
+        return FfiMailAccount(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterUShort.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterUShort.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiMailAccount) = (
+            FfiConverterString.allocationSize(value.`address`) +
+            FfiConverterString.allocationSize(value.`password`) +
+            FfiConverterString.allocationSize(value.`imapHost`) +
+            FfiConverterUShort.allocationSize(value.`imapPort`) +
+            FfiConverterString.allocationSize(value.`smtpHost`) +
+            FfiConverterUShort.allocationSize(value.`smtpPort`) +
+            FfiConverterBoolean.allocationSize(value.`viaTor`)
+    )
+
+    override fun write(value: FfiMailAccount, buf: ByteBuffer) {
+            FfiConverterString.write(value.`address`, buf)
+            FfiConverterString.write(value.`password`, buf)
+            FfiConverterString.write(value.`imapHost`, buf)
+            FfiConverterUShort.write(value.`imapPort`, buf)
+            FfiConverterString.write(value.`smtpHost`, buf)
+            FfiConverterUShort.write(value.`smtpPort`, buf)
+            FfiConverterBoolean.write(value.`viaTor`, buf)
+    }
+}
+
+
+
+/**
+ * Состояние почты целиком — то, что рисуется на экране настроек.
+ *
+ * Запросом, а не только событиями, и это не удобство. События существуют
+ * один раз: клиент, открывший экран через минуту после входа, не увидит
+ * ничего и покажет пустоту вместо правды. А человек, пришедший туда,
+ * спрашивает ровно одно — «почему не идёт», — и ответ обязан быть
+ * на экране, а не в пропущенном уведомлении.
+ */
+data class FfiMailStatus (
+    /**
+     * Что происходит.
+     */
+    val `state`: FfiMailState
+    , 
+    /**
+     * Словами, если есть что сказать: причина отказа сервера.
+     */
+    val `detail`: kotlin.String?
+    , 
+    /**
+     * Адрес ящика, если он заведён, — его показывают рядом с состоянием.
+     */
+    val `address`: kotlin.String?
+    , 
+    /**
+     * Идёт ли почта через Tor.
+     *
+     * Здесь же, а не отдельным запросом, потому что показывается рядом:
+     * «работает» и «работает напрямую» — разные утверждения, и второе
+     * человек обязан видеть, не открывая настройки ящика (§2.2).
+     */
+    val `viaTor`: kotlin.Boolean
+    , 
+    /**
+     * Предел одного письма у **своего** сервера, байт.
+     *
+     * `None` — сервер не назвал, и это законно. Показывать в этом случае
+     * нечего: строка «предел: неизвестно» человеку не говорит ничего.
+     */
+    val `letterLimitBytes`: kotlin.ULong?
+    , 
+    /**
+     * Занято в ящике, байт. `None` — сервер не умеет `QUOTA`.
+     */
+    val `mailboxUsedBytes`: kotlin.ULong?
+    , 
+    /**
+     * Весь объём ящика, байт. `None` — сервер не умеет `QUOTA`.
+     */
+    val `mailboxLimitBytes`: kotlin.ULong?
+    , 
+    /**
+     * Места в ящике меньше, чем нужно одной передаче файла.
+     *
+     * Готовый вывод, а не проценты: считать порог в клиенте значило бы
+     * вынести протокольное правило выше границы §13.3. Пока это `true`,
+     * файлы почтой **не принимаются** — и человеку стоит сказать почему,
+     * иначе он увидит только застывшую полосу.
+     */
+    val `mailboxCrowded`: kotlin.Boolean
+    , 
+    /**
+     * Поедут ли почтой файлы.
+     *
+     * `false` означает, что сервер объявил предел письма меньше, чем
+     * весит письмо с куском файла. Сообщения при этом ходят как ходили —
+     * это ограничение только для вложений, и сказать надо именно так.
+     */
+    val `carriesFiles`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiMailStatus: FfiConverterRustBuffer<FfiMailStatus> {
+    override fun read(buf: ByteBuffer): FfiMailStatus {
+        return FfiMailStatus(
+            FfiConverterTypeFfiMailState.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalULong.read(buf),
+            FfiConverterOptionalULong.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiMailStatus) = (
+            FfiConverterTypeFfiMailState.allocationSize(value.`state`) +
+            FfiConverterOptionalString.allocationSize(value.`detail`) +
+            FfiConverterOptionalString.allocationSize(value.`address`) +
+            FfiConverterBoolean.allocationSize(value.`viaTor`) +
+            FfiConverterOptionalULong.allocationSize(value.`letterLimitBytes`) +
+            FfiConverterOptionalULong.allocationSize(value.`mailboxUsedBytes`) +
+            FfiConverterOptionalULong.allocationSize(value.`mailboxLimitBytes`) +
+            FfiConverterBoolean.allocationSize(value.`mailboxCrowded`) +
+            FfiConverterBoolean.allocationSize(value.`carriesFiles`)
+    )
+
+    override fun write(value: FfiMailStatus, buf: ByteBuffer) {
+            FfiConverterTypeFfiMailState.write(value.`state`, buf)
+            FfiConverterOptionalString.write(value.`detail`, buf)
+            FfiConverterOptionalString.write(value.`address`, buf)
+            FfiConverterBoolean.write(value.`viaTor`, buf)
+            FfiConverterOptionalULong.write(value.`letterLimitBytes`, buf)
+            FfiConverterOptionalULong.write(value.`mailboxUsedBytes`, buf)
+            FfiConverterOptionalULong.write(value.`mailboxLimitBytes`, buf)
+            FfiConverterBoolean.write(value.`mailboxCrowded`, buf)
+            FfiConverterBoolean.write(value.`carriesFiles`, buf)
     }
 }
 
@@ -5479,6 +6282,72 @@ public object FfiConverterTypeFfiOwnCard: FfiConverterRustBuffer<FfiOwnCard> {
 
 
 /**
+ * Куда поедет следующее сообщение этому контакту — и почему не дальше.
+ *
+ * **Вердикт считает ядро, и пересчитывать его в клиенте нельзя** (§13.3).
+ * Лестница §5.4 живёт одним списком в `proto::transport_policy`, и по нему
+ * же ходит настоящая отправка. Копия в Kotlin разойдётся с ней при первом
+ * же изменении правил — молча: экран скажет «пойдёт почтой», а уедет
+ * через onion.
+ */
+data class FfiReachability (
+    /**
+     * Ступени по порядку §5.4: LAN, onion, почта.
+     */
+    val `rungs`: List<FfiRung>
+    , 
+    /**
+     * Ступень, которой уйдёт следующее сообщение. `None` — сейчас некуда.
+     */
+    val `route`: FfiTransport?
+    , 
+    /**
+     * Ступень, которая заберёт отправку, когда поднимется.
+     *
+     * Отвечает на «сообщение висит — оно уйдёт или нет». Непустое значение
+     * вместе с пустым `route` означает «уйдёт, надо подождать» — и показывать
+     * это надо спокойно. Оба пустые — ждать нечего: нужен адрес или
+     * переключатель, и человек может это сделать сам.
+     */
+    val `rising`: FfiTransport?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiReachability: FfiConverterRustBuffer<FfiReachability> {
+    override fun read(buf: ByteBuffer): FfiReachability {
+        return FfiReachability(
+            FfiConverterSequenceTypeFfiRung.read(buf),
+            FfiConverterOptionalTypeFfiTransport.read(buf),
+            FfiConverterOptionalTypeFfiTransport.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiReachability) = (
+            FfiConverterSequenceTypeFfiRung.allocationSize(value.`rungs`) +
+            FfiConverterOptionalTypeFfiTransport.allocationSize(value.`route`) +
+            FfiConverterOptionalTypeFfiTransport.allocationSize(value.`rising`)
+    )
+
+    override fun write(value: FfiReachability, buf: ByteBuffer) {
+            FfiConverterSequenceTypeFfiRung.write(value.`rungs`, buf)
+            FfiConverterOptionalTypeFfiTransport.write(value.`route`, buf)
+            FfiConverterOptionalTypeFfiTransport.write(value.`rising`, buf)
+    }
+}
+
+
+
+/**
  * Реакция на сообщение в том виде, в каком её показывает UI.
  */
 data class FfiReaction (
@@ -5531,6 +6400,87 @@ public object FfiConverterTypeFfiReaction: FfiConverterRustBuffer<FfiReaction> {
             FfiConverterString.write(value.`emoji`, buf)
             FfiConverterByteArray.write(value.`authorIk`, buf)
             FfiConverterBoolean.write(value.`mine`, buf)
+    }
+}
+
+
+
+/**
+ * Одна ступень лестницы §5.4 глазами конкретного контакта.
+ *
+ * Три признака, а не один «доступен», и это не подробность ради
+ * подробности: они лечатся тремя разными действиями. `enabled` чинится
+ * переключателем в приложении, `ready` — временем (Tor поднимается
+ * десятки секунд), `addressable` — обменом карточками (§4.3) или тем,
+ * что собеседник появится в общей сети (§5.1).
+ *
+ * Слив их в одно слово, экран отвечал бы одинаково на три разных вопроса,
+ * и человек чинил бы не то. Именно так и выглядит «сообщение не уходит,
+ * а почему — непонятно».
+ */
+data class FfiRung (
+    /**
+     * Какая ступень.
+     */
+    val `transport`: FfiTransport
+    , 
+    /**
+     * Разрешена человеком.
+     */
+    val `enabled`: kotlin.Boolean
+    , 
+    /**
+     * Уже работает.
+     */
+    val `ready`: kotlin.Boolean
+    , 
+    /**
+     * Есть куда ехать: адрес в карточке или маяк в эфире.
+     */
+    val `addressable`: kotlin.Boolean
+    , 
+    /**
+     * Годится прямо сейчас — все три признака сразу.
+     */
+    val `usable`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiRung: FfiConverterRustBuffer<FfiRung> {
+    override fun read(buf: ByteBuffer): FfiRung {
+        return FfiRung(
+            FfiConverterTypeFfiTransport.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiRung) = (
+            FfiConverterTypeFfiTransport.allocationSize(value.`transport`) +
+            FfiConverterBoolean.allocationSize(value.`enabled`) +
+            FfiConverterBoolean.allocationSize(value.`ready`) +
+            FfiConverterBoolean.allocationSize(value.`addressable`) +
+            FfiConverterBoolean.allocationSize(value.`usable`)
+    )
+
+    override fun write(value: FfiRung, buf: ByteBuffer) {
+            FfiConverterTypeFfiTransport.write(value.`transport`, buf)
+            FfiConverterBoolean.write(value.`enabled`, buf)
+            FfiConverterBoolean.write(value.`ready`, buf)
+            FfiConverterBoolean.write(value.`addressable`, buf)
+            FfiConverterBoolean.write(value.`usable`, buf)
     }
 }
 
@@ -5685,6 +6635,67 @@ public object FfiConverterTypeFfiSwept: FfiConverterRustBuffer<FfiSwept> {
             FfiConverterULong.write(value.`files`, buf)
             FfiConverterULong.write(value.`chunks`, buf)
             FfiConverterULong.write(value.`bytes`, buf)
+    }
+}
+
+
+
+/**
+ * Что Tor сказал о себе последним (§5.2, §13.1).
+ *
+ * Тот же смысл и та же причина, что у [`FfiMailStatus`]: событие двигает
+ * индикатор, запрос отвечает тому, кто пришёл смотреть позже.
+ */
+data class FfiTorStatus (
+    /**
+     * Доля готовности, от 0 до 1.
+     */
+    val `fraction`: kotlin.Float
+    , 
+    /**
+     * Что происходит сейчас — словами arti.
+     */
+    val `note`: kotlin.String
+    , 
+    /**
+     * Почему подъём стоит, если он стоит.
+     *
+     * Пусто — «идёт, просто долго». Непусто — «встал, и вот причина».
+     * Снаружи эти два случая неотличимы, и §14 не разрешает о них молчать.
+     */
+    val `blocked`: kotlin.String?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiTorStatus: FfiConverterRustBuffer<FfiTorStatus> {
+    override fun read(buf: ByteBuffer): FfiTorStatus {
+        return FfiTorStatus(
+            FfiConverterFloat.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiTorStatus) = (
+            FfiConverterFloat.allocationSize(value.`fraction`) +
+            FfiConverterString.allocationSize(value.`note`) +
+            FfiConverterOptionalString.allocationSize(value.`blocked`)
+    )
+
+    override fun write(value: FfiTorStatus, buf: ByteBuffer) {
+            FfiConverterFloat.write(value.`fraction`, buf)
+            FfiConverterString.write(value.`note`, buf)
+            FfiConverterOptionalString.write(value.`blocked`, buf)
     }
 }
 
@@ -6003,6 +7014,39 @@ sealed class FfiEvent {
     }
     
     /**
+     * Файлу не на чем ехать (§10.3).
+     *
+     * **Состояние, а не происшествие.** Показывать надо на самом файле —
+     * строкой из [`file_waiting_text`], — а не всплывающей подсказкой:
+     * подсказка исчезнет, а ждать файл будет столько, сколько собеседник
+     * вне сети.
+     *
+     * Случаев два. Либо канала нет никакого — собеседник не в сети, почты
+     * у него нет. Либо канал остался только почтовый, а файл для почты
+     * слишком велик: почтой файлы ходят (по чанку в письме), но круг у неё
+     * минутный, и сотня мегабайт — предел, за которым честнее сказать
+     * «нужен прямой канал», чем показывать полоску, которая не сдвинется
+     * до завтра.
+     *
+     * Снимает это состояние следующий [`FfiEvent::FileProgress`]: он
+     * и означает, что канал появился и передача пошла.
+     *
+     * Прежнее имя — `FileWaitsForDirectChannel`; переименовано, когда
+     * чанки поехали почтой.
+     */
+    data class FileWaitsForChannel(
+        /**
+         * Какой файл.
+         */
+        val `fileId`: kotlin.ByteArray) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
      * Ход передачи файла (§10.2).
      *
      * Приходит на каждый принятый чанк и на завершение. `total` равен нулю
@@ -6037,6 +7081,128 @@ sealed class FfiEvent {
          * Текст.
          */
         val `text`: kotlin.String) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Ядро отвергло команду (§14).
+     *
+     * Отдельно от [`FfiEvent::HonestNotice`]: там выверенный текст §14,
+     * здесь — отчёт о конкретном действии человека (опечатка в ссылке,
+     * файл не того формата). Показать обязательно: молчание после
+     * нажатия он прочтёт как поломку приложения.
+     */
+    data class CommandRefused(
+        /**
+         * Что именно не так — словами, для показа.
+         */
+        val `reason`: kotlin.String) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Chatmail-сервер завёл ящик (§5.3).
+     *
+     * Показать адрес обязательно, и не из вежливости: это новая почта
+     * человека, он её больше нигде не увидит, а собеседники будут писать
+     * именно туда. Пароль в событие не едет — он не нужен ни для показа,
+     * ни для чего-либо ещё выше границы §13.3.
+     */
+    data class MailAccountReady(
+        /**
+         * Адрес, который выдал сервер.
+         */
+        val `address`: kotlin.String) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Завести ящик не вышло (§5.3, §14).
+     *
+     * Человек нажал «завести почту» и обязан узнать, почему её нет.
+     * Молчаливый отказ он прочтёт как поломку приложения — и будет прав.
+     */
+    data class MailAccountFailed(
+        /**
+         * Что именно не вышло — словами, для показа.
+         */
+        val `reason`: kotlin.String) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Вход на почтовый сервер не удался (§5.3, §14).
+     *
+     * Отдельно от [`FfiEvent::MailAccountFailed`], потому что беды разные
+     * и лечатся по-разному: там ящик не завёлся, здесь ящик есть, а войти
+     * в него не вышло — сменили пароль, лежит сервер, не пускает Tor.
+     *
+     * Показывать надо там же, где состояние почты: молча переставшая
+     * работать почта выглядит поломкой приложения. Ни ошибкой, ни модальным
+     * окном это не является — сообщения при этом продолжают ходить
+     * остальными ступенями §5.4.
+     */
+    data class MailLoginFailed(
+        /**
+         * Что именно не вышло — словами, для показа.
+         */
+        val `reason`: kotlin.String) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Почтовый сервер назвал свои пределы (§5.3).
+     *
+     * Приходит при входе на сервер и после каждой разборки ящика. То же
+     * самое отдаёт [`RatatoskClient::mail_status`] — событие двигает
+     * показанное, запрос отвечает пришедшему позже.
+     *
+     * Само по себе оно не новость и всплывающей подсказки не заслуживает:
+     * это состояние экрана настроек почты. Новостью становятся два вывода
+     * внутри — `crowded` и `carries_files`, — и оба означают, что вложения
+     * сейчас почтой не пойдут, а сообщения пойдут.
+     */
+    data class MailLimits(
+        /**
+         * Предел одного письма, байт. `None` — сервер не назвал.
+         */
+        val `letterBytes`: kotlin.ULong?, 
+        /**
+         * Занято в ящике, байт.
+         */
+        val `mailboxUsed`: kotlin.ULong?, 
+        /**
+         * Весь объём ящика, байт.
+         */
+        val `mailboxLimit`: kotlin.ULong?, 
+        /**
+         * Места меньше, чем нужно одной передаче файла.
+         */
+        val `crowded`: kotlin.Boolean, 
+        /**
+         * Поедут ли почтой файлы.
+         */
+        val `carriesFiles`: kotlin.Boolean) : FfiEvent()
         
     {
         
@@ -6103,13 +7269,35 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
             11 -> FfiEvent.GroupMembershipChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            12 -> FfiEvent.FileProgress(
+            12 -> FfiEvent.FileWaitsForChannel(
+                FfiConverterByteArray.read(buf),
+                )
+            13 -> FfiEvent.FileProgress(
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            13 -> FfiEvent.HonestNotice(
+            14 -> FfiEvent.HonestNotice(
                 FfiConverterString.read(buf),
+                )
+            15 -> FfiEvent.CommandRefused(
+                FfiConverterString.read(buf),
+                )
+            16 -> FfiEvent.MailAccountReady(
+                FfiConverterString.read(buf),
+                )
+            17 -> FfiEvent.MailAccountFailed(
+                FfiConverterString.read(buf),
+                )
+            18 -> FfiEvent.MailLoginFailed(
+                FfiConverterString.read(buf),
+                )
+            19 -> FfiEvent.MailLimits(
+                FfiConverterOptionalULong.read(buf),
+                FfiConverterOptionalULong.read(buf),
+                FfiConverterOptionalULong.read(buf),
+                FfiConverterBoolean.read(buf),
+                FfiConverterBoolean.read(buf),
                 )
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
         }
@@ -6203,6 +7391,13 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 + FfiConverterByteArray.allocationSize(value.`chatId`)
             )
         }
+        is FfiEvent.FileWaitsForChannel -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`fileId`)
+            )
+        }
         is FfiEvent.FileProgress -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -6217,6 +7412,45 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
             (
                 4UL
                 + FfiConverterString.allocationSize(value.`text`)
+            )
+        }
+        is FfiEvent.CommandRefused -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`reason`)
+            )
+        }
+        is FfiEvent.MailAccountReady -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`address`)
+            )
+        }
+        is FfiEvent.MailAccountFailed -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`reason`)
+            )
+        }
+        is FfiEvent.MailLoginFailed -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`reason`)
+            )
+        }
+        is FfiEvent.MailLimits -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterOptionalULong.allocationSize(value.`letterBytes`)
+                + FfiConverterOptionalULong.allocationSize(value.`mailboxUsed`)
+                + FfiConverterOptionalULong.allocationSize(value.`mailboxLimit`)
+                + FfiConverterBoolean.allocationSize(value.`crowded`)
+                + FfiConverterBoolean.allocationSize(value.`carriesFiles`)
             )
         }
     }
@@ -6288,19 +7522,166 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
-            is FfiEvent.FileProgress -> {
+            is FfiEvent.FileWaitsForChannel -> {
                 buf.putInt(12)
+                FfiConverterByteArray.write(value.`fileId`, buf)
+                Unit
+            }
+            is FfiEvent.FileProgress -> {
+                buf.putInt(13)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterULong.write(value.`received`, buf)
                 FfiConverterULong.write(value.`total`, buf)
                 Unit
             }
             is FfiEvent.HonestNotice -> {
-                buf.putInt(13)
+                buf.putInt(14)
                 FfiConverterString.write(value.`text`, buf)
                 Unit
             }
+            is FfiEvent.CommandRefused -> {
+                buf.putInt(15)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is FfiEvent.MailAccountReady -> {
+                buf.putInt(16)
+                FfiConverterString.write(value.`address`, buf)
+                Unit
+            }
+            is FfiEvent.MailAccountFailed -> {
+                buf.putInt(17)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is FfiEvent.MailLoginFailed -> {
+                buf.putInt(18)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is FfiEvent.MailLimits -> {
+                buf.putInt(19)
+                FfiConverterOptionalULong.write(value.`letterBytes`, buf)
+                FfiConverterOptionalULong.write(value.`mailboxUsed`, buf)
+                FfiConverterOptionalULong.write(value.`mailboxLimit`, buf)
+                FfiConverterBoolean.write(value.`crowded`, buf)
+                FfiConverterBoolean.write(value.`carriesFiles`, buf)
+                Unit
+            }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
+/**
+ * Что происходит с почтой прямо сейчас (§5.3, §5.4).
+ *
+ * Пять состояний, и это ровно те пять ответов, которые человек может
+ * получить на вопрос «почему не отправляется». Каждый лечится по-своему,
+ * и слить их в «работает / не работает» значило бы оставить его наедине
+ * с состоянием, из которого он не знает выхода.
+ */
+
+enum class FfiMailState {
+    
+    /**
+     * Выключена человеком. Лечится переключателем.
+     */
+    OFF,
+    /**
+     * Включена, но ящика нет. Лечится вводом настроек или регистрацией.
+     */
+    NO_ACCOUNT,
+    /**
+     * Ящик есть, входим на сервер. Лечится ожиданием — секунды, через Tor
+     * десятки секунд.
+     */
+    CONNECTING,
+    /**
+     * Вошли: §5.4 выбирает почту для отправки.
+     */
+    READY,
+    /**
+     * Сервер не пустил. Причина — в `detail`, и показать её обязательно.
+     */
+    FAILED;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiMailState: FfiConverterRustBuffer<FfiMailState> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiMailState.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiMailState) = 4UL
+
+    override fun write(value: FfiMailState, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
+ * Транспорт на границе §13.3.
+ *
+ * Своё перечисление, а не `ratatosk_proto::Transport`: типы протокола
+ * наружу не отдаются (§13.3), и превращение одного в другой — единственное
+ * место, где о них знают обе стороны.
+ */
+
+enum class FfiTransport {
+    
+    /**
+     * Локальная сеть (§5.1). По умолчанию **выключена**: маяк в эфире
+     * выдаёт присутствие устройства всем, кто слушает.
+     */
+    LAN,
+    /**
+     * Tor onion-to-onion (§5.2). По умолчанию включён.
+     */
+    ONION,
+    /**
+     * Почта chatmail поверх Tor (§5.3). По умолчанию включена.
+     */
+    MAIL;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiTransport: FfiConverterRustBuffer<FfiTransport> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiTransport.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiTransport) = 4UL
+
+    override fun write(value: FfiTransport, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
     }
 }
 
@@ -6533,6 +7914,38 @@ public object FfiConverterOptionalTypeFfiFileReader: FfiConverterRustBuffer<FfiF
 /**
  * @suppress
  */
+public object FfiConverterOptionalTypeFfiMailAccount: FfiConverterRustBuffer<FfiMailAccount?> {
+    override fun read(buf: ByteBuffer): FfiMailAccount? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeFfiMailAccount.read(buf)
+    }
+
+    override fun allocationSize(value: FfiMailAccount?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeFfiMailAccount.allocationSize(value)
+        }
+    }
+
+    override fun write(value: FfiMailAccount?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeFfiMailAccount.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterOptionalTypeFfiMessage: FfiConverterRustBuffer<FfiMessage?> {
     override fun read(buf: ByteBuffer): FfiMessage? {
         if (buf.get().toInt() == 0) {
@@ -6597,6 +8010,38 @@ public object FfiConverterOptionalTypeFfiSharedContact: FfiConverterRustBuffer<F
 /**
  * @suppress
  */
+public object FfiConverterOptionalTypeFfiTorStatus: FfiConverterRustBuffer<FfiTorStatus?> {
+    override fun read(buf: ByteBuffer): FfiTorStatus? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeFfiTorStatus.read(buf)
+    }
+
+    override fun allocationSize(value: FfiTorStatus?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeFfiTorStatus.allocationSize(value)
+        }
+    }
+
+    override fun write(value: FfiTorStatus?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeFfiTorStatus.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterOptionalTypeFfiDeliveryStatus: FfiConverterRustBuffer<FfiDeliveryStatus?> {
     override fun read(buf: ByteBuffer): FfiDeliveryStatus? {
         if (buf.get().toInt() == 0) {
@@ -6619,6 +8064,38 @@ public object FfiConverterOptionalTypeFfiDeliveryStatus: FfiConverterRustBuffer<
         } else {
             buf.put(1)
             FfiConverterTypeFfiDeliveryStatus.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeFfiTransport: FfiConverterRustBuffer<FfiTransport?> {
+    override fun read(buf: ByteBuffer): FfiTransport? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeFfiTransport.read(buf)
+    }
+
+    override fun allocationSize(value: FfiTransport?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeFfiTransport.allocationSize(value)
+        }
+    }
+
+    override fun write(value: FfiTransport?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeFfiTransport.write(value, buf)
         }
     }
 }
@@ -6846,6 +8323,34 @@ public object FfiConverterSequenceTypeFfiReaction: FfiConverterRustBuffer<List<F
         }
     }
 }
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFfiRung: FfiConverterRustBuffer<List<FfiRung>> {
+    override fun read(buf: ByteBuffer): List<FfiRung> {
+        val len = buf.getInt()
+        return List<FfiRung>(len) {
+            FfiConverterTypeFfiRung.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiRung>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiRung.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiRung>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiRung.write(it, buf)
+        }
+    }
+}
         /**
          * Размер куска файла в байтах — то, чем ходит [`FfiFileReader::chunk`].
          */ fun `chunkBytes`(): kotlin.UInt {
@@ -6925,6 +8430,23 @@ public object FfiConverterSequenceTypeFfiReaction: FfiConverterRustBuffer<List<F
     
 
         /**
+         * Что показать на файле, которому не на чем ехать (§10.3).
+         *
+         * Текст задан спецификацией и переписыванию не подлежит: он обещает ровно
+         * то, что протокол делает, — файл уедет, когда собеседник появится в сети.
+         * «Ошибка отправки» и «загрузка…» здесь одинаково неправда.
+         */ fun `fileWaitingText`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_file_waiting_text(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
          * Что сказать при пересылке (§14).
          */ fun `forwardNotice`(): kotlin.String {
             return FfiConverterString.lift(
@@ -6960,6 +8482,30 @@ public object FfiConverterSequenceTypeFfiReaction: FfiConverterRustBuffer<List<F
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_func_lan_warning(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Наибольший размер файла, который поедет почтой (§10.3).
+         *
+         * Файл крупнее ждёт прямого канала: почтой он поехал бы сутками, и §14
+         * велит сказать это до начала, а не показывать полосу, которая
+         * не сдвинется. Ограничение это про **время**, а не про место — место
+         * защищает окно передачи.
+         *
+         * Клиенту нужно, чтобы сказать заранее. Без этого числа он узнаёт
+         * о запрете только событием [`FfiEvent::FileWaitsForChannel`], то есть
+         * уже после того, как человек выбрал файл и нажал «отправить».
+         *
+         * Заведомо меньше [`max_file_bytes`]: прямым каналом ходит всё.
+         */ fun `mailFileLimitBytes`(): kotlin.ULong {
+            return FfiConverterULong.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_mail_file_limit_bytes(
     
         _status)
 }

@@ -134,7 +134,7 @@ object RatatoskCore : EventObserver {
     fun getActiveAccountId(): String? = activeAccountIdHex
 
     fun listAccounts(): List<FfiAccount> {
-        return registry?.list() ?: emptyList()
+        return safeCall { registry?.list() ?: emptyList() }.getOrDefault(emptyList())
     }
 
     fun anyAccountExists(context: Context): Boolean {

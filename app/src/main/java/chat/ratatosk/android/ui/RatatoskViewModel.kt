@@ -54,8 +54,20 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _searchResults = MutableStateFlow<List<FfiMessage>>(emptyList())
     val searchResults = _searchResults.asStateFlow()
 
-    private val _torStatus = MutableStateFlow<FfiEvent.TorStatus?>(null)
+    private val _torStatus = MutableStateFlow<FfiTorStatus?>(null)
     val torStatus = _torStatus.asStateFlow()
+
+    private val _mailStatus = MutableStateFlow<FfiMailStatus?>(null)
+    val mailStatus = _mailStatus.asStateFlow()
+
+    private val _mailAccount = MutableStateFlow<FfiMailAccount?>(null)
+    val mailAccount = _mailAccount.asStateFlow()
+
+    private val _transportsEnabled = MutableStateFlow<Map<FfiTransport, Boolean>>(emptyMap())
+    val transportsEnabled = _transportsEnabled.asStateFlow()
+
+    private val _transportsReady = MutableStateFlow<Map<FfiTransport, Boolean>>(emptyMap())
+    val transportsReady = _transportsReady.asStateFlow()
 
     private val _isSearching = MutableStateFlow(false)
     val isSearching = _isSearching.asStateFlow()
@@ -78,6 +90,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     val totalUnreadCount: StateFlow<Int> = _unreadCounts
         .map { it.values.sum() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    private val _activeChatIdFlow = MutableStateFlow<ByteArray?>(null)
+    val activeChatIdFlow = _activeChatIdFlow.asStateFlow()
+
+    private val _activeContactIdFlow = MutableStateFlow<ByteArray?>(null)
+    val activeContactIdFlow = _activeContactIdFlow.asStateFlow()
 
     private var activeChatId: String? = null
 
@@ -133,13 +151,14 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         if (id == null) flowOf(null) else settingsRepository.getDownloadDirUri(id)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val lanEnabled = activeAccountId.flatMapLatest { id ->
-        if (id == null) flowOf(false) else settingsRepository.getLanEnabled(id)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val lanEnabled = transportsEnabled.map { it[FfiTransport.LAN] ?: false }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    val torEnabled = activeAccountId.flatMapLatest { id ->
-        if (id == null) flowOf(false) else settingsRepository.getTorEnabled(id)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val torEnabled = transportsEnabled.map { it[FfiTransport.ONION] ?: false }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        
+    val mailEnabled = transportsEnabled.map { it[FfiTransport.MAIL] ?: false }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     private val _onionAddress = MutableStateFlow<String?>(null)
     val onionAddress = _onionAddress.asStateFlow()
@@ -182,11 +201,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             setupEngine()
         }
         
-        // Periodically refresh contacts
+        // Periodically refresh contacts and transport status
         viewModelScope.launch {
             while (true) {
                 if (RatatoskCore.isInitialized()) {
                     refreshContacts()
+                    refreshTransportStatus()
                 }
                 kotlinx.coroutines.delay(30000)
             }
@@ -244,31 +264,18 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 // Initial load of contacts and messages
                 launch(Dispatchers.IO) {
                     try {
-                        android.util.Log.d("RatatoskVM", "Engine setup: refreshing contacts and preloading messages")
+                        android.util.Log.d("RatatoskVM", "Engine setup: refreshing contacts, transports and preloading messages")
                         val currentContacts = client.contacts()
                         withContext(Dispatchers.Main) { _contacts.value = currentContacts }
+                        
+                        refreshTransportStatus()
+                        
                         currentContacts.forEach { contact ->
                             loadMessages(contact.chatId)
                         }
                     } catch (e: Exception) {
                         android.util.Log.e("RatatoskVM", "Failed to preload contacts/messages", e)
                     }
-                }
-                
-                // Sync LAN preference
-                withContext(Dispatchers.Main) {
-                    android.util.Log.d("RatatoskVM", "Engine setup: setting up LAN sync")
-                    lanEnabled
-                        .onEach { enabled ->
-                            try {
-                                withContext(Dispatchers.IO) {
-                                    client.setLanEnabled(enabled)
-                                }
-                            } catch (e: Exception) {
-                                android.util.Log.e("RatatoskVM", "Failed to sync LAN state", e)
-                            }
-                        }
-                        .launchIn(viewModelScope)
                 }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Critical failure during setupEngine", e)
@@ -706,33 +713,84 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
     
-    fun setLanEnabled(enabled: Boolean) {
-        val id = activeAccountId.value ?: return
-        viewModelScope.launch {
+    fun refreshTransportStatus() {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                settingsRepository.setLanEnabled(id, enabled)
-                RatatoskCore.getClient().setLanEnabled(enabled)
+                val client = RatatoskCore.getClient()
+                val en = FfiTransport.values().associateWith { client.transportEnabled(it) }
+                val re = FfiTransport.values().associateWith { client.transportReady(it) }
+                val ts = client.torStatus()
+                val ms = client.mailStatus()
+                val ma = client.mailAccount()
+                
+                withContext(Dispatchers.Main) {
+                    _transportsEnabled.value = en
+                    _transportsReady.value = re
+                    _torStatus.value = ts
+                    _mailStatus.value = ms
+                    _mailAccount.value = ma
+                }
             } catch (e: Exception) {
-                _error.value = "Failed to toggle LAN: ${e.message}"
+                android.util.Log.e("RatatoskVM", "Failed to refresh transport status", e)
             }
         }
     }
 
-    fun setTorEnabled(enabled: Boolean) {
-        val id = activeAccountId.value ?: return
-        viewModelScope.launch {
+    fun setTransportEnabled(transport: FfiTransport, enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                settingsRepository.setTorEnabled(id, enabled)
-                // Note: Tor is managed by the core based on this preference
-                // We might need to call announceAddresses("") if disabled, but the core should handle it.
-                if (!enabled) {
-                    _onionAddress.value = null
-                    RatatoskCore.getClient().announceAddresses("", "")
-                }
+                RatatoskCore.getClient().setTransportEnabled(transport, enabled)
+                refreshTransportStatus()
             } catch (e: Exception) {
-                _error.value = "Failed to toggle Tor: ${e.message}"
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to toggle transport: ${e.message}"
+                }
             }
         }
+    }
+
+    fun setMailAccount(address: String, password: String, imapHost: String, imapPort: Int, smtpHost: String, smtpPort: Int, viaTor: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().setMailAccount(address, password, imapHost, imapPort.toUShort(), smtpHost, smtpPort.toUShort(), viaTor)
+                refreshTransportStatus()
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to set mail account: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun createMailAccount(url: String, viaTor: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().createMailAccount(url, viaTor)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to create mail account: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun clearMailAccount() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().clearMailAccount()
+                refreshTransportStatus()
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to clear mail account", e)
+            }
+        }
+    }
+
+    fun setLanEnabled(enabled: Boolean) {
+        setTransportEnabled(FfiTransport.LAN, enabled)
+    }
+
+    fun setTorEnabled(enabled: Boolean) {
+        setTransportEnabled(FfiTransport.ONION, enabled)
     }
 
     fun addContact(uri: String, metInPerson: Boolean) {
@@ -993,10 +1051,15 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setActiveChat(chatId: ByteArray?) {
+        _activeChatIdFlow.value = chatId
         activeChatId = chatId?.toHexString()
         if (chatId != null) {
             _unreadCounts.update { it + (chatId.toHexString() to 0) }
         }
+    }
+
+    fun setActiveContact(chatId: ByteArray?) {
+        _activeContactIdFlow.value = chatId
     }
 
     fun updateChatTheme(updater: (ChatThemeData) -> ChatThemeData) {
@@ -1080,7 +1143,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             }
             is FfiEvent.TorStatus -> {
                 android.util.Log.i("RatatoskVM", "TorStatus event: fraction=${event.fraction}, note=${event.note}, blocked=${event.blocked}")
-                _torStatus.value = event
+                _torStatus.value = FfiTorStatus(event.fraction, event.note, event.blocked)
                 if (event.fraction >= 1.0f && _onionAddress.value == null && !isAnnouncingTor) {
                     // Tor is up, announce addresses if Tor is enabled
                     isAnnouncingTor = true
@@ -1094,7 +1157,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                                 _cardVersion.value = card.version
                             }
                             
-                            if (torEnabled.value && card.onion.isNotEmpty()) {
+                            if (client.transportEnabled(FfiTransport.ONION) && card.onion.isNotEmpty()) {
                                 android.util.Log.i("RatatoskVM", "Tor is up, announcing onion address: ${card.onion}")
                                 client.announceAddresses(card.onion, card.chatmail)
                                 // Refresh again to get new version if it changed
@@ -1110,6 +1173,26 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                         }
                     }
                 }
+                refreshTransportStatus()
+            }
+            is FfiEvent.CommandRefused -> {
+                _error.value = event.reason
+            }
+            is FfiEvent.MailAccountReady -> {
+                android.util.Log.i("RatatoskVM", "Mail account ready: ${event.address}")
+                refreshTransportStatus()
+            }
+            is FfiEvent.MailAccountFailed -> {
+                _error.value = "Mail setup failed: ${event.reason}"
+                refreshTransportStatus()
+            }
+            is FfiEvent.MailLoginFailed -> {
+                android.util.Log.w("RatatoskVM", "Mail login failed: ${event.reason}")
+                refreshTransportStatus()
+            }
+            is FfiEvent.MailLimits -> {
+                android.util.Log.i("RatatoskVM", "Mail limits updated: usage=${event.mailboxUsed}, limit=${event.mailboxLimit}")
+                refreshTransportStatus()
             }
             is FfiEvent.HonestNotice -> {
                 // Could show as a global notice or snackbar

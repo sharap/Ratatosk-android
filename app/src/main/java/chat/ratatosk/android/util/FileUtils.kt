@@ -47,4 +47,14 @@ object FileUtils {
         }
         return name
     }
+
+    fun formatFileSize(bytes: ULong): String {
+        val b = bytes.toDouble()
+        return when {
+            b < 1024 -> "%.0f B".format(java.util.Locale.US, b)
+            b < 1024 * 1024 -> "%.1f KB".format(java.util.Locale.US, b / 1024)
+            b < 1024 * 1024 * 1024 -> "%.1f MB".format(java.util.Locale.US, b / (1024 * 1024))
+            else -> "%.1f GB".format(java.util.Locale.US, b / (1024 * 1024 * 1024))
+        }
+    }
 }
