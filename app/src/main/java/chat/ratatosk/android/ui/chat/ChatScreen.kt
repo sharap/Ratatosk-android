@@ -75,7 +75,9 @@ fun ChatScreen(
     viewModel: RatatoskViewModel,
     chatId: ByteArray,
     onBack: () -> Unit,
-    onHeaderClick: () -> Unit
+    onHeaderClick: () -> Unit,
+    showBackButton: Boolean = true,
+    isCompact: Boolean = true
 ) {
     var text by remember { mutableStateOf("") }
     var editingMessage by remember { mutableStateOf<FfiMessage?>(null) }
@@ -113,21 +115,29 @@ fun ChatScreen(
 
     val displayMessages = remember(messages) { messages.reversed() }
 
-    val backOffset = remember(chatIdHex) { Animatable(screenWidth) }
+    val backOffset = remember(chatIdHex) { Animatable(if (showBackButton) screenWidth else 0f) }
 
     val performBack = {
-        scope.launch {
-            backOffset.animateTo(screenWidth, animationSpec = tween(durationMillis = 200, easing = LinearOutSlowInEasing))
+        if (showBackButton) {
+            scope.launch {
+                backOffset.animateTo(screenWidth, animationSpec = tween(durationMillis = 200, easing = LinearOutSlowInEasing))
+                onBack()
+            }
+        } else {
             onBack()
         }
     }
 
     LaunchedEffect(chatIdHex) {
-        backOffset.animateTo(0f, animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing))
+        if (showBackButton) {
+            backOffset.animateTo(0f, animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing))
+        }
     }
 
-    BackHandler(enabled = true) {
-        performBack()
+    if (showBackButton) {
+        BackHandler(enabled = true) {
+            performBack()
+        }
     }
 
     val fileLauncher = rememberLauncherForActivityResult(
@@ -269,7 +279,8 @@ fun ChatScreen(
                 .fillMaxSize()
                 .offset { IntOffset(backOffset.value.roundToInt(), 0) }
                 .shadow(elevation = if (backOffset.value > 0f) 16.dp else 0.dp)
-                .pointerInput(Unit) {
+                .pointerInput(showBackButton, isCompact) {
+                    if (!showBackButton || !isCompact) return@pointerInput
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { change, dragAmount ->
                             if (dragAmount > 0 || backOffset.value > 0) {
@@ -371,7 +382,7 @@ fun ChatScreen(
                                     }) {
                                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel search")
                                     }
-                                } else {
+                                } else if (showBackButton) {
                                     IconButton(onClick = { performBack() }) {
                                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                                     }
@@ -412,7 +423,8 @@ fun ChatScreen(
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                 navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            ),
+                            windowInsets = WindowInsets(0, 0, 0, 0)
                         )
 
                         val torStatus by viewModel.torStatus.collectAsState()
@@ -600,7 +612,8 @@ fun ChatScreen(
                                             outgoingColor = if (chatTheme.themeColor != Color.Unspecified) chatTheme.themeColor else MaterialTheme.colorScheme.primary,
                                             status = messageStatuses[msg.msgId.toHexString()] ?: msg.status,
                                             onReplyClick = {},
-                                            isHighlighted = false,
+                                                isHighlighted = false,
+                                            isCompact = isCompact,
                                             onRetry = {}, onDelete = {}, onRetract = {}, onEdit = {}, onReply = {}, onForward = {}, onReaction = { _ -> },
                                             retractionNotice = { "" }, getRepliedMessage = { null },
                                             onBackDrag = { amount -> scope.launch { backOffset.snapTo((backOffset.value + amount).coerceAtLeast(0f)) } },
@@ -651,6 +664,7 @@ fun ChatScreen(
                                         retractionNotice = { viewModel.getRetractionNotice() },
                                         getRepliedMessage = { id -> viewModel.getMessage(id) },
                                         isHighlighted = highlightedMsgId == msg.msgId.toHexString(),
+                                        isCompact = isCompact,
                                         onBackDrag = { amount -> scope.launch { backOffset.snapTo((backOffset.value + amount).coerceAtLeast(0f)) } },
                                         onBackRelease = {
                                             if (backOffset.value > 250f) {
@@ -783,6 +797,7 @@ fun MessageBubble(
     retractionNotice: () -> String,
     getRepliedMessage: (ByteArray) -> FfiMessage?,
     isHighlighted: Boolean,
+    isCompact: Boolean = true,
     onBackDrag: (Float) -> Unit = {},
     onBackRelease: () -> Unit = {}
 ) {
@@ -871,13 +886,13 @@ fun MessageBubble(
 
     Box(
         modifier = Modifier.fillMaxWidth()
-            .pointerInput(Unit) {
+            .pointerInput(isCompact) {
                 detectHorizontalDragGestures(
                     onHorizontalDrag = { change, dragAmount ->
                         if (dragAmount < 0 || offsetX < 0) {
                             offsetX = (offsetX + dragAmount).coerceIn(-150f, 0f)
                             if (offsetX < 0) change.consume()
-                        } else {
+                        } else if (isCompact) {
                             onBackDrag(dragAmount)
                             change.consume()
                         }
@@ -885,11 +900,11 @@ fun MessageBubble(
                     onDragEnd = {
                         if (offsetX < -80f) { onReply() }
                         offsetX = 0f
-                        onBackRelease()
+                        if (isCompact) onBackRelease()
                     },
                     onDragCancel = {
                         offsetX = 0f
-                        onBackRelease()
+                        if (isCompact) onBackRelease()
                     }
                 )
             },

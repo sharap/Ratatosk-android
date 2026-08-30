@@ -6,6 +6,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
@@ -34,7 +35,8 @@ import qrcode.QRCode
 @Composable
 fun ProfileScreen(
     viewModel: RatatoskViewModel,
-    onCropAvatar: () -> Unit
+    onCropAvatar: () -> Unit,
+    isTwoColumn: Boolean = false
 ) {
     val context = LocalContext.current
     val fingerprint by viewModel.fingerprint.collectAsState()
@@ -71,171 +73,121 @@ fun ProfileScreen(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(16.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(contentAlignment = Alignment.BottomEnd) {
-                Avatar(
-                    avatarBytes = myAvatar,
-                    name = userName ?: "U",
-                    size = 100.dp,
-                    modifier = Modifier.clickable { avatarLauncher.launch("image/*") }
-                )
-                SmallFloatingActionButton(
-                    onClick = { avatarLauncher.launch("image/*") },
-                    modifier = Modifier.size(32.dp),
-                    shape = androidx.compose.foundation.shape.CircleShape,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ) {
-                    Icon(Icons.Default.AddAPhoto, contentDescription = "Change Avatar", modifier = Modifier.size(16.dp))
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = userName ?: "User",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                IconButton(onClick = { 
-                    newName = userName ?: ""
-                    showEditName = true 
-                }) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit Name", modifier = Modifier.size(20.dp))
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Identity Card
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = stringResource(R.string.fingerprint_title),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = fingerprint ?: "Loading...",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (cardVersion != null) {
-                            Text(
-                                text = "v$cardVersion",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
-                        }
-                        IconButton(onClick = {
-                            fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) }
-                        }) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
-                        }
-                    }
-                }
-            }
-
-            if (torEnabled) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Onion Address",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = onionAddress ?: "Waiting for Tor...",
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (onionAddress != null) {
-                                IconButton(onClick = {
-                                    clipboardManager.setText(AnnotatedString(onionAddress!!))
-                                }) {
-                                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
+        if (isTwoColumn) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp)
             ) {
-                Button(
-                    onClick = { showMyQr = true },
-                    modifier = Modifier.weight(1f)
+                // Column 1: Identity & Actions
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(Icons.Default.QrCode, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.my_qr_code))
+                    ProfileHeaderSection(
+                        myAvatar = myAvatar,
+                        userName = userName,
+                        onAvatarClick = { avatarLauncher.launch("image/*") },
+                        onEditNameClick = {
+                            newName = userName ?: ""
+                            showEditName = true
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    OutlinedButton(
+                        onClick = { viewModel.logout() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Icon(Icons.Default.Logout, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Switch Account")
+                    }
                 }
+
+                // Column 2: Details & Notices
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    ProfileDetailsSection(
+                        fingerprint = fingerprint,
+                        cardVersion = cardVersion,
+                        torEnabled = torEnabled,
+                        onionAddress = onionAddress,
+                        myContactUri = myContactUri,
+                        onCopyFingerprint = { fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) } },
+                        onCopyOnion = { onionAddress?.let { clipboardManager.setText(AnnotatedString(it)) } },
+                        onShowQr = { showMyQr = true },
+                        onCopyLink = {
+                            viewModel.getMyContactUri()
+                            myContactUri?.let { uri -> clipboardManager.setText(AnnotatedString(uri)) }
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    ProfileNoticesSection(notices = notices)
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(16.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                ProfileHeaderSection(
+                    myAvatar = myAvatar,
+                    userName = userName,
+                    onAvatarClick = { avatarLauncher.launch("image/*") },
+                    onEditNameClick = {
+                        newName = userName ?: ""
+                        showEditName = true
+                    }
+                )
+                
+                Spacer(modifier = Modifier.height(24.dp))
+
+                ProfileDetailsSection(
+                    fingerprint = fingerprint,
+                    cardVersion = cardVersion,
+                    torEnabled = torEnabled,
+                    onionAddress = onionAddress,
+                    myContactUri = myContactUri,
+                    onCopyFingerprint = { fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) } },
+                    onCopyOnion = { onionAddress?.let { clipboardManager.setText(AnnotatedString(it)) } },
+                    onShowQr = { showMyQr = true },
+                    onCopyLink = {
+                        viewModel.getMyContactUri()
+                        myContactUri?.let { uri -> clipboardManager.setText(AnnotatedString(uri)) }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
 
                 OutlinedButton(
-                    onClick = {
-                        viewModel.getMyContactUri()
-                        myContactUri?.let { uri ->
-                            clipboardManager.setText(AnnotatedString(uri))
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
+                    onClick = { viewModel.logout() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                    Icon(Icons.Default.Logout, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.copy_link))
+                    Text("Switch Account")
                 }
-            }
 
-            Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
-            OutlinedButton(
-                onClick = { viewModel.logout() },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-            ) {
-                Icon(Icons.Default.Logout, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Switch Account")
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Security Notices Section (§14)
-            Text(
-                text = stringResource(R.string.honest_notices_title),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.align(Alignment.Start)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            notices.forEach { notice ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                    )
-                ) {
-                    Text(
-                        text = notice,
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
+                ProfileNoticesSection(notices = notices)
             }
         }
     }
@@ -321,5 +273,158 @@ fun ProfileScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+fun ProfileHeaderSection(
+    myAvatar: ByteArray?,
+    userName: String?,
+    onAvatarClick: () -> Unit,
+    onEditNameClick: () -> Unit
+) {
+    Box(contentAlignment = Alignment.BottomEnd) {
+        Avatar(
+            avatarBytes = myAvatar,
+            name = userName ?: "U",
+            size = 100.dp,
+            modifier = Modifier.clickable { onAvatarClick() }
+        )
+        SmallFloatingActionButton(
+            onClick = onAvatarClick,
+            modifier = Modifier.size(32.dp),
+            shape = CircleShape,
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ) {
+            Icon(Icons.Default.AddAPhoto, contentDescription = "Change Avatar", modifier = Modifier.size(16.dp))
+        }
+    }
+    
+    Spacer(modifier = Modifier.height(16.dp))
+    
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = userName ?: "User",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+        IconButton(onClick = onEditNameClick) {
+            Icon(Icons.Default.Edit, contentDescription = "Edit Name", modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+fun ProfileDetailsSection(
+    fingerprint: String?,
+    cardVersion: ULong?,
+    torEnabled: Boolean,
+    onionAddress: String?,
+    myContactUri: String?,
+    onCopyFingerprint: () -> Unit,
+    onCopyOnion: () -> Unit,
+    onShowQr: () -> Unit,
+    onCopyLink: () -> Unit
+) {
+    // Identity Card
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.fingerprint_title),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.outline
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = fingerprint ?: "Loading...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                if (cardVersion != null) {
+                    Text(
+                        text = "v$cardVersion",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                }
+                IconButton(onClick = onCopyFingerprint) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
+                }
+            }
+        }
+    }
+
+    if (torEnabled) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Onion Address",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = onionAddress ?: "Waiting for Tor...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (onionAddress != null) {
+                        IconButton(onClick = onCopyOnion) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Button(
+            onClick = onShowQr,
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(Icons.Default.QrCode, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.my_qr_code))
+        }
+
+        OutlinedButton(
+            onClick = onCopyLink,
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(Icons.Default.ContentCopy, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.copy_link))
+        }
+    }
+}
+
+@Composable
+fun ProfileNoticesSection(notices: List<String>) {
+    Text(
+        text = stringResource(R.string.honest_notices_title),
+        style = MaterialTheme.typography.titleMedium,
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    notices.forEach { notice ->
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            )
+        ) {
+            Text(
+                text = notice,
+                modifier = Modifier.padding(12.dp),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
     }
 }

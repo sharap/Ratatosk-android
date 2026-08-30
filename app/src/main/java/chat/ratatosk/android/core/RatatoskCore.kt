@@ -135,11 +135,9 @@ object RatatoskCore : EventObserver {
     }
 
     override fun onEvent(`event`: FfiEvent) {
-        android.util.Log.e("RatatoskCore", "RECEIVING EVENT: $`event`")
+        android.util.Log.i("RatatoskCore", "RECEIVING EVENT: $`event`")
         if (`event` is FfiEvent.TorStatus) {
             android.util.Log.i("RatatoskCore", "Tor status: [${(`event`.fraction * 100).toInt()}%] ${`event`.note}${`event`.blocked?.let { " (BLOCKED: $it)" } ?: ""}")
-        } else {
-            android.util.Log.d("RatatoskCore", "Event from native: $`event`")
         }
         val success = _events.tryEmit(`event`)
         if (!success) {

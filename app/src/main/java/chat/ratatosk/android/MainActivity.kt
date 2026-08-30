@@ -66,8 +66,6 @@ class MainActivity : ComponentActivity() {
 
             val selectedAccount by appViewModel.selectedAccount.collectAsState()
             val isCreatingNewAccount by appViewModel.isCreatingNewAccount.collectAsState()
-            val activeChatId by appViewModel.activeChatIdFlow.collectAsState()
-            val activeContactId by appViewModel.activeContactIdFlow.collectAsState()
 
             // Set initial selection if only one account exists
             LaunchedEffect(accounts) {
@@ -149,7 +147,16 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onCropAvatar = {
                                             navController.navigate("crop")
+                                        },
+                                        onPairedDevicesClick = {
+                                            navController.navigate("paired_devices")
                                         }
+                                    )
+                                }
+                                composable("paired_devices") {
+                                    chat.ratatosk.android.ui.settings.PairedDevicesScreen(
+                                        viewModel = appViewModel,
+                                        onBack = { navController.popBackStack() }
                                     )
                                 }
                                 composable("crop") {
@@ -168,31 +175,6 @@ class MainActivity : ComponentActivity() {
                                         onBack = { navController.popBackStack() }
                                     )
                                 }
-                            }
-
-                            // Chat Overlay
-                            if (activeChatId != null) {
-                                ChatScreen(
-                                    viewModel = appViewModel,
-                                    chatId = activeChatId!!,
-                                    onBack = { appViewModel.setActiveChat(null) },
-                                    onHeaderClick = {
-                                        appViewModel.setActiveContact(activeChatId!!)
-                                    }
-                                )
-                            }
-
-                            // Contact Details Overlay
-                            if (activeContactId != null) {
-                                ContactDetailsScreen(
-                                    viewModel = appViewModel,
-                                    chatId = activeContactId!!,
-                                    onBack = { appViewModel.setActiveContact(null) },
-                                    onChatClick = {
-                                        appViewModel.setActiveContact(null)
-                                        appViewModel.setActiveChat(it)
-                                    }
-                                )
                             }
 
                             // Media Overlay

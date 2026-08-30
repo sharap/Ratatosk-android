@@ -17,11 +17,24 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("keystore/release.jks")
+            storePassword = "ratatosk"
+            keyAlias = "ratatosk-release"
+            keyPassword = "ratatosk"
+        }
+    }
+
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     compileOptions {
@@ -51,6 +64,10 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material3.adaptive)
+    implementation(libs.androidx.compose.material3.adaptive.layout)
+    implementation(libs.androidx.compose.material3.adaptive.navigation)
+    implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
@@ -95,7 +112,7 @@ val buildRustCore = tasks.register<Exec>("buildRustCore") {
         "-t", "x86_64",
         "-t", "arm64-v8a",
         "-o", jniLibsDir.absolutePath,
-        "build", "--release", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail"
+        "build", "--profile", "release-android", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail"
     )
     
     inputs.dir(rustProjectDir.resolve("crates"))
@@ -104,10 +121,10 @@ val buildRustCore = tasks.register<Exec>("buildRustCore") {
 
 val buildRustHost = tasks.register<Exec>("buildRustHost") {
     workingDir = rustProjectDir
-    commandLine("cargo", "build", "--release", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail")
+    commandLine("cargo", "build", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail")
     
     inputs.dir(rustProjectDir.resolve("crates"))
-    outputs.file(rustProjectDir.resolve("target/release/libratatosk_ffi.so"))
+    outputs.file(rustProjectDir.resolve("target/debug/libratatosk_ffi.so"))
 }
 
 tasks.register<Exec>("generateUniFFIBindings") {

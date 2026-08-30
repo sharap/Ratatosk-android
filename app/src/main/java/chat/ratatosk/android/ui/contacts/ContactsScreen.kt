@@ -2,8 +2,11 @@ package chat.ratatosk.android.ui.contacts
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Refresh
@@ -23,7 +26,10 @@ import chat.ratatosk.android.util.toHexString
 fun ContactsScreen(
     viewModel: RatatoskViewModel,
     onContactClick: (ByteArray) -> Unit,
-    onScanClick: () -> Unit
+    onScanClick: () -> Unit,
+    isTwoColumn: Boolean = false,
+    gridState: LazyGridState = rememberLazyGridState(),
+    showFab: Boolean = true
 ) {
     val contacts by viewModel.contacts.collectAsState()
     val contactAvatars by viewModel.contactAvatars.collectAsState()
@@ -51,12 +57,15 @@ fun ContactsScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
+                ),
+                windowInsets = WindowInsets(0, 0, 0, 0)
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.PersonAdd, contentDescription = stringResource(R.string.add_contact))
+            if (showFab) {
+                FloatingActionButton(onClick = { showAddDialog = true }) {
+                    Icon(Icons.Default.PersonAdd, contentDescription = stringResource(R.string.add_contact))
+                }
             }
         }
     ) { innerPadding ->
@@ -70,7 +79,9 @@ fun ContactsScreen(
                     )
                 }
             } else {
-                LazyColumn(
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(if (isTwoColumn) 2 else 1),
+                    state = gridState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)

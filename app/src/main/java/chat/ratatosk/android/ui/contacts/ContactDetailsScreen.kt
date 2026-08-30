@@ -55,7 +55,9 @@ fun ContactDetailsScreen(
     viewModel: RatatoskViewModel,
     chatId: ByteArray,
     onBack: () -> Unit,
-    onChatClick: (ByteArray) -> Unit
+    onChatClick: (ByteArray) -> Unit,
+    showBackButton: Boolean = true,
+    isCompact: Boolean = true
 ) {
     val contacts by viewModel.contacts.collectAsState()
     val contactAvatars by viewModel.contactAvatars.collectAsState()
@@ -67,21 +69,29 @@ fun ContactDetailsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val screenWidth = remember { context.resources.displayMetrics.widthPixels.toFloat() }
-    val backOffset = remember(chatId.toHexString()) { Animatable(screenWidth) }
+    val backOffset = remember(chatId.toHexString()) { Animatable(if (showBackButton) screenWidth else 0f) }
 
     val performBack = {
-        scope.launch {
-            backOffset.animateTo(screenWidth, animationSpec = tween(durationMillis = 200, easing = LinearOutSlowInEasing))
+        if (showBackButton) {
+            scope.launch {
+                backOffset.animateTo(screenWidth, animationSpec = tween(durationMillis = 200, easing = LinearOutSlowInEasing))
+                onBack()
+            }
+        } else {
             onBack()
         }
     }
 
     LaunchedEffect(chatId.toHexString()) {
-        backOffset.animateTo(0f, animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing))
+        if (showBackButton) {
+            backOffset.animateTo(0f, animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing))
+        }
     }
 
-    BackHandler(enabled = true) {
-        performBack()
+    if (showBackButton) {
+        BackHandler(enabled = true) {
+            performBack()
+        }
     }
 
     var showEditNameDialog by remember { mutableStateOf(false) }
@@ -108,7 +118,8 @@ fun ContactDetailsScreen(
                 .offset { IntOffset(backOffset.value.roundToInt(), 0) }
                 .shadow(elevation = if (backOffset.value > 0f) 16.dp else 0.dp)
                 .background(MaterialTheme.colorScheme.background)
-                .pointerInput(Unit) {
+                .pointerInput(showBackButton, isCompact) {
+                    if (!showBackButton || !isCompact) return@pointerInput
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { change, dragAmount ->
                             scope.launch {
@@ -135,13 +146,16 @@ fun ContactDetailsScreen(
                     TopAppBar(
                         title = { Text(stringResource(R.string.contact_details)) },
                         navigationIcon = {
-                            IconButton(onClick = { performBack() }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            if (showBackButton) {
+                                IconButton(onClick = { performBack() }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                }
                             }
                         }
                     )
                 }
-            ) { innerPadding ->
+            ) {
+innerPadding ->
                 if (contact == null) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text("Contact not found")

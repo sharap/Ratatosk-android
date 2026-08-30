@@ -2,7 +2,10 @@ package chat.ratatosk.android.ui.chatlist
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -21,7 +24,10 @@ import chat.ratatosk.android.util.toHexString
 fun ChatListScreen(
     viewModel: RatatoskViewModel,
     onChatClick: (ByteArray) -> Unit,
-    onScanClick: () -> Unit
+    onScanClick: () -> Unit,
+    isTwoColumn: Boolean = false,
+    gridState: LazyGridState = rememberLazyGridState(),
+    showFab: Boolean = true
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     val contacts by viewModel.contacts.collectAsState()
@@ -30,7 +36,6 @@ fun ChatListScreen(
     val contactAvatars by viewModel.contactAvatars.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.setActiveChat(null)
         viewModel.refreshContacts()
     }
 
@@ -42,7 +47,8 @@ fun ChatListScreen(
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
+                    ),
+                    windowInsets = WindowInsets(0, 0, 0, 0)
                 )
                 
                 val torStatus by viewModel.torStatus.collectAsState()
@@ -70,8 +76,10 @@ fun ChatListScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_contact))
+            if (showFab) {
+                FloatingActionButton(onClick = { showAddDialog = true }) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_contact))
+                }
             }
         }
     ) { innerPadding ->
@@ -85,7 +93,9 @@ fun ChatListScreen(
                     )
                 }
             } else {
-                LazyColumn(
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(if (isTwoColumn) 2 else 1),
+                    state = gridState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp)
                 ) {

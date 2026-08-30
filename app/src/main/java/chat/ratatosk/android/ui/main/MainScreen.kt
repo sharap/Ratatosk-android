@@ -34,69 +34,13 @@ fun MainScreen(
     onChatClick: (ByteArray) -> Unit,
     onContactClick: (ByteArray) -> Unit,
     onScanClick: () -> Unit,
-    onCropAvatar: () -> Unit
+    onCropAvatar: () -> Unit,
+    onPairedDevicesClick: () -> Unit
 ) {
-    val tabs = MainTab.entries
-    val pagerState = rememberPagerState(pageCount = { tabs.size })
-    val scope = rememberCoroutineScope()
-    val totalUnreadCount by viewModel.totalUnreadCount.collectAsState()
-
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                tabs.forEachIndexed { index, tab ->
-                    NavigationBarItem(
-                        icon = {
-                            BadgedBox(
-                                badge = {
-                                    if (tab == MainTab.CHATS && totalUnreadCount > 0) {
-                                        Badge {
-                                            Text(totalUnreadCount.toString())
-                                        }
-                                    }
-                                }
-                            ) {
-                                Icon(tab.icon, contentDescription = null)
-                            }
-                        },
-                        label = { Text(stringResource(tab.labelRes)) },
-                        selected = pagerState.currentPage == index,
-                        onClick = {
-                            scope.launch {
-                                pagerState.animateScrollToPage(index)
-                            }
-                        }
-                    )
-                }
-            }
-        }
-    ) { innerPadding ->
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize(),
-            beyondViewportPageCount = 3
-        ) { page ->
-            when (tabs[page]) {
-                MainTab.CHATS -> ChatListScreen(
-                    viewModel = viewModel,
-                    onChatClick = onChatClick,
-                    onScanClick = onScanClick
-                )
-                MainTab.CONTACTS -> ContactsScreen(
-                    viewModel = viewModel,
-                    onContactClick = onContactClick,
-                    onScanClick = onScanClick
-                )
-                MainTab.SETTINGS -> SettingsScreen(
-                    viewModel = viewModel
-                )
-                MainTab.PROFILE -> ProfileScreen(
-                    viewModel = viewModel,
-                    onCropAvatar = onCropAvatar
-                )
-            }
-        }
-    }
+    AdaptiveMainScreen(
+        viewModel = viewModel,
+        onScanClick = onScanClick,
+        onCropAvatar = onCropAvatar,
+        onPairedDevicesClick = onPairedDevicesClick
+    )
 }

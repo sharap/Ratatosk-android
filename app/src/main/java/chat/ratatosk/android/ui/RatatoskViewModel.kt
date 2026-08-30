@@ -97,6 +97,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _activeContactIdFlow = MutableStateFlow<ByteArray?>(null)
     val activeContactIdFlow = _activeContactIdFlow.asStateFlow()
 
+    private val _pairedDevices = MutableStateFlow<List<FfiPairedDevice>>(emptyList())
+    val pairedDevices = _pairedDevices.asStateFlow()
+
+    private val _pairingUri = MutableStateFlow<String?>(null)
+    val pairingUri = _pairingUri.asStateFlow()
+
     private val _activeMediaFile = MutableStateFlow<FfiFile?>(null)
     val activeMediaFile = _activeMediaFile.asStateFlow()
 
@@ -213,6 +219,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 if (RatatoskCore.isInitialized()) {
                     refreshContacts()
                     refreshTransportStatus()
+                    loadPairedDevices()
                 }
                 kotlinx.coroutines.delay(30000)
             }
@@ -275,6 +282,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                         withContext(Dispatchers.Main) { _contacts.value = currentContacts }
                         
                         refreshTransportStatus()
+                        loadPairedDevices()
                         
                         currentContacts.forEach { contact ->
                             loadMessages(contact.chatId)
@@ -1056,16 +1064,69 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun loadPairedDevices() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (!RatatoskCore.isInitialized()) return@launch
+                val devices = RatatoskCore.getClient().devices()
+                withContext(Dispatchers.Main) {
+                    _pairedDevices.value = devices
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to load paired devices", e)
+            }
+        }
+    }
+
+    fun startPairing(label: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (!RatatoskCore.isInitialized()) return@launch
+                android.util.Log.d("RatatoskVM", "Starting pairing for label: $label")
+                _pairingUri.value = null
+                RatatoskCore.getClient().pairDevice(label)
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to start pairing", e)
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to start pairing: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun stopPairing() {
+        _pairingUri.value = null
+    }
+
+    fun revokePairing(deviceId: ByteArray) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (!RatatoskCore.isInitialized()) return@launch
+                RatatoskCore.getClient().revokePairing(deviceId)
+                loadPairedDevices()
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to revoke: ${e.message}"
+                }
+            }
+        }
+    }
+
     fun setActiveChat(chatId: ByteArray?) {
         _activeChatIdFlow.value = chatId
         activeChatId = chatId?.toHexString()
         if (chatId != null) {
+            _activeContactIdFlow.value = null
             _unreadCounts.update { it + (chatId.toHexString() to 0) }
         }
     }
 
     fun setActiveContact(chatId: ByteArray?) {
         _activeContactIdFlow.value = chatId
+        if (chatId != null) {
+            _activeChatIdFlow.value = null
+            activeChatId = null
+        }
     }
 
     fun setActiveMediaFile(file: FfiFile?) {
@@ -1231,6 +1292,19 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             }
             is FfiEvent.HonestNotice -> {
                 // Could show as a global notice or snackbar
+            }
+            is FfiEvent.PairingReady -> {
+                android.util.Log.i("RatatoskVM", "Pairing ready event received. URI: ${event.uri}")
+                _pairingUri.value = event.uri
+                loadPairedDevices()
+            }
+            is FfiEvent.PairingRevoked -> {
+                android.util.Log.i("RatatoskVM", "Pairing revoked event for device: ${event.deviceId.toHexString()}")
+                loadPairedDevices()
+            }
+            is FfiEvent.DeviceLink -> {
+                android.util.Log.i("RatatoskVM", "Device ${event.deviceId.toHexString()} link status: ${event.connected}")
+                loadPairedDevices()
             }
             else -> {}
         }
