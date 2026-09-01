@@ -6,19 +6,15 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GppBad
@@ -27,27 +23,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.components.Avatar
 import chat.ratatosk.android.util.formatDateTime
 import chat.ratatosk.android.util.toHexString
-import kotlinx.coroutines.launch
-import qrcode.QRCode
 import org.ratatosk.core.*
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,26 +53,9 @@ fun ContactDetailsScreen(
     }
     
     val clipboardManager = LocalClipboardManager.current
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val screenWidth = remember { context.resources.displayMetrics.widthPixels.toFloat() }
-    val backOffset = remember(chatId.toHexString()) { Animatable(if (showBackButton) screenWidth else 0f) }
 
     val performBack = {
-        if (showBackButton) {
-            scope.launch {
-                backOffset.animateTo(screenWidth, animationSpec = tween(durationMillis = 200, easing = LinearOutSlowInEasing))
-                onBack()
-            }
-        } else {
-            onBack()
-        }
-    }
-
-    LaunchedEffect(chatId.toHexString()) {
-        if (showBackButton) {
-            backOffset.animateTo(0f, animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing))
-        }
+        onBack()
     }
 
     if (showBackButton) {
@@ -102,82 +72,53 @@ fun ContactDetailsScreen(
     var editNameText by remember { mutableStateOf("") }
     var purgeHistoryOnDelete by remember { mutableStateOf(true) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Dimming layer
-        if (backOffset.value > 0f) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = (0.25f * (1f - backOffset.value / screenWidth)).coerceAtLeast(0f)))
+    Scaffold(
+        containerColor = Color.Transparent,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.contact_details)) },
+                navigationIcon = {
+                    if (showBackButton) {
+                        IconButton(onClick = { performBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                }
             )
         }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .offset { IntOffset(backOffset.value.roundToInt(), 0) }
-                .shadow(elevation = if (backOffset.value > 0f) 16.dp else 0.dp)
-                .background(MaterialTheme.colorScheme.background)
-                .pointerInput(showBackButton, isCompact) {
-                    if (!showBackButton || !isCompact) return@pointerInput
-                    detectHorizontalDragGestures(
-                        onHorizontalDrag = { change, dragAmount ->
-                            scope.launch {
-                                backOffset.snapTo((backOffset.value + dragAmount).coerceAtLeast(0f))
-                            }
-                            change.consume()
-                        },
-                        onDragEnd = {
-                            if (backOffset.value > 250f) {
-                                performBack()
-                            } else {
-                                scope.launch { backOffset.animateTo(0f) }
-                            }
-                        },
-                        onDragCancel = {
-                            scope.launch { backOffset.animateTo(0f) }
-                        }
-                    )
-                }
-        ) {
-            Scaffold(
-                containerColor = Color.Transparent,
-                topBar = {
-                    TopAppBar(
-                        title = { Text(stringResource(R.string.contact_details)) },
-                        navigationIcon = {
-                            if (showBackButton) {
-                                IconButton(onClick = { performBack() }) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                                }
-                            }
-                        }
-                    )
-                }
+    ) { innerPadding ->
+        if (contact == null) {
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Text(stringResource(R.string.identity_not_found))
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                contentPadding = PaddingValues(bottom = 32.dp)
             ) {
-innerPadding ->
-                if (contact == null) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Contact not found")
-                    }
-                } else {
+                // Avatar
+                item {
+                    val avatarBytes = contact.peerIk.toHexString().let { contactAvatars[it] } ?: viewModel.getAvatarOf(contact.peerIk)
+                    Avatar(
+                        avatarBytes = avatarBytes,
+                        name = contact.localName ?: contact.displayName,
+                        modifier = if (isCompact) {
+                            Modifier.fillMaxWidth().aspectRatio(1f)
+                        } else {
+                            Modifier.size(200.dp)
+                        },
+                        shape = androidx.compose.ui.graphics.RectangleShape
+                    )
+                }
+
+                item {
                     Column(
-                        modifier = Modifier
-                            .padding(innerPadding)
-                            .padding(16.dp)
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
+                        modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Avatar
-                        Avatar(
-                            avatarBytes = contact.peerIk.toHexString().let { contactAvatars[it] } ?: viewModel.getAvatarOf(contact.peerIk),
-                            name = contact.localName ?: contact.displayName,
-                            size = 100.dp
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = contact.localName ?: contact.displayName,
@@ -215,7 +156,7 @@ innerPadding ->
                                 )
                             } else {
                                 Text(
-                                    text = "Offline",
+                                    text = stringResource(R.string.offline),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.outline
                                 )
@@ -294,9 +235,11 @@ innerPadding ->
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(stringResource(R.string.chat_button))
                         }
+                    }
+                }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
+                item {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         // Fingerprint and Share
                         Card(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.padding(16.dp)) {
@@ -428,10 +371,10 @@ innerPadding ->
                         Card(modifier = Modifier.fillMaxWidth()) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
-                                    text = "Technical Details",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                text = stringResource(R.string.technical_details),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
                                     text = stringResource(R.string.card_version, contact.cardVersion.toLong()),
@@ -462,7 +405,8 @@ innerPadding ->
 
                         TextButton(
                             onClick = { showDeleteDialog = true },
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -482,7 +426,7 @@ innerPadding ->
                 OutlinedTextField(
                     value = editNameText,
                     onValueChange = { editNameText = it },
-                    label = { Text("Nickname") },
+                    label = { Text(stringResource(R.string.nickname)) },
                     singleLine = true,
                     placeholder = { Text(contact.displayName) }
                 )
@@ -606,3 +550,6 @@ fun StatusChip(text: String, active: Boolean) {
         )
     }
 }
+
+fun revocationNotice(): String = "Revoking trust will prevent you from seeing this contact's avatar and other details until you verify them again."
+fun deletionNotice(): String = "Are you sure you want to delete this contact? This will remove all their keys and session material."

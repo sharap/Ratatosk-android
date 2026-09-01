@@ -14,8 +14,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BatteryAlert
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,7 +33,9 @@ import chat.ratatosk.android.ui.RatatoskViewModel
 @Composable
 fun OnboardingScreen(
     viewModel: RatatoskViewModel,
-    onBack: (() -> Unit)? = null
+    onBack: (() -> Unit)? = null,
+    onLinkCompanion: () -> Unit,
+    onImport: () -> Unit
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -186,6 +187,28 @@ fun OnboardingScreen(
             enabled = displayName.isNotBlank()
         ) {
             Text(stringResource(R.string.generate_identity))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(
+            onClick = onLinkCompanion,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.AddLink, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.link_as_companion))
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextButton(
+            onClick = onImport,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.Restore, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.restore_from_backup))
         }
 
         if (onBack != null) {

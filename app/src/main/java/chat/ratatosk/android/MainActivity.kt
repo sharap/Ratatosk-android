@@ -25,6 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import chat.ratatosk.android.service.RatatoskService
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.onboarding.OnboardingScreen
+import chat.ratatosk.android.ui.onboarding.LinkCompanionScreen
 import chat.ratatosk.android.ui.unlock.UnlockScreen
 import chat.ratatosk.android.ui.unlock.AccountSelectionScreen
 import chat.ratatosk.android.ui.main.MainScreen
@@ -60,16 +61,46 @@ class MainActivity : ComponentActivity() {
             val appViewModel: RatatoskViewModel = viewModel()
             val isCoreReady by appViewModel.isInitialized.collectAsState()
             val accounts by appViewModel.availableAccounts.collectAsState()
+            val companionLinks by appViewModel.companionLinks.collectAsState()
+            val lastAccountId by appViewModel.lastAccountId.collectAsState()
+            
             val currentError by appViewModel.error.collectAsState()
             val chatTheme by appViewModel.chatTheme.collectAsState()
             val navController = rememberNavController()
 
             val selectedAccount by appViewModel.selectedAccount.collectAsState()
             val isCreatingNewAccount by appViewModel.isCreatingNewAccount.collectAsState()
+            var isLinkingCompanion by remember { mutableStateOf(false) }
+            var isScanningCompanion by remember { mutableStateOf(false) }
+            var companionScanUri by remember { mutableStateOf<String?>(null) }
+            var isRestoringAccount by remember { mutableStateOf(false) }
 
-            // Set initial selection if only one account exists
-            LaunchedEffect(accounts) {
-                if (accounts.size == 1 && selectedAccount == null && !isCreatingNewAccount && !isCoreReady) {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val importLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                ActivityResultContracts.GetContent()
+            ) { uri ->
+                uri?.let {
+                    val file = chat.ratatosk.android.util.FileUtils.copyUriToInternalStorage(context, it)
+                    if (file != null) {
+                        companionScanUri = file.absolutePath
+                        isRestoringAccount = true
+                    }
+                }
+            }
+
+            // Auto-select last account or auto-login companion
+            LaunchedEffect(accounts, companionLinks, lastAccountId) {
+                if (lastAccountId != null && selectedAccount == null && !isCreatingNewAccount && !isCoreReady) {
+                    val localAccount = accounts.find { it.id.toHexString() == lastAccountId }
+                    if (localAccount != null) {
+                        appViewModel.selectAccount(localAccount)
+                    } else {
+                        val companionLink = companionLinks.find { "companion:${it.inviteUri.hashCode()}" == lastAccountId }
+                        if (companionLink != null) {
+                            appViewModel.unlockCompanion(companionLink)
+                        }
+                    }
+                } else if (accounts.size == 1 && companionLinks.isEmpty() && selectedAccount == null && !isCreatingNewAccount && !isCoreReady) {
                     appViewModel.selectAccount(accounts.first())
                 }
             }
@@ -105,17 +136,51 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (!isCoreReady) {
                         when {
-                            isCreatingNewAccount || accounts.isEmpty() -> {
+                            isScanningCompanion -> {
+                                chat.ratatosk.android.ui.qr.QRScannerScreen(
+                                    onResult = { uri ->
+                                        companionScanUri = uri
+                                        isScanningCompanion = false
+                                    },
+                                    onBack = { isScanningCompanion = false }
+                                )
+                            }
+                            isRestoringAccount -> {
+                                chat.ratatosk.android.ui.unlock.ImportArchiveDialog(
+                                    path = companionScanUri!!,
+                                    viewModel = appViewModel,
+                                    onDismiss = { 
+                                        isRestoringAccount = false
+                                        companionScanUri = null
+                                    }
+                                )
+                            }
+                            isLinkingCompanion -> {
+                                LinkCompanionScreen(
+                                    viewModel = appViewModel,
+                                    initialUri = companionScanUri,
+                                    onScan = { isScanningCompanion = true },
+                                    onBack = { 
+                                        isLinkingCompanion = false
+                                        companionScanUri = null
+                                    }
+                                )
+                            }
+                            isCreatingNewAccount || (accounts.isEmpty() && companionLinks.isEmpty()) -> {
                                 OnboardingScreen(
                                     viewModel = appViewModel,
-                                    onBack = if (accounts.isNotEmpty()) { { appViewModel.setCreatingNewAccount(false) } } else null
+                                    onBack = if (accounts.isNotEmpty() || companionLinks.isNotEmpty()) { { appViewModel.setCreatingNewAccount(false) } } else null,
+                                    onLinkCompanion = { isLinkingCompanion = true },
+                                    onImport = { importLauncher.launch("*/*") }
                                 )
                             }
                             selectedAccount == null -> {
                                 AccountSelectionScreen(
                                     viewModel = appViewModel,
                                     onSelect = { appViewModel.selectAccount(it) },
-                                    onCreateNew = { appViewModel.setCreatingNewAccount(true) }
+                                    onSelectCompanion = { appViewModel.unlockCompanion(it) },
+                                    onCreateNew = { appViewModel.setCreatingNewAccount(true) },
+                                    onLinkCompanion = { isLinkingCompanion = true }
                                 )
                             }
                             else -> {

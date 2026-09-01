@@ -2,8 +2,11 @@ package chat.ratatosk.android.core
 
 import android.content.Context
 import org.ratatosk.core.EventObserver
+import org.ratatosk.core.CompanionObserver
 import org.ratatosk.core.FfiEvent
+import org.ratatosk.core.FfiCompanionEvent
 import org.ratatosk.core.RatatoskClient
+import org.ratatosk.core.RatatoskCompanion
 import org.ratatosk.core.RatatoskException
 import org.ratatosk.core.AccountRegistry
 import org.ratatosk.core.FfiAccount
@@ -13,9 +16,12 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.channels.BufferOverflow
 import java.io.File
 
-object RatatoskCore : EventObserver {
+object RatatoskCore : EventObserver, CompanionObserver {
     @Volatile
     private var client: RatatoskClient? = null
+
+    @Volatile
+    private var companion: RatatoskCompanion? = null
 
     @Volatile
     private var registry: AccountRegistry? = null
@@ -24,6 +30,9 @@ object RatatoskCore : EventObserver {
     private var nativeError: Throwable? = null
 
     private var activeAccountIdHex: String? = null
+    private var isCompanionMode: Boolean = false
+
+    private val companionChatCache = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     // Session credentials stored ONLY in RAM
     private data class SessionCredentials(
@@ -41,6 +50,13 @@ object RatatoskCore : EventObserver {
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     val events = _events.asSharedFlow()
+
+    private val _companionEvents = MutableSharedFlow<FfiCompanionEvent>(
+        replay = 20,
+        extraBufferCapacity = 100,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val companionEvents = _companionEvents.asSharedFlow()
 
     @Throws(RatatoskException::class)
     fun initializeRegistry(context: Context): AccountRegistry {
@@ -60,14 +76,17 @@ object RatatoskCore : EventObserver {
             val accountIdHex = accountId.toHexString()
             android.util.Log.d("RatatoskCore", "Initialize called for account: $accountIdHex. Current client: ${if (client != null) "ACTIVE" else "NULL"}")
             
-            if (client != null && activeAccountIdHex == accountIdHex) {
+            if (client != null && activeAccountIdHex == accountIdHex && !isCompanionMode) {
                 android.util.Log.d("RatatoskCore", "Returning existing client for same account")
                 return client!!
             }
 
-            // Close existing client if switching accounts
+            // Close existing client/companion if switching
             client?.destroy()
             client = null
+            companion?.destroy()
+            companion = null
+            companionChatCache.clear()
             
             return try {
                 val reg = registry ?: throw IllegalStateException("Registry not initialized")
@@ -85,6 +104,7 @@ object RatatoskCore : EventObserver {
                 
                 client = newClient
                 activeAccountIdHex = accountIdHex
+                isCompanionMode = false
                 nativeError = null 
                 newClient
             } catch (t: Throwable) {
@@ -92,6 +112,46 @@ object RatatoskCore : EventObserver {
                 nativeError = t
                 throw t
             }
+        }
+    }
+
+    @Throws(RatatoskException::class)
+    fun initializeCompanion(inviteUri: String, port: UShort, peerAddr: String?, cachePath: String?, torDir: String?): RatatoskCompanion {
+        synchronized(this) {
+            android.util.Log.d("RatatoskCore", "InitializeCompanion called for: $inviteUri")
+            
+            client?.destroy()
+            client = null
+            companion?.destroy()
+            companion = null
+            companionChatCache.clear()
+            
+            var lastError: Throwable? = null
+            for (attempt in 1..5) {
+                try {
+                    val newCompanion = RatatoskCompanion.open(inviteUri, port, peerAddr, cachePath, torDir)
+                    newCompanion.setObserver(this)
+                    
+                    companion = newCompanion
+                    activeAccountIdHex = "companion:${inviteUri.hashCode()}"
+                    isCompanionMode = true
+                    nativeError = null
+                    return newCompanion
+                } catch (t: Throwable) {
+                    lastError = t
+                    val msg = t.message ?: ""
+                    if (msg.contains("Address already in use") || msg.contains("98")) {
+                        android.util.Log.w("RatatoskCore", "Port $port still busy after destroy (attempt $attempt), waiting...")
+                        Thread.sleep(200 * attempt.toLong()) // Exponential backoff
+                        continue
+                    }
+                    break
+                }
+            }
+            
+            android.util.Log.e("RatatoskCore", "Failed to initialize companion after retries", lastError)
+            nativeError = lastError
+            throw lastError ?: RuntimeException("Unknown initialization error")
         }
     }
 
@@ -113,13 +173,50 @@ object RatatoskCore : EventObserver {
         return reg.create(label)
     }
 
+    fun wipeAccount(accountId: ByteArray) {
+        synchronized(this) {
+            registry?.wipe(accountId)
+        }
+    }
+
+    @Throws(RatatoskException::class)
+    fun exportHistory(path: String, scope: org.ratatosk.core.FfiExportScope, phrase: String?): org.ratatosk.core.FfiExported {
+        return getClient().exportHistory(path, scope, phrase)
+    }
+
+    @Throws(RatatoskException::class)
+    fun peekArchive(path: String): org.ratatosk.core.FfiArchivePeek {
+        return org.ratatosk.core.peekArchive(path)
+    }
+
+    @Throws(RatatoskException::class)
+    fun importArchive(context: Context, archivePath: String, unlock: org.ratatosk.core.FfiArchiveUnlock, label: String): org.ratatosk.core.FfiImported {
+        val root = File(context.filesDir, "ratatosk_root")
+        
+        // Reverting to the simpler random-ID strategy that worked previously
+        val accountId = java.util.UUID.randomUUID().toString().replace("-", "").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        val idHex = accountId.toHexString()
+        val destination = File(root, "$idHex.db").absolutePath
+        val filesDir = File(root, idHex).absolutePath
+        
+        android.util.Log.d("RatatoskCore", "Restoring archive to $idHex.db")
+        val result = org.ratatosk.core.importArchive(archivePath, unlock, destination, filesDir)
+        
+        registry?.adopt(accountId, label)
+        android.util.Log.i("RatatoskCore", "Account restored and adopted with ID $idHex")
+        return result
+    }
     fun logout() {
         synchronized(this) {
             registry?.setForeground(null)
             client?.destroy()
             client = null
+            companion?.destroy()
+            companion = null
             activeAccountIdHex = null
             sessionCredentials = null
+            isCompanionMode = false
+            companionChatCache.clear()
         }
     }
 
@@ -145,13 +242,64 @@ object RatatoskCore : EventObserver {
         }
     }
 
+    override fun onEvent(`event`: FfiCompanionEvent) {
+        android.util.Log.i("RatatoskCore", "RECEIVING COMPANION EVENT: $`event`")
+        _companionEvents.tryEmit(`event`)
+        
+        when (`event`) {
+            is FfiCompanionEvent.Chats -> {
+                `event`.chats.forEach { chat ->
+                    companionChatCache[chat.chatId.toHexString()] = chat.title
+                }
+            }
+            is FfiCompanionEvent.Arrived -> {
+                _events.tryEmit(FfiEvent.MessageReceived(`event`.message.chatId, `event`.message.msgId))
+            }
+            is FfiCompanionEvent.Edited -> {
+                _events.tryEmit(FfiEvent.MessageEdited(`event`.message.chatId, `event`.message.msgId))
+            }
+            is FfiCompanionEvent.Reacted -> {
+                _events.tryEmit(FfiEvent.ReactionChanged(`event`.chatId, `event`.msgId, ByteArray(0)))
+            }
+            is FfiCompanionEvent.StatusChanged -> {
+                _events.tryEmit(FfiEvent.StatusChanged(`event`.msgId, `event`.status))
+            }
+            is FfiCompanionEvent.Gone -> {
+                _events.tryEmit(FfiEvent.MessagesDeleted(`event`.chatId, `event`.msgIds))
+            }
+            is FfiCompanionEvent.FileProgress -> {
+                _events.tryEmit(FfiEvent.FileProgress(`event`.fileId, `event`.haveChunks, `event`.chunkTotal))
+            }
+            is FfiCompanionEvent.ChatsChanged -> {
+                _events.tryEmit(FfiEvent.ContactChanged(ByteArray(0)))
+            }
+            is FfiCompanionEvent.Avatar -> {
+                // Signals that an avatar was received
+                _events.tryEmit(FfiEvent.AvatarChanged(event.chatId ?: ByteArray(0)))
+            }
+            else -> {}
+        }
+    }
+
     fun getClient(): RatatoskClient {
         val error = nativeError
         if (error != null) throw RuntimeException("Native core failed to load", error)
         return client ?: throw IllegalStateException("RatatoskCore not initialized")
     }
+
+    fun getCompanion(): RatatoskCompanion {
+        val error = nativeError
+        if (error != null) throw RuntimeException("Native core failed to load", error)
+        return companion ?: throw IllegalStateException("RatatoskCompanion not initialized")
+    }
     
-    fun isInitialized(): Boolean = client != null
+    fun isInitialized(): Boolean = client != null || companion != null
+
+    fun isCompanionMode(): Boolean = isCompanionMode
+
+    fun getCompanionChatTitle(chatId: ByteArray): String? {
+        return companionChatCache[chatId.toHexString()]
+    }
 
     fun getActiveAccountId(): String? = activeAccountIdHex
 

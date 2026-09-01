@@ -14,6 +14,15 @@ import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
+data class CompanionLink(
+    val label: String,
+    val inviteUri: String,
+    val port: Int,
+    val peerAddr: String?,
+    val cachePath: String?,
+    val torDir: String? = null
+)
+
 class SettingsRepository(private val context: Context) {
     private object Keys {
         val THEME_COLOR = longPreferencesKey("theme_color")
@@ -24,6 +33,63 @@ class SettingsRepository(private val context: Context) {
         val NOTIFICATIONS_SHOW_TEXT = booleanPreferencesKey("notifications_show_text")
         val DOWNLOAD_DIR_URI = stringPreferencesKey("download_dir_uri")
         val ACCOUNTS_MAP = stringPreferencesKey("accounts_map")
+        val COMPANION_LINKS = stringPreferencesKey("companion_links")
+        val LAST_ACCOUNT_ID = stringPreferencesKey("last_account_id")
+    }
+
+    val lastAccountId: Flow<String?> = context.dataStore.data.map { it[Keys.LAST_ACCOUNT_ID] }
+
+    suspend fun setLastAccountId(id: String?) {
+        context.dataStore.edit { preferences ->
+            if (id != null) preferences[Keys.LAST_ACCOUNT_ID] = id
+            else preferences.remove(Keys.LAST_ACCOUNT_ID)
+        }
+    }
+
+    val companionLinks: Flow<List<CompanionLink>> = context.dataStore.data.map { preferences ->
+        val raw = preferences[Keys.COMPANION_LINKS] ?: ""
+        if (raw.isEmpty()) emptyList()
+        else {
+            raw.split(";;").filter { it.isNotBlank() }.mapNotNull { entry ->
+                val parts = entry.split("|")
+                if (parts.size >= 5) {
+                    CompanionLink(
+                        label = parts[0],
+                        inviteUri = parts[1],
+                        port = parts[2].toIntOrNull() ?: 0,
+                        peerAddr = parts[3].takeIf { it != "null" },
+                        cachePath = parts[4].takeIf { it != "null" },
+                        torDir = parts.getOrNull(5)?.takeIf { it != "null" }
+                    )
+                } else null
+            }
+        }
+    }
+
+    suspend fun saveCompanionLink(link: CompanionLink) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[Keys.COMPANION_LINKS] ?: ""
+            val links = current.split(";;").filter { it.isNotBlank() }.toMutableList()
+            val entry = "${link.label}|${link.inviteUri}|${link.port}|${link.peerAddr ?: "null"}|${link.cachePath ?: "null"}|${link.torDir ?: "null"}"
+            
+            // Avoid duplicates by inviteUri
+            val index = links.indexOfFirst { it.contains("|${link.inviteUri}|") }
+            if (index != -1) {
+                links[index] = entry
+            } else {
+                links.add(entry)
+            }
+            preferences[Keys.COMPANION_LINKS] = links.joinToString(";;")
+        }
+    }
+
+    suspend fun removeCompanionLink(inviteUri: String) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[Keys.COMPANION_LINKS] ?: ""
+            val links = current.split(";;").filter { it.isNotBlank() }.toMutableList()
+            links.removeAll { it.contains("|${inviteUri}|") }
+            preferences[Keys.COMPANION_LINKS] = links.joinToString(";;")
+        }
     }
 
     val accountsMap: Flow<Map<String, String>> = context.dataStore.data.map { preferences ->

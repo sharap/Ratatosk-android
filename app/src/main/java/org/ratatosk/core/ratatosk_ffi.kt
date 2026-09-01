@@ -733,9 +733,15 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_forward_notice(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_group_join_notice(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_honest_notices(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_import_archive(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_lan_warning(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_leave_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_mail_file_limit_bytes(
     ): Int
@@ -749,6 +755,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_max_forward_ids(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_max_group_title_chars(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_max_local_name_chars(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_max_preview_bytes(
@@ -758,6 +766,10 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_func_max_text_bytes(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_no_pin_warning(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_owner_leave_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_peek_archive(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_quote_unavailable_notice(
     ): Int
@@ -817,6 +829,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_contacts(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_group(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_mail_account(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_decline_file(
@@ -829,9 +843,19 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_edit_message(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_evict_from_group(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_export_history(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fingerprint(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_forward_messages(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_groups(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_invite_to_group(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_leave_group(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mail_account(
     ): Int
@@ -840,6 +864,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mark_read(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mark_verified(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_merge_contacts(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_message(
     ): Int
@@ -905,6 +931,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_accept_file(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_avatar(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_cancel_save(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_cancel_send(
@@ -946,6 +974,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_send_reply(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_send_text(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_avatar(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_cache_path(
     ): Int
@@ -1051,6 +1081,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_contacts(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_group(`ptr`: Long,`title`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_mail_account(`ptr`: Long,`url`: RustBuffer.ByValue,`viaTor`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_decline_file(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1063,9 +1095,19 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_edit_message(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgId`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_evict_from_group(`ptr`: Long,`chatId`: RustBuffer.ByValue,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_export_history(`ptr`: Long,`path`: RustBuffer.ByValue,`scope`: RustBuffer.ByValue,`phrase`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_fingerprint(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_forward_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_groups(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_invite_to_group(`ptr`: Long,`chatId`: RustBuffer.ByValue,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_leave_group(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_mail_account(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1075,6 +1117,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_mark_verified(`ptr`: Long,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_merge_contacts(`ptr`: Long,`archive`: RustBuffer.ByValue,`unlock`: RustBuffer.ByValue,`scratchDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_message(`ptr`: Long,`msgId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
@@ -1147,9 +1191,11 @@ internal object UniffiLib {
     ): Long
     external fun uniffi_ratatosk_ffi_fn_free_ratatoskcompanion(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    external fun uniffi_ratatosk_ffi_fn_constructor_ratatoskcompanion_open(`inviteUri`: RustBuffer.ByValue,`port`: Short,`peerAddr`: RustBuffer.ByValue,`cachePath`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_ratatosk_ffi_fn_constructor_ratatoskcompanion_open(`inviteUri`: RustBuffer.ByValue,`port`: Short,`peerAddr`: RustBuffer.ByValue,`cachePath`: RustBuffer.ByValue,`torDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_accept_file(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_avatar(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_cancel_save(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1193,6 +1239,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_send_text(`ptr`: Long,`chatId`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_set_avatar(`ptr`: Long,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_set_cache_path(`ptr`: Long,`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_set_observer(`ptr`: Long,`observer`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1215,9 +1263,15 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_forward_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_group_join_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_honest_notices(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_import_archive(`archive`: RustBuffer.ByValue,`unlock`: RustBuffer.ByValue,`destination`: RustBuffer.ByValue,`filesDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_lan_warning(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_leave_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_mail_file_limit_bytes(uniffi_out_err: UniffiRustCallStatus, 
     ): Long
@@ -1231,6 +1285,8 @@ internal object UniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_fn_func_max_forward_ids(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
+    external fun uniffi_ratatosk_ffi_fn_func_max_group_title_chars(uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
     external fun uniffi_ratatosk_ffi_fn_func_max_local_name_chars(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     external fun uniffi_ratatosk_ffi_fn_func_max_preview_bytes(uniffi_out_err: UniffiRustCallStatus, 
@@ -1240,6 +1296,10 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_func_max_text_bytes(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     external fun uniffi_ratatosk_ffi_fn_func_no_pin_warning(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_owner_leave_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_peek_archive(`archive`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_quote_unavailable_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1392,13 +1452,22 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_forward_notice() != 40090) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_group_join_notice() != 55807) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_honest_notices() != 24405) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_import_archive() != 18200) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_lan_warning() != 33547) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_func_mail_file_limit_bytes() != 243) {
+    if (lib.uniffi_ratatosk_ffi_checksum_func_leave_notice() != 52936) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_mail_file_limit_bytes() != 51232) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_max_avatar_bytes() != 56374) {
@@ -1416,6 +1485,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_max_forward_ids() != 63449) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_max_group_title_chars() != 14737) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_max_local_name_chars() != 30310) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1429,6 +1501,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_no_pin_warning() != 45718) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_owner_leave_notice() != 58740) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_peek_archive() != 53342) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_quote_unavailable_notice() != 20199) {
@@ -1518,6 +1596,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_contacts() != 31413) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_group() != 15828) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_mail_account() != 44026) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1536,10 +1617,25 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_edit_message() != 1652) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_evict_from_group() != 9761) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_export_history() != 10325) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fingerprint() != 15731) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_forward_messages() != 50510) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_groups() != 30498) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_invite_to_group() != 16240) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_leave_group() != 19694) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mail_account() != 18859) {
@@ -1552,6 +1648,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_mark_verified() != 22163) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_merge_contacts() != 40927) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_message() != 18267) {
@@ -1650,6 +1749,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_accept_file() != 59625) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_avatar() != 3824) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_cancel_save() != 48002) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1713,6 +1815,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_send_text() != 56185) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_avatar() != 36625) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_cache_path() != 19860) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1728,7 +1833,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_constructor_ratatoskclient_open() != 30015) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_constructor_ratatoskcompanion_open() != 6697) {
+    if (lib.uniffi_ratatosk_ffi_checksum_constructor_ratatoskcompanion_open() != 4796) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -4030,6 +4135,22 @@ public interface RatatoskClientInterface {
     fun `contacts`(): List<FfiContact>
     
     /**
+     * Заводит группу (§11).
+     *
+     * Идентификатор придёт событием `GroupCreated` — и только им: у группы
+     * он случаен, из названия не выводится и человеку неизвестен.
+     *
+     * **Перед вызовом обязателен [`group_join_notice`]**: §11.5 требует
+     * сказать, что участники увидят адреса друг друга, именно при создании
+     * группы. Сказанное после — уже не предупреждение, и отменить это
+     * нельзя ничем.
+     *
+     * Название непустое и не длиннее [`max_group_title_chars`] символов.
+     * Оба отказа приходят как `CommandRefused` со словами.
+     */
+    fun `createGroup`(`title`: kotlin.String)
+    
+    /**
      * Просит chatmail-сервер завести **новый** ящик (§5.3).
      *
      * `url` — ссылка вида `https://chatmail.example/new`; такие же в ходу
@@ -4112,6 +4233,38 @@ public interface RatatoskClientInterface {
     fun `editMessage`(`chatId`: kotlin.ByteArray, `msgId`: kotlin.ByteArray, `text`: kotlin.String)
     
     /**
+     * Исключает из группы. Только создатель (§11.2).
+     *
+     * **Перед вызовом обязателен [`eviction_notice`]**: §11.4 требует сказать
+     * дословно, что исключённый сохранит доступ к прошлой переписке.
+     * Исключение социальное, а не криптографическое, и обещать обратное
+     * нельзя.
+     *
+     * Себя исключить нельзя: для этого есть [`RatatoskClient::leave_group`].
+     * Отказ приходит словами и называет нужную команду.
+     */
+    fun `evictFromGroup`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray)
+    
+    /**
+     * Вывозит переписку в зашифрованный архив (§12).
+     *
+     * **Единственный путь переноса истории на другое устройство в v1.**
+     * Ни синхронизации, ни облака нет; без архива переписка человека живёт
+     * ровно столько, сколько его телефон.
+     *
+     * `path` — куда положить файл. Существующий файл **не** перезаписывается:
+     * под ним может лежать единственная копия чьей-то переписки, и молчаливая
+     * перезапись стоила бы её.
+     *
+     * Ключ возвращается в [`FfiExported::key_text`], и показать его надо
+     * сразу: без него архив не открыть, а спросить его второй раз нельзя.
+     *
+     * Дорогая: переписывает базу и все вложения. Вызывать не из UI-потока
+     * и показывать человеку ожидание.
+     */
+    fun `exportHistory`(`path`: kotlin.String, `scope`: FfiExportScope, `phrase`: kotlin.String?): FfiExported
+    
+    /**
      * Отпечаток собственной идентичности (§3).
      */
     fun `fingerprint`(): kotlin.String
@@ -4130,6 +4283,47 @@ public interface RatatoskClientInterface {
      * пересланное — отдельный кадр.
      */
     fun `forwardMessages`(`chatId`: kotlin.ByteArray, `msgIds`: List<kotlin.ByteArray>)
+    
+    /**
+     * Группы, в которых мы состоим (§11).
+     *
+     * Отдельным списком, а не вперемешку с контактами: у группы нет ни
+     * отпечатка, ни сверки, ни адресов, и половина полей `FfiContact`
+     * у неё была бы пустой. Список чатов клиент собирает из двух списков —
+     * это честнее, чем один список с необязательными полями.
+     */
+    fun `groups`(): List<FfiGroup>
+    
+    /**
+     * Приглашает в группу (§11.2, §11.5).
+     *
+     * Приглашать может любой участник. Приглашаемый обязан быть **контактом**:
+     * без карточки ему нечем отправить даже рукопожатие.
+     *
+     * Отсюда уезжает больше кадров, чем от любой другой команды: новичку
+     * отдают состав, карточки всех участников и их ключи отправителей.
+     * Ждать этого не нужно — состав у него соберётся сам, и о нём придёт
+     * `GroupMembershipChanged`.
+     */
+    fun `inviteToGroup`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray)
+    
+    /**
+     * Выходит из группы.
+     *
+     * **Дополнение к спецификации:** §11.2 знает только «создатель
+     * исключает». Отдельная команда, а не исключение себя: у исключения
+     * правило «только создатель», у выхода правила нет вовсе.
+     *
+     * **Перед вызовом обязателен [`leave_notice`]** — а если выходит
+     * создатель, то и [`owner_leave_notice`]. Причина та же, что
+     * у исключения: §14 требует сказать вслух то, чего протокол
+     * не отменяет. Переписка останется, новых сообщений не будет,
+     * а после ухода создателя исключать не сможет никто.
+     *
+     * Вернуть вышедшего может **любой** участник: приглашение в §11.2
+     * не привилегия создателя.
+     */
+    fun `leaveGroup`(`chatId`: kotlin.ByteArray)
     
     /**
      * Настройки почтового ящика, если он заведён (§5.3).
@@ -4179,6 +4373,34 @@ public interface RatatoskClientInterface {
      * Подтверждает сверку отпечатка голосом (§4.2).
      */
     fun `markVerified`(`peerIk`: kotlin.ByteArray)
+    
+    /**
+     * Добавляет к своим знакомствам те, что лежат в архиве (§12).
+     *
+     * **Не восстановление, и путать их нельзя.** `import_archive` делает
+     * архив аккаунтом целиком и требует чистого места; здесь личность
+     * остаётся своя, переписка своя, а из архива берутся только контакты.
+     * Поэтому это метод открытого клиента, а не свободная функция.
+     *
+     * Что человеку стоит сказать про исход:
+     *
+     * * `own_graph = false` — список чужой, и **никто в нём не сверен**
+     * (§4.2: поручительство друга сверкой голосом не является).
+     * Локальные имена из чужого списка тоже не переносятся.
+     * * `known` — сколько уже было. Эти не тронуты ни в одном поле:
+     * ни адреса, ни версия карточки, ни сверка. Без этой строки слияние
+     * ста контактов, из которых девяносто известны, выглядит поломкой.
+     * * `refused` — сколько записей оказались негодными. Ноль — обычное
+     * дело; не ноль — повод посмотреть, откуда взялся архив.
+     *
+     * `scratch_dir` — каталог для черновика, приватный каталог приложения.
+     * Общий временный не годится: черновик — расшифрованная копия чужой базы.
+     *
+     * # Errors
+     *
+     * Файла нет, это не архив, он оборван, ключ или фраза не те.
+     */
+    fun `mergeContacts`(`archive`: kotlin.String, `unlock`: FfiArchiveUnlock, `scratchDir`: kotlin.String): FfiMerged
     
     /**
      * Одно сообщение по идентификатору.
@@ -4926,6 +5148,34 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Заводит группу (§11).
+     *
+     * Идентификатор придёт событием `GroupCreated` — и только им: у группы
+     * он случаен, из названия не выводится и человеку неизвестен.
+     *
+     * **Перед вызовом обязателен [`group_join_notice`]**: §11.5 требует
+     * сказать, что участники увидят адреса друг друга, именно при создании
+     * группы. Сказанное после — уже не предупреждение, и отменить это
+     * нельзя ничем.
+     *
+     * Название непустое и не длиннее [`max_group_title_chars`] символов.
+     * Оба отказа приходят как `CommandRefused` со словами.
+     */
+    @Throws(RatatoskException::class)override fun `createGroup`(`title`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_group(
+        it,
+        
+        FfiConverterString.lower(`title`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Просит chatmail-сервер завести **новый** ящик (§5.3).
      *
      * `url` — ссылка вида `https://chatmail.example/new`; такие же в ходу
@@ -5085,6 +5335,66 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Исключает из группы. Только создатель (§11.2).
+     *
+     * **Перед вызовом обязателен [`eviction_notice`]**: §11.4 требует сказать
+     * дословно, что исключённый сохранит доступ к прошлой переписке.
+     * Исключение социальное, а не криптографическое, и обещать обратное
+     * нельзя.
+     *
+     * Себя исключить нельзя: для этого есть [`RatatoskClient::leave_group`].
+     * Отказ приходит словами и называет нужную команду.
+     */
+    @Throws(RatatoskException::class)override fun `evictFromGroup`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_evict_from_group(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterByteArray.lower(`peerIk`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Вывозит переписку в зашифрованный архив (§12).
+     *
+     * **Единственный путь переноса истории на другое устройство в v1.**
+     * Ни синхронизации, ни облака нет; без архива переписка человека живёт
+     * ровно столько, сколько его телефон.
+     *
+     * `path` — куда положить файл. Существующий файл **не** перезаписывается:
+     * под ним может лежать единственная копия чьей-то переписки, и молчаливая
+     * перезапись стоила бы её.
+     *
+     * Ключ возвращается в [`FfiExported::key_text`], и показать его надо
+     * сразу: без него архив не открыть, а спросить его второй раз нельзя.
+     *
+     * Дорогая: переписывает базу и все вложения. Вызывать не из UI-потока
+     * и показывать человеку ожидание.
+     */
+    @Throws(RatatoskException::class)override fun `exportHistory`(`path`: kotlin.String, `scope`: FfiExportScope, `phrase`: kotlin.String?): FfiExported {
+            return FfiConverterTypeFfiExported.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_export_history(
+        it,
+        
+        FfiConverterString.lower(`path`),
+        FfiConverterTypeFfiExportScope.lower(`scope`),
+        FfiConverterOptionalString.lower(`phrase`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Отпечаток собственной идентичности (§3).
      */override fun `fingerprint`(): kotlin.String {
             return FfiConverterString.lift(
@@ -5122,6 +5432,84 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         
         FfiConverterByteArray.lower(`chatId`),
         FfiConverterSequenceByteArray.lower(`msgIds`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Группы, в которых мы состоим (§11).
+     *
+     * Отдельным списком, а не вперемешку с контактами: у группы нет ни
+     * отпечатка, ни сверки, ни адресов, и половина полей `FfiContact`
+     * у неё была бы пустой. Список чатов клиент собирает из двух списков —
+     * это честнее, чем один список с необязательными полями.
+     */
+    @Throws(RatatoskException::class)override fun `groups`(): List<FfiGroup> {
+            return FfiConverterSequenceTypeFfiGroup.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_groups(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Приглашает в группу (§11.2, §11.5).
+     *
+     * Приглашать может любой участник. Приглашаемый обязан быть **контактом**:
+     * без карточки ему нечем отправить даже рукопожатие.
+     *
+     * Отсюда уезжает больше кадров, чем от любой другой команды: новичку
+     * отдают состав, карточки всех участников и их ключи отправителей.
+     * Ждать этого не нужно — состав у него соберётся сам, и о нём придёт
+     * `GroupMembershipChanged`.
+     */
+    @Throws(RatatoskException::class)override fun `inviteToGroup`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_invite_to_group(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterByteArray.lower(`peerIk`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Выходит из группы.
+     *
+     * **Дополнение к спецификации:** §11.2 знает только «создатель
+     * исключает». Отдельная команда, а не исключение себя: у исключения
+     * правило «только создатель», у выхода правила нет вовсе.
+     *
+     * **Перед вызовом обязателен [`leave_notice`]** — а если выходит
+     * создатель, то и [`owner_leave_notice`]. Причина та же, что
+     * у исключения: §14 требует сказать вслух то, чего протокол
+     * не отменяет. Переписка останется, новых сообщений не будет,
+     * а после ухода создателя исключать не сможет никто.
+     *
+     * Вернуть вышедшего может **любой** участник: приглашение в §11.2
+     * не привилегия создателя.
+     */
+    @Throws(RatatoskException::class)override fun `leaveGroup`(`chatId`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_leave_group(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
 }
     }
     
@@ -5223,6 +5611,49 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 }
     }
     
+    
+
+    
+    /**
+     * Добавляет к своим знакомствам те, что лежат в архиве (§12).
+     *
+     * **Не восстановление, и путать их нельзя.** `import_archive` делает
+     * архив аккаунтом целиком и требует чистого места; здесь личность
+     * остаётся своя, переписка своя, а из архива берутся только контакты.
+     * Поэтому это метод открытого клиента, а не свободная функция.
+     *
+     * Что человеку стоит сказать про исход:
+     *
+     * * `own_graph = false` — список чужой, и **никто в нём не сверен**
+     * (§4.2: поручительство друга сверкой голосом не является).
+     * Локальные имена из чужого списка тоже не переносятся.
+     * * `known` — сколько уже было. Эти не тронуты ни в одном поле:
+     * ни адреса, ни версия карточки, ни сверка. Без этой строки слияние
+     * ста контактов, из которых девяносто известны, выглядит поломкой.
+     * * `refused` — сколько записей оказались негодными. Ноль — обычное
+     * дело; не ноль — повод посмотреть, откуда взялся архив.
+     *
+     * `scratch_dir` — каталог для черновика, приватный каталог приложения.
+     * Общий временный не годится: черновик — расшифрованная копия чужой базы.
+     *
+     * # Errors
+     *
+     * Файла нет, это не архив, он оборван, ключ или фраза не те.
+     */
+    @Throws(RatatoskException::class)override fun `mergeContacts`(`archive`: kotlin.String, `unlock`: FfiArchiveUnlock, `scratchDir`: kotlin.String): FfiMerged {
+            return FfiConverterTypeFfiMerged.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_merge_contacts(
+        it,
+        
+        FfiConverterString.lower(`archive`),
+        FfiConverterTypeFfiArchiveUnlock.lower(`unlock`),
+        FfiConverterString.lower(`scratchDir`),_status)
+}
+    }
+    )
+    }
     
 
     
@@ -6218,6 +6649,25 @@ public interface RatatoskCompanionInterface {
     fun `acceptFile`(`fileId`: kotlin.ByteArray)
     
     /**
+     * Спрашивает аватарку — контакта или свою.
+     *
+     * `chat_id = None` — своя. Ответ приедет событием
+     * [`FfiCompanionEvent::Avatar`], байтами, и мера у этого та же, что
+     * у превью: лицо не больше 32 КиБ.
+     *
+     * **Звать стоит по метке, а не на каждый показ списка.**
+     * [`FfiCompanionChat::avatar_ms`] говорит, изменилось ли лицо
+     * с прошлого раза; спросив без этой проверки, окно возит по сети
+     * тридцать два килобайта на контакт при каждом обновлении списка.
+     * Свою — раз за подключение: метки для сравнения у неё нет.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    fun `avatar`(`chatId`: kotlin.ByteArray?)
+    
+    /**
      * Прекращает начатое сохранение и убирает недописанный файл.
      *
      * Обрывок стирается всегда, и это не уборка ради чистоты: недокачанный
@@ -6491,6 +6941,28 @@ public interface RatatoskCompanionInterface {
     fun `sendText`(`chatId`: kotlin.ByteArray, `text`: kotlin.String)
     
     /**
+     * Ставит или снимает **свою** аватарку (§4.2).
+     *
+     * `None` — снять. Байты готовит клиент, как и превью: масштабирование
+     * и перекодирование — работа платформенного декодера, а не ядра,
+     * которое держит ключи. Предел — `max_avatar_bytes()`; картинку больше
+     * провод отвергнет, а негодный формат вернётся `Refused` со словами.
+     *
+     * **Чужую аватарку поменять нельзя ни отсюда, ни откуда-либо ещё.**
+     * Лицо контакта приходит от него самого по установленной сессии.
+     *
+     * Разошлёт её сверенным контактам телефон — рассылка отсюда невозможна
+     * в принципе: сессии с контактами есть только у него (§13.4). Ответ
+     * приедет событием [`FfiCompanionEvent::AvatarChanged`] с `chat_id:
+     * None`; его получат **все** сопряжённые десктопы, включая этот.
+     *
+     * # Errors
+     *
+     * Остановленный компаньон.
+     */
+    fun `setAvatar`(`bytes`: kotlin.ByteArray?)
+    
+    /**
      * Включает или выключает снимок переписки на диске.
      *
      * `None` **стирает** уже лежащий файл, а не перестаёт его обновлять:
@@ -6661,6 +7133,37 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
         it,
         
         FfiConverterByteArray.lower(`fileId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Спрашивает аватарку — контакта или свою.
+     *
+     * `chat_id = None` — своя. Ответ приедет событием
+     * [`FfiCompanionEvent::Avatar`], байтами, и мера у этого та же, что
+     * у превью: лицо не больше 32 КиБ.
+     *
+     * **Звать стоит по метке, а не на каждый показ списка.**
+     * [`FfiCompanionChat::avatar_ms`] говорит, изменилось ли лицо
+     * с прошлого раза; спросив без этой проверки, окно возит по сети
+     * тридцать два килобайта на контакт при каждом обновлении списка.
+     * Свою — раз за подключение: метки для сравнения у неё нет.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    @Throws(RatatoskException::class)override fun `avatar`(`chatId`: kotlin.ByteArray?)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_avatar(
+        it,
+        
+        FfiConverterOptionalByteArray.lower(`chatId`),_status)
 }
     }
     
@@ -7201,6 +7704,40 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
 
     
     /**
+     * Ставит или снимает **свою** аватарку (§4.2).
+     *
+     * `None` — снять. Байты готовит клиент, как и превью: масштабирование
+     * и перекодирование — работа платформенного декодера, а не ядра,
+     * которое держит ключи. Предел — `max_avatar_bytes()`; картинку больше
+     * провод отвергнет, а негодный формат вернётся `Refused` со словами.
+     *
+     * **Чужую аватарку поменять нельзя ни отсюда, ни откуда-либо ещё.**
+     * Лицо контакта приходит от него самого по установленной сессии.
+     *
+     * Разошлёт её сверенным контактам телефон — рассылка отсюда невозможна
+     * в принципе: сессии с контактами есть только у него (§13.4). Ответ
+     * приедет событием [`FfiCompanionEvent::AvatarChanged`] с `chat_id:
+     * None`; его получат **все** сопряжённые десктопы, включая этот.
+     *
+     * # Errors
+     *
+     * Остановленный компаньон.
+     */
+    @Throws(RatatoskException::class)override fun `setAvatar`(`bytes`: kotlin.ByteArray?)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_set_avatar(
+        it,
+        
+        FfiConverterOptionalByteArray.lower(`bytes`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Включает или выключает снимок переписки на диске.
      *
      * `None` **стирает** уже лежащий файл, а не перестаёт его обновлять:
@@ -7296,6 +7833,22 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
      * который лежит рядом, значит защита работает против скопированного
      * файла и бэкапа, но не против забранной машины.
      *
+     * `tor_dir` — каталог состояния своего onion-сервиса. `None` — сервис
+     * не поднимать, и это умолчание: **вне общей сети терминал тогда
+     * не работает вовсе**, а в общей сети onion не нужен. Задав его,
+     * скажите человеку, что первый подъём идёт десятки секунд и что до него
+     * телефон дотянется только по локальной сети.
+     *
+     * Каталог обязателен, а не временный: адрес выводится из секрета
+     * сопряжения и потому постоянен, но arti держит там состояние сети
+     * и ключи, и одноразовый каталог означал бы полный bootstrap на каждый
+     * запуск. Класть его надо туда же, куда кладут кэш, — и защищать
+     * так же.
+     *
+     * Без признака сборки `tor` живого arti в двоичном файле нет, и параметр
+     * не делает ничего: сервис не поднимется, а `reachable_anywhere`
+     * у сопряжения останется ложью.
+     *
      * Возврат **не** означает, что телефон ответил: рукопожатие идёт своим
      * чередом и повторяется по таймеру. Ждать надо
      * [`FfiCompanionEvent::Linked`].
@@ -7304,7 +7857,7 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
      *
      * Негодная ссылка, занятый порт, невозможность поднять поток.
      */
-    @Throws(RatatoskException::class) fun `open`(`inviteUri`: kotlin.String, `port`: kotlin.UShort, `peerAddr`: kotlin.String?, `cachePath`: kotlin.String?): RatatoskCompanion {
+    @Throws(RatatoskException::class) fun `open`(`inviteUri`: kotlin.String, `port`: kotlin.UShort, `peerAddr`: kotlin.String?, `cachePath`: kotlin.String?, `torDir`: kotlin.String?): RatatoskCompanion {
             return FfiConverterTypeRatatoskCompanion.lift(
     uniffiRustCallWithError(RatatoskException) { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_constructor_ratatoskcompanion_open(
@@ -7313,7 +7866,8 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
         FfiConverterString.lower(`inviteUri`),
         FfiConverterUShort.lower(`port`),
         FfiConverterOptionalString.lower(`peerAddr`),
-        FfiConverterOptionalString.lower(`cachePath`),_status)
+        FfiConverterOptionalString.lower(`cachePath`),
+        FfiConverterOptionalString.lower(`torDir`),_status)
 }
     )
     }
@@ -7493,6 +8047,53 @@ public object FfiConverterTypeFfiAnomalies: FfiConverterRustBuffer<FfiAnomalies>
 
 
 /**
+ * Что за архив лежит по этому пути (§12).
+ */
+data class FfiArchivePeek (
+    /**
+     * Что вывезено.
+     */
+    val `scope`: FfiExportScope
+    , 
+    /**
+     * Открывается ли фразой. `false` — спрашивать надо ключ.
+     */
+    val `takesPassphrase`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiArchivePeek: FfiConverterRustBuffer<FfiArchivePeek> {
+    override fun read(buf: ByteBuffer): FfiArchivePeek {
+        return FfiArchivePeek(
+            FfiConverterTypeFfiExportScope.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiArchivePeek) = (
+            FfiConverterTypeFfiExportScope.allocationSize(value.`scope`) +
+            FfiConverterBoolean.allocationSize(value.`takesPassphrase`)
+    )
+
+    override fun write(value: FfiArchivePeek, buf: ByteBuffer) {
+            FfiConverterTypeFfiExportScope.write(value.`scope`, buf)
+            FfiConverterBoolean.write(value.`takesPassphrase`, buf)
+    }
+}
+
+
+
+/**
  * Вложение в сообщении, показанном на десктопе.
  *
  * Байтов здесь нет и быть не может: страница возит сотню сообщений.
@@ -7631,6 +8232,47 @@ data class FfiCompanionChat (
      * Когда оно было, мс.
      */
     val `lastMs`: kotlin.ULong
+    , 
+    /**
+     * Группа это или человек (§11).
+     *
+     * **Вывести это из остальных полей нельзя.** У группы `verified`
+     * всегда `false` и `avatar_ms` всегда `0` — ровно тот же набор,
+     * что у несверенного контакта без картинки. Без этого признака
+     * десктоп сказал бы про группу «не сверен», а это утверждение
+     * не про «сверьте при встрече»: оно означает «здесь есть отпечаток,
+     * и вы его не сверили». У группы отпечатка нет и быть не может —
+     * §11 не даёт ей идентичности, которую сверяют.
+     */
+    val `isGroup`: kotlin.Boolean
+    , 
+    /**
+     * Состоим ли мы в этом чате сейчас (§11).
+     *
+     * **У разговора с человеком всегда `true`**: из переписки с ним
+     * не выходят — её удаляют, и тогда чата в списке нет вовсе.
+     *
+     * `false` означает «показывать переписку **без поля ввода**».
+     * Два случая — вышли сами и исключили — читаются одинаково,
+     * и различать их незачем: делать в обоих нечего одно и то же.
+     * Без этого признака десктоп предлагал бы писать туда, где телефон
+     * откажет, и человек увидел бы ошибку вместо серой строки.
+     */
+    val `joined`: kotlin.Boolean
+    , 
+    /**
+     * Метка аватарки; `0` — показывать нечего.
+     *
+     * **Не байты, а число**, и не для показа: список чатов приезжает
+     * целиком и часто, а лицо весит до 32 КиБ. Клиент сравнивает метку
+     * с той, при которой он забирал картинку в прошлый раз, и зовёт
+     * `avatar` только для разошедшихся.
+     *
+     * Ноль означает «показывать нечего» и покрывает два случая сразу:
+     * аватарки нет и контакт не сверен (§4.2). Различить их клиент
+     * не может намеренно — рисовать в обоих надо заглушку.
+     */
+    val `avatarMs`: kotlin.ULong
     
 ){
     
@@ -7652,6 +8294,9 @@ public object FfiConverterTypeFfiCompanionChat: FfiConverterRustBuffer<FfiCompan
             FfiConverterBoolean.read(buf),
             FfiConverterString.read(buf),
             FfiConverterULong.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterULong.read(buf),
         )
     }
 
@@ -7660,7 +8305,10 @@ public object FfiConverterTypeFfiCompanionChat: FfiConverterRustBuffer<FfiCompan
             FfiConverterString.allocationSize(value.`title`) +
             FfiConverterBoolean.allocationSize(value.`verified`) +
             FfiConverterString.allocationSize(value.`lastText`) +
-            FfiConverterULong.allocationSize(value.`lastMs`)
+            FfiConverterULong.allocationSize(value.`lastMs`) +
+            FfiConverterBoolean.allocationSize(value.`isGroup`) +
+            FfiConverterBoolean.allocationSize(value.`joined`) +
+            FfiConverterULong.allocationSize(value.`avatarMs`)
     )
 
     override fun write(value: FfiCompanionChat, buf: ByteBuffer) {
@@ -7669,6 +8317,9 @@ public object FfiConverterTypeFfiCompanionChat: FfiConverterRustBuffer<FfiCompan
             FfiConverterBoolean.write(value.`verified`, buf)
             FfiConverterString.write(value.`lastText`, buf)
             FfiConverterULong.write(value.`lastMs`, buf)
+            FfiConverterBoolean.write(value.`isGroup`, buf)
+            FfiConverterBoolean.write(value.`joined`, buf)
+            FfiConverterULong.write(value.`avatarMs`, buf)
     }
 }
 
@@ -8099,6 +8750,93 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
 
 
 /**
+ * Что уехало в вывезенный архив переписки (§12).
+ *
+ * **Ключ показать обязательно и обязательно сразу.** Он здесь не для
+ * журнала: без него архив не открывается нигде, а второй раз этот же
+ * архив не спросишь. Клиент, который положит его в лог и не покажет
+ * человеку, отдаст ему файл, который никогда не откроется.
+ *
+ * Строкой, а не байтами: ключ выходит наружу ровно затем, чтобы его
+ * переписали с экрана, и вид этой строки — часть решения §12.
+ */
+data class FfiExported (
+    /**
+     * Куда лёг архив.
+     */
+    val `path`: kotlin.String
+    , 
+    /**
+     * Ключ для показа человеку: base32 группами по четыре.
+     *
+     * Отдаётся **всегда**, в том числе когда архив заперт фразой: это
+     * второй вход, и место ему — в менеджере паролей.
+     */
+    val `keyText`: kotlin.String
+    , 
+    /**
+     * Заперт ли архив фразой.
+     *
+     * От этого зависит, **что** показывать. С фразой ключ — запасной вход
+     * «на всякий случай», и человек вправе его не записывать. Без фразы
+     * ключ единственный: потерять его значит потерять архив, и строка
+     * на экране обязана звучать иначе.
+     */
+    val `lockedByPhrase`: kotlin.Boolean
+    , 
+    /**
+     * Сколько вложений уехало вместе с базой.
+     */
+    val `files`: kotlin.ULong
+    , 
+    /**
+     * Сколько байт в архиве.
+     */
+    val `bytes`: kotlin.ULong
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiExported: FfiConverterRustBuffer<FfiExported> {
+    override fun read(buf: ByteBuffer): FfiExported {
+        return FfiExported(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiExported) = (
+            FfiConverterString.allocationSize(value.`path`) +
+            FfiConverterString.allocationSize(value.`keyText`) +
+            FfiConverterBoolean.allocationSize(value.`lockedByPhrase`) +
+            FfiConverterULong.allocationSize(value.`files`) +
+            FfiConverterULong.allocationSize(value.`bytes`)
+    )
+
+    override fun write(value: FfiExported, buf: ByteBuffer) {
+            FfiConverterString.write(value.`path`, buf)
+            FfiConverterString.write(value.`keyText`, buf)
+            FfiConverterBoolean.write(value.`lockedByPhrase`, buf)
+            FfiConverterULong.write(value.`files`, buf)
+            FfiConverterULong.write(value.`bytes`, buf)
+    }
+}
+
+
+
+/**
  * Вложение в том виде, в каком его показывает UI.
  *
  * Байтов здесь нет: файл может весить гигабайты, а список чата рисуется
@@ -8203,6 +8941,200 @@ public object FfiConverterTypeFfiFile: FfiConverterRustBuffer<FfiFile> {
             FfiConverterULong.write(value.`receivedChunks`, buf)
             FfiConverterULong.write(value.`chunkTotal`, buf)
             FfiConverterBoolean.write(value.`hasPreview`, buf)
+    }
+}
+
+
+
+/**
+ * Что клиент знает о группе (§11).
+ *
+ * Плоская, как и всё на этой границе: `Group` — тип протокольного слоя,
+ * и отдавать его наружу значило бы пустить решения о составе выше
+ * границы §13.3. Наружу едет то, что рисуют.
+ */
+data class FfiGroup (
+    /**
+     * Идентификатор чата — им адресуются команды.
+     */
+    val `chatId`: kotlin.ByteArray
+    , 
+    /**
+     * Название.
+     *
+     * **Своё**, а не общее: рассылки переименований v1 не описывает,
+     * и у другого участника оно может быть иным. Обещать в UI
+     * «переименовать группу» до того, как это станет правдой, нельзя.
+     */
+    val `title`: kotlin.String
+    , 
+    /**
+     * Когда заведена, мс.
+     */
+    val `createdMs`: kotlin.ULong
+    , 
+    /**
+     * Состав — публичные `IK` участников, включая себя.
+     *
+     * Карточки к ним ищутся в списке контактов: участники, узнанные
+     * при вступлении, заводятся **несверенными** (§4.2), и UI обязан
+     * показывать их так же, как всякий несверенный контакт.
+     */
+    val `members`: List<kotlin.ByteArray>
+    , 
+    /**
+     * Создатель ли мы.
+     *
+     * **Выходом не снимается**: создатель, ушедший из группы, остаётся
+     * её создателем и, вернувшись, снова сможет исключать. Поэтому
+     * «показывать ли исключить» — это `mine && joined`, а не `mine`.
+     * Считается ядром, а не клиентом по сравнению ключей: правило одно
+     * и живёт в одном месте (§13.3).
+     */
+    val `mine`: kotlin.Boolean
+    , 
+    /**
+     * Состоим ли мы в группе сейчас.
+     *
+     * **Единственный честный признак того, что чат ещё наш.** Вывести
+     * его из [`FfiGroup::members`] поиском своего ключа клиент, конечно,
+     * может — но это ровно то знание о протоколе, которое §13.3 держит
+     * ниже границы, и первая же сборка, забывшая про выход, показала бы
+     * поле ввода там, где писать нельзя.
+     *
+     * `false` покрывает два случая, и различать их клиенту незачем:
+     * мы вышли сами и нас исключили. Показывать надо одно и то же —
+     * переписку без поля ввода. Что делать дальше, тоже одно: позвать
+     * обратно вправе любой участник, и попросить об этом можно только
+     * вне протокола.
+     *
+     * Переписка при этом остаётся, и группа остаётся в списке чатов:
+     * уход из разговора не стирает сказанное.
+     */
+    val `joined`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiGroup: FfiConverterRustBuffer<FfiGroup> {
+    override fun read(buf: ByteBuffer): FfiGroup {
+        return FfiGroup(
+            FfiConverterByteArray.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterSequenceByteArray.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiGroup) = (
+            FfiConverterByteArray.allocationSize(value.`chatId`) +
+            FfiConverterString.allocationSize(value.`title`) +
+            FfiConverterULong.allocationSize(value.`createdMs`) +
+            FfiConverterSequenceByteArray.allocationSize(value.`members`) +
+            FfiConverterBoolean.allocationSize(value.`mine`) +
+            FfiConverterBoolean.allocationSize(value.`joined`)
+    )
+
+    override fun write(value: FfiGroup, buf: ByteBuffer) {
+            FfiConverterByteArray.write(value.`chatId`, buf)
+            FfiConverterString.write(value.`title`, buf)
+            FfiConverterULong.write(value.`createdMs`, buf)
+            FfiConverterSequenceByteArray.write(value.`members`, buf)
+            FfiConverterBoolean.write(value.`mine`, buf)
+            FfiConverterBoolean.write(value.`joined`, buf)
+    }
+}
+
+
+
+/**
+ * Что приехало из архива — для показа человеку (§12).
+ */
+data class FfiImported (
+    /**
+     * Что было вывезено: `Everything`, `WithoutAttachments`, `SocialGraph`.
+     */
+    val `scope`: FfiExportScope
+    , 
+    /**
+     * Сколько знакомств приехало.
+     */
+    val `contacts`: kotlin.ULong
+    , 
+    /**
+     * Сколько сообщений.
+     */
+    val `messages`: kotlin.ULong
+    , 
+    /**
+     * Сколько записей о вложениях.
+     */
+    val `files`: kotlin.ULong
+    , 
+    /**
+     * Сколько вложений доехало **целиком** — байтами, а не записью.
+     *
+     * Разница с `files` — это то, о чём человеку стоит сказать: вложения,
+     * чьи байты остались на прежнем устройстве, показываются неполученными.
+     */
+    val `wholeFiles`: kotlin.ULong
+    , 
+    /**
+     * Сколько байт вложений легло на диск.
+     */
+    val `bytes`: kotlin.ULong
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiImported: FfiConverterRustBuffer<FfiImported> {
+    override fun read(buf: ByteBuffer): FfiImported {
+        return FfiImported(
+            FfiConverterTypeFfiExportScope.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiImported) = (
+            FfiConverterTypeFfiExportScope.allocationSize(value.`scope`) +
+            FfiConverterULong.allocationSize(value.`contacts`) +
+            FfiConverterULong.allocationSize(value.`messages`) +
+            FfiConverterULong.allocationSize(value.`files`) +
+            FfiConverterULong.allocationSize(value.`wholeFiles`) +
+            FfiConverterULong.allocationSize(value.`bytes`)
+    )
+
+    override fun write(value: FfiImported, buf: ByteBuffer) {
+            FfiConverterTypeFfiExportScope.write(value.`scope`, buf)
+            FfiConverterULong.write(value.`contacts`, buf)
+            FfiConverterULong.write(value.`messages`, buf)
+            FfiConverterULong.write(value.`files`, buf)
+            FfiConverterULong.write(value.`wholeFiles`, buf)
+            FfiConverterULong.write(value.`bytes`, buf)
     }
 }
 
@@ -8420,6 +9352,71 @@ public object FfiConverterTypeFfiMailStatus: FfiConverterRustBuffer<FfiMailStatu
             FfiConverterOptionalULong.write(value.`mailboxLimitBytes`, buf)
             FfiConverterBoolean.write(value.`mailboxCrowded`, buf)
             FfiConverterBoolean.write(value.`carriesFiles`, buf)
+    }
+}
+
+
+
+/**
+ * Что дало слияние знакомств (§12).
+ */
+data class FfiMerged (
+    /**
+     * Вывезен ли архив этой же личностью.
+     *
+     * `false` — список чужой, и никто в нём не сверен.
+     */
+    val `ownGraph`: kotlin.Boolean
+    , 
+    /**
+     * Сколько знакомств добавлено.
+     */
+    val `added`: kotlin.ULong
+    , 
+    /**
+     * Сколько уже было — **не тронуты** ни в одном поле.
+     */
+    val `known`: kotlin.ULong
+    , 
+    /**
+     * Сколько записей отвергнуто как негодные.
+     */
+    val `refused`: kotlin.ULong
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiMerged: FfiConverterRustBuffer<FfiMerged> {
+    override fun read(buf: ByteBuffer): FfiMerged {
+        return FfiMerged(
+            FfiConverterBoolean.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiMerged) = (
+            FfiConverterBoolean.allocationSize(value.`ownGraph`) +
+            FfiConverterULong.allocationSize(value.`added`) +
+            FfiConverterULong.allocationSize(value.`known`) +
+            FfiConverterULong.allocationSize(value.`refused`)
+    )
+
+    override fun write(value: FfiMerged, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`ownGraph`, buf)
+            FfiConverterULong.write(value.`added`, buf)
+            FfiConverterULong.write(value.`known`, buf)
+            FfiConverterULong.write(value.`refused`, buf)
     }
 }
 
@@ -8727,6 +9724,18 @@ data class FfiPairedDevice (
      * Пора ли десктопу стереть кэш — тридцать суток без связи (§13.4).
      */
     val `cacheExpired`: kotlin.Boolean
+    , 
+    /**
+     * Дотянется ли до этого устройства телефон вне общей сети (§13.4).
+     *
+     * **Признак, а не адрес.** Ложь значит «только дома» — законное
+     * и самое частое состояние, и показывать его надо как состояние,
+     * а не как поломку: «работает, когда телефон и ноутбук в одной сети».
+     *
+     * Иначе человек, открывший ноутбук в другом городе, видит вечное
+     * «подключаемся» и не знает, ждать ему или нет (§14).
+     */
+    val `reachableAnywhere`: kotlin.Boolean
     
 ){
     
@@ -8749,6 +9758,7 @@ public object FfiConverterTypeFfiPairedDevice: FfiConverterRustBuffer<FfiPairedD
             FfiConverterULong.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
         )
     }
 
@@ -8758,7 +9768,8 @@ public object FfiConverterTypeFfiPairedDevice: FfiConverterRustBuffer<FfiPairedD
             FfiConverterULong.allocationSize(value.`pairedMs`) +
             FfiConverterULong.allocationSize(value.`lastSeenMs`) +
             FfiConverterBoolean.allocationSize(value.`connected`) +
-            FfiConverterBoolean.allocationSize(value.`cacheExpired`)
+            FfiConverterBoolean.allocationSize(value.`cacheExpired`) +
+            FfiConverterBoolean.allocationSize(value.`reachableAnywhere`)
     )
 
     override fun write(value: FfiPairedDevice, buf: ByteBuffer) {
@@ -8768,6 +9779,7 @@ public object FfiConverterTypeFfiPairedDevice: FfiConverterRustBuffer<FfiPairedD
             FfiConverterULong.write(value.`lastSeenMs`, buf)
             FfiConverterBoolean.write(value.`connected`, buf)
             FfiConverterBoolean.write(value.`cacheExpired`, buf)
+            FfiConverterBoolean.write(value.`reachableAnywhere`, buf)
     }
 }
 
@@ -9194,6 +10206,121 @@ public object FfiConverterTypeFfiTorStatus: FfiConverterRustBuffer<FfiTorStatus>
 
 
 /**
+ * Наибольший размер файла, который поедет почтой (§10.3).
+ *
+ * Файл крупнее ждёт прямого канала: почтой он поехал бы сутками, и §14
+ * велит сказать это до начала, а не показывать полосу, которая
+ * не сдвинется. Ограничение это про **время**, а не про место — место
+ * защищает окно передачи.
+ *
+ * Клиенту нужно, чтобы сказать заранее. Без этого числа он узнаёт
+ * о запрете только событием [`FfiEvent::FileWaitsForChannel`], то есть
+ * уже после того, как человек выбрал файл и нажал «отправить».
+ *
+ * Заведомо меньше [`max_file_bytes`]: прямым каналом ходит всё.
+ * Чем открывают архив (§12).
+ *
+ * Два входа в один и тот же архив. Фразу человек придумал сам и держит
+ * в голове; сырой ключ он положил в менеджер паролей и не смотрит на него
+ * никогда. Спрашивать надо **тот, который подойдёт**, — что подойдёт,
+ * говорит [`peek_archive`].
+ */
+sealed class FfiArchiveUnlock {
+    
+    /**
+     * Фраза, придуманная при вывозе.
+     */
+    data class Passphrase(
+        /**
+         * Она самая.
+         */
+        val `phrase`: kotlin.String) : FfiArchiveUnlock()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Сырой ключ — та строка, что показывалась при вывозе.
+     */
+    data class Key(
+        /**
+         * Разделители и регистр не важны.
+         */
+        val `keyText`: kotlin.String) : FfiArchiveUnlock()
+        
+    {
+        
+
+        companion object
+    }
+    
+
+    
+
+    
+    
+
+
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiArchiveUnlock : FfiConverterRustBuffer<FfiArchiveUnlock>{
+    override fun read(buf: ByteBuffer): FfiArchiveUnlock {
+        return when(buf.getInt()) {
+            1 -> FfiArchiveUnlock.Passphrase(
+                FfiConverterString.read(buf),
+                )
+            2 -> FfiArchiveUnlock.Key(
+                FfiConverterString.read(buf),
+                )
+            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: FfiArchiveUnlock): ULong = when(value) {
+        is FfiArchiveUnlock.Passphrase -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`phrase`)
+            )
+        }
+        is FfiArchiveUnlock.Key -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterString.allocationSize(value.`keyText`)
+            )
+        }
+    }
+
+    override fun write(value: FfiArchiveUnlock, buf: ByteBuffer) {
+        when(value) {
+            is FfiArchiveUnlock.Passphrase -> {
+                buf.putInt(1)
+                FfiConverterString.write(value.`phrase`, buf)
+                Unit
+            }
+            is FfiArchiveUnlock.Key -> {
+                buf.putInt(2)
+                FfiConverterString.write(value.`keyText`, buf)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
+/**
  * Что компаньон говорит окну.
  */
 sealed class FfiCompanionEvent {
@@ -9455,6 +10582,75 @@ sealed class FfiCompanionEvent {
     }
     
     /**
+     * Аватарка — или её отсутствие.
+     *
+     * `bytes: None` — показывать нечего: аватарки нет либо контакт
+     * не сверен (§4.2). Случаи неразличимы намеренно, рисовать в обоих
+     * надо одно.
+     *
+     * Не больше 32 КиБ — предел проверен проводом, но декодировать эти
+     * байты всё равно клиенту, и с чужого телефона они пришли ровно так же,
+     * как превью: обращаться с ними надо как с любым чужим файлом.
+     */
+    data class Avatar(
+        /**
+         * Чей чат; `None` — своя.
+         */
+        val `chatId`: kotlin.ByteArray?, 
+        /**
+         * Байты, если они есть.
+         */
+        val `bytes`: kotlin.ByteArray?, 
+        /**
+         * Подтверждено ли телефоном сейчас; `false` — показанное из кэша.
+         */
+        val `fresh`: kotlin.Boolean) : FfiCompanionEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Сопряжение отозвано — этот компьютер больше не второй экран (§13.4).
+     *
+     * Кэш к этому моменту стёрт и в памяти, и на диске. Окну остаётся
+     * одно, и это **обязательно**: сказать человеку словами. До этой
+     * новости отзыв выглядел тишиной, неотличимой от «телефон не в сети»,
+     * и окно вечно писало «подключаемся» (§14).
+     *
+     * Дальше объект жив, но бесполезен: подключаться он не пробует,
+     * а на любую команду отвечает [`FfiCompanionEvent::Refused`]. Новый
+     * второй экран заводится новым QR — то есть новым объектом.
+     */
+    object Revoked : FfiCompanionEvent()
+    
+    
+    /**
+     * Лицо сменилось — прежнее убрать, новое спросить.
+     *
+     * Байтов не несёт: новость приезжает без спроса. Клиенту тут работы
+     * на две строки — стереть показанное и, если `avatar_ms` не ноль,
+     * позвать `avatar`.
+     */
+    data class AvatarChanged(
+        /**
+         * Чей чат; `None` — своя.
+         */
+        val `chatId`: kotlin.ByteArray?, 
+        /**
+         * Новая метка; `0` — показывать нечего, и спрашивать не о чем.
+         */
+        val `avatarMs`: kotlin.ULong) : FfiCompanionEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
      * Вложение забрано и лежит по этому пути.
      */
     data class FileSaved(
@@ -9642,28 +10838,38 @@ public object FfiConverterTypeFfiCompanionEvent : FfiConverterRustBuffer<FfiComp
                 FfiConverterByteArray.read(buf),
                 FfiConverterOptionalByteArray.read(buf),
                 )
-            15 -> FfiCompanionEvent.FileSaved(
+            15 -> FfiCompanionEvent.Avatar(
+                FfiConverterOptionalByteArray.read(buf),
+                FfiConverterOptionalByteArray.read(buf),
+                FfiConverterBoolean.read(buf),
+                )
+            16 -> FfiCompanionEvent.Revoked
+            17 -> FfiCompanionEvent.AvatarChanged(
+                FfiConverterOptionalByteArray.read(buf),
+                FfiConverterULong.read(buf),
+                )
+            18 -> FfiCompanionEvent.FileSaved(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            16 -> FfiCompanionEvent.FilesSent(
+            19 -> FfiCompanionEvent.FilesSent(
                 FfiConverterSequenceByteArray.read(buf),
                 )
-            17 -> FfiCompanionEvent.FetchPaused
-            18 -> FfiCompanionEvent.FetchResumed(
+            20 -> FfiCompanionEvent.FetchPaused
+            21 -> FfiCompanionEvent.FetchResumed(
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            19 -> FfiCompanionEvent.SendPaused
-            20 -> FfiCompanionEvent.SendResumed(
+            22 -> FfiCompanionEvent.SendPaused
+            23 -> FfiCompanionEvent.SendResumed(
                 FfiConverterUInt.read(buf),
                 FfiConverterUInt.read(buf),
                 )
-            21 -> FfiCompanionEvent.Done
-            22 -> FfiCompanionEvent.Refused(
+            24 -> FfiCompanionEvent.Done
+            25 -> FfiCompanionEvent.Refused(
                 FfiConverterString.read(buf),
                 )
-            23 -> FfiCompanionEvent.NotLinked
+            26 -> FfiCompanionEvent.NotLinked
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
         }
     }
@@ -9774,6 +10980,29 @@ public object FfiConverterTypeFfiCompanionEvent : FfiConverterRustBuffer<FfiComp
                 4UL
                 + FfiConverterByteArray.allocationSize(value.`fileId`)
                 + FfiConverterOptionalByteArray.allocationSize(value.`bytes`)
+            )
+        }
+        is FfiCompanionEvent.Avatar -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterOptionalByteArray.allocationSize(value.`chatId`)
+                + FfiConverterOptionalByteArray.allocationSize(value.`bytes`)
+                + FfiConverterBoolean.allocationSize(value.`fresh`)
+            )
+        }
+        is FfiCompanionEvent.Revoked -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
+        is FfiCompanionEvent.AvatarChanged -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterOptionalByteArray.allocationSize(value.`chatId`)
+                + FfiConverterULong.allocationSize(value.`avatarMs`)
             )
         }
         is FfiCompanionEvent.FileSaved -> {
@@ -9921,48 +11150,65 @@ public object FfiConverterTypeFfiCompanionEvent : FfiConverterRustBuffer<FfiComp
                 FfiConverterOptionalByteArray.write(value.`bytes`, buf)
                 Unit
             }
-            is FfiCompanionEvent.FileSaved -> {
+            is FfiCompanionEvent.Avatar -> {
                 buf.putInt(15)
+                FfiConverterOptionalByteArray.write(value.`chatId`, buf)
+                FfiConverterOptionalByteArray.write(value.`bytes`, buf)
+                FfiConverterBoolean.write(value.`fresh`, buf)
+                Unit
+            }
+            is FfiCompanionEvent.Revoked -> {
+                buf.putInt(16)
+                Unit
+            }
+            is FfiCompanionEvent.AvatarChanged -> {
+                buf.putInt(17)
+                FfiConverterOptionalByteArray.write(value.`chatId`, buf)
+                FfiConverterULong.write(value.`avatarMs`, buf)
+                Unit
+            }
+            is FfiCompanionEvent.FileSaved -> {
+                buf.putInt(18)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterString.write(value.`path`, buf)
                 Unit
             }
             is FfiCompanionEvent.FilesSent -> {
-                buf.putInt(16)
+                buf.putInt(19)
                 FfiConverterSequenceByteArray.write(value.`fileIds`, buf)
                 Unit
             }
             is FfiCompanionEvent.FetchPaused -> {
-                buf.putInt(17)
+                buf.putInt(20)
                 Unit
             }
             is FfiCompanionEvent.FetchResumed -> {
-                buf.putInt(18)
+                buf.putInt(21)
                 FfiConverterULong.write(value.`done`, buf)
                 FfiConverterULong.write(value.`total`, buf)
                 Unit
             }
             is FfiCompanionEvent.SendPaused -> {
-                buf.putInt(19)
+                buf.putInt(22)
                 Unit
             }
             is FfiCompanionEvent.SendResumed -> {
-                buf.putInt(20)
+                buf.putInt(23)
                 FfiConverterUInt.write(value.`done`, buf)
                 FfiConverterUInt.write(value.`total`, buf)
                 Unit
             }
             is FfiCompanionEvent.Done -> {
-                buf.putInt(21)
+                buf.putInt(24)
                 Unit
             }
             is FfiCompanionEvent.Refused -> {
-                buf.putInt(22)
+                buf.putInt(25)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiCompanionEvent.NotLinked -> {
-                buf.putInt(23)
+                buf.putInt(26)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
@@ -10239,6 +11485,21 @@ sealed class FfiEvent {
     }
     
     /**
+     * **Своя** аватарка поставлена или снята.
+     *
+     * Отдельное событие, а не [`FfiEvent::AvatarChanged`] с собственным
+     * `IK`: по тому клиент идёт за контактом и со своим ключом не нашёл бы
+     * там ничего, а перерисовать ему надо профиль.
+     *
+     * **Приходит и тогда, когда сменил не этот экран.** Своё лицо теперь
+     * вправе поменять сопряжённый десктоп (§13.4); без этого события
+     * телефон показывал бы прежнюю картинку до перезапуска. Байты —
+     * через [`RatatoskClient::my_avatar`], как и у чужой.
+     */
+    object OwnAvatarChanged : FfiEvent()
+    
+    
+    /**
      * Как идёт подъём Tor (§5.2).
      *
      * Показывать это человеку **надо**, и не из любви к прогресс-барам:
@@ -10263,6 +11524,30 @@ sealed class FfiEvent {
          * Почему стоит, если стоит.
          */
         val `blocked`: kotlin.String?) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Группа заведена (§11).
+     *
+     * Отдельно от [`FfiEvent::GroupMembershipChanged`]: то событие говорит
+     * «в известном чате стало иначе», а это — «в списке появилась строка,
+     * которой не было». Идентификатор здесь единственный способ узнать,
+     * какой чат открывать: у группы он случаен и человеку неизвестен.
+     */
+    data class GroupCreated(
+        /**
+         * Чат.
+         */
+        val `chatId`: kotlin.ByteArray, 
+        /**
+         * Название.
+         */
+        val `title`: kotlin.String) : FfiEvent()
         
     {
         
@@ -10615,55 +11900,60 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
             9 -> FfiEvent.AvatarChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            10 -> FfiEvent.TorStatus(
+            10 -> FfiEvent.OwnAvatarChanged
+            11 -> FfiEvent.TorStatus(
                 FfiConverterFloat.read(buf),
                 FfiConverterString.read(buf),
                 FfiConverterOptionalString.read(buf),
                 )
-            11 -> FfiEvent.GroupMembershipChanged(
+            12 -> FfiEvent.GroupCreated(
+                FfiConverterByteArray.read(buf),
+                FfiConverterString.read(buf),
+                )
+            13 -> FfiEvent.GroupMembershipChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            12 -> FfiEvent.FileWaitsForChannel(
+            14 -> FfiEvent.FileWaitsForChannel(
                 FfiConverterByteArray.read(buf),
                 )
-            13 -> FfiEvent.FileProgress(
+            15 -> FfiEvent.FileProgress(
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            14 -> FfiEvent.FileGone(
+            16 -> FfiEvent.FileGone(
                 FfiConverterByteArray.read(buf),
                 )
-            15 -> FfiEvent.HonestNotice(
+            17 -> FfiEvent.HonestNotice(
                 FfiConverterString.read(buf),
                 )
-            16 -> FfiEvent.CommandRefused(
+            18 -> FfiEvent.CommandRefused(
                 FfiConverterString.read(buf),
                 )
-            17 -> FfiEvent.MailAccountReady(
+            19 -> FfiEvent.MailAccountReady(
                 FfiConverterString.read(buf),
                 )
-            18 -> FfiEvent.MailAccountFailed(
+            20 -> FfiEvent.MailAccountFailed(
                 FfiConverterString.read(buf),
                 )
-            19 -> FfiEvent.MailLoginFailed(
+            21 -> FfiEvent.MailLoginFailed(
                 FfiConverterString.read(buf),
                 )
-            20 -> FfiEvent.MailLimits(
+            22 -> FfiEvent.MailLimits(
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterBoolean.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            21 -> FfiEvent.PairingReady(
+            23 -> FfiEvent.PairingReady(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            22 -> FfiEvent.PairingRevoked(
+            24 -> FfiEvent.PairingRevoked(
                 FfiConverterByteArray.read(buf),
                 )
-            23 -> FfiEvent.DeviceLink(
+            25 -> FfiEvent.DeviceLink(
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
@@ -10743,6 +12033,12 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 + FfiConverterByteArray.allocationSize(value.`peerIk`)
             )
         }
+        is FfiEvent.OwnAvatarChanged -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
         is FfiEvent.TorStatus -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
@@ -10750,6 +12046,14 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 + FfiConverterFloat.allocationSize(value.`fraction`)
                 + FfiConverterString.allocationSize(value.`note`)
                 + FfiConverterOptionalString.allocationSize(value.`blocked`)
+            )
+        }
+        is FfiEvent.GroupCreated -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
+                + FfiConverterString.allocationSize(value.`title`)
             )
         }
         is FfiEvent.GroupMembershipChanged -> {
@@ -10908,62 +12212,72 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterByteArray.write(value.`peerIk`, buf)
                 Unit
             }
-            is FfiEvent.TorStatus -> {
+            is FfiEvent.OwnAvatarChanged -> {
                 buf.putInt(10)
+                Unit
+            }
+            is FfiEvent.TorStatus -> {
+                buf.putInt(11)
                 FfiConverterFloat.write(value.`fraction`, buf)
                 FfiConverterString.write(value.`note`, buf)
                 FfiConverterOptionalString.write(value.`blocked`, buf)
                 Unit
             }
+            is FfiEvent.GroupCreated -> {
+                buf.putInt(12)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                FfiConverterString.write(value.`title`, buf)
+                Unit
+            }
             is FfiEvent.GroupMembershipChanged -> {
-                buf.putInt(11)
+                buf.putInt(13)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
             is FfiEvent.FileWaitsForChannel -> {
-                buf.putInt(12)
+                buf.putInt(14)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 Unit
             }
             is FfiEvent.FileProgress -> {
-                buf.putInt(13)
+                buf.putInt(15)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterULong.write(value.`received`, buf)
                 FfiConverterULong.write(value.`total`, buf)
                 Unit
             }
             is FfiEvent.FileGone -> {
-                buf.putInt(14)
+                buf.putInt(16)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 Unit
             }
             is FfiEvent.HonestNotice -> {
-                buf.putInt(15)
+                buf.putInt(17)
                 FfiConverterString.write(value.`text`, buf)
                 Unit
             }
             is FfiEvent.CommandRefused -> {
-                buf.putInt(16)
-                FfiConverterString.write(value.`reason`, buf)
-                Unit
-            }
-            is FfiEvent.MailAccountReady -> {
-                buf.putInt(17)
-                FfiConverterString.write(value.`address`, buf)
-                Unit
-            }
-            is FfiEvent.MailAccountFailed -> {
                 buf.putInt(18)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
-            is FfiEvent.MailLoginFailed -> {
+            is FfiEvent.MailAccountReady -> {
                 buf.putInt(19)
+                FfiConverterString.write(value.`address`, buf)
+                Unit
+            }
+            is FfiEvent.MailAccountFailed -> {
+                buf.putInt(20)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is FfiEvent.MailLoginFailed -> {
+                buf.putInt(21)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.MailLimits -> {
-                buf.putInt(20)
+                buf.putInt(22)
                 FfiConverterOptionalULong.write(value.`letterBytes`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxUsed`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxLimit`, buf)
@@ -10972,23 +12286,77 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.PairingReady -> {
-                buf.putInt(21)
+                buf.putInt(23)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterString.write(value.`uri`, buf)
                 Unit
             }
             is FfiEvent.PairingRevoked -> {
-                buf.putInt(22)
+                buf.putInt(24)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 Unit
             }
             is FfiEvent.DeviceLink -> {
-                buf.putInt(23)
+                buf.putInt(25)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterBoolean.write(value.`connected`, buf)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
+/**
+ * Что именно вывозить (§12).
+ *
+ * Три области, и выбор между ними — не настройка «поменьше», а разные
+ * задачи. Полный архив переносит переписку целиком и весит как она.
+ * Без вложений — то же, но на порядок легче: уезжает почтой, а файлы
+ * остаются на прежнем устройстве. Граф — только знакомства: с ним человек,
+ * сменивший телефон, не теряет **связей**, даже если готов расстаться
+ * с историей.
+ */
+
+enum class FfiExportScope {
+    
+    /**
+     * Переписка со вложениями.
+     */
+    EVERYTHING,
+    /**
+     * Переписка без вложений.
+     */
+    WITHOUT_ATTACHMENTS,
+    /**
+     * Только контакты с их адресами и своя идентичность.
+     */
+    SOCIAL_GRAPH;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiExportScope: FfiConverterRustBuffer<FfiExportScope> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiExportScope.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiExportScope) = 4UL
+
+    override fun write(value: FfiExportScope, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
     }
 }
 
@@ -11838,6 +13206,34 @@ public object FfiConverterSequenceTypeFfiFile: FfiConverterRustBuffer<List<FfiFi
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeFfiGroup: FfiConverterRustBuffer<List<FfiGroup>> {
+    override fun read(buf: ByteBuffer): List<FfiGroup> {
+        val len = buf.getInt()
+        return List<FfiGroup>(len) {
+            FfiConverterTypeFfiGroup.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiGroup>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiGroup.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiGroup>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiGroup.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeFfiMessage: FfiConverterRustBuffer<List<FfiMessage>> {
     override fun read(buf: ByteBuffer): List<FfiMessage> {
         val len = buf.getInt()
@@ -12080,6 +13476,27 @@ public object FfiConverterSequenceTypeFfiRung: FfiConverterRustBuffer<List<FfiRu
     
 
         /**
+         * Что сказать при создании группы (§11.5).
+         *
+         * Спецификация требует этого дословно: «присоединение раскрывает всем
+         * участникам onion- и chatmail-адреса друг друга. Так и сказать
+         * при создании группы».
+         *
+         * Показывать **до** создания, как [`lan_warning`], а не после: сказанное
+         * после — уже не предупреждение. Отменить это нельзя ничем: вышедший
+         * из группы адреса уже знает.
+         */ fun `groupJoinNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_group_join_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
          * Тексты из §14, которые клиент обязан показать дословно.
          *
          * Функция на границе, а не константа в клиенте: §14 существует затем, чтобы
@@ -12091,6 +13508,48 @@ public object FfiConverterSequenceTypeFfiRung: FfiConverterRustBuffer<List<FfiRu
     UniffiLib.uniffi_ratatosk_ffi_fn_func_honest_notices(
     
         _status)
+}
+    )
+    }
+    
+
+        /**
+         * Восстанавливает аккаунт из архива (§12).
+         *
+         * **Это восстановление, а не слияние.** Архив становится аккаунтом целиком;
+         * база по пути `destination` не должна существовать — иначе отказ. Слияния
+         * с живущим аккаунтом в v1 нет и не будет: у него нет ответа на вопрос,
+         * чьей остаётся личность.
+         *
+         * `key_text` — та строка, которую человек переписал с экрана при вывозе.
+         * Разделители и регистр не важны.
+         *
+         * Три вещи, которые UI обязан сказать человеку **после** успеха:
+         *
+         * 1. **Прежним устройством пользоваться больше нельзя.** Восстановленный
+         * аккаунт — та же личность; два устройства с одним `IK` разойдутся
+         * сессиями и запутают собеседников. Для второго экрана есть режим
+         * компаньона (§13.4).
+         * 2. **База открывается прежним PIN.** Соль уехала в архиве вместе
+         * с базой, поэтому `open` после ввоза ждёт тот PIN, что был на старом
+         * телефоне, а не новый.
+         * 3. Если `whole_files` меньше `files` — часть вложений осталась дома.
+         *
+         * # Errors
+         *
+         * Файла нет, это не архив, он оборван, ключ не тот, архив сделан сборкой
+         * новее или база на месте назначения уже есть.
+         */
+    @Throws(RatatoskException::class) fun `importArchive`(`archive`: kotlin.String, `unlock`: FfiArchiveUnlock, `destination`: kotlin.String, `filesDir`: kotlin.String): FfiImported {
+            return FfiConverterTypeFfiImported.lift(
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_import_archive(
+    
+        
+        FfiConverterString.lower(`archive`),
+        FfiConverterTypeFfiArchiveUnlock.lower(`unlock`),
+        FfiConverterString.lower(`destination`),
+        FfiConverterString.lower(`filesDir`),_status)
 }
     )
     }
@@ -12110,18 +13569,27 @@ public object FfiConverterSequenceTypeFfiRung: FfiConverterRustBuffer<List<FfiRu
     
 
         /**
-         * Наибольший размер файла, который поедет почтой (§10.3).
+         * Что сказать перед выходом из группы.
          *
-         * Файл крупнее ждёт прямого канала: почтой он поехал бы сутками, и §14
-         * велит сказать это до начала, а не показывать полосу, которая
-         * не сдвинется. Ограничение это про **время**, а не про место — место
-         * защищает окно передачи.
+         * Половина сказанного совпадает с [`eviction_notice`] дословно, и это
+         * не небрежность: изнутри протокола выход и исключение — одна и та же
+         * операция состава, и последствия у них одни.
+         */ fun `leaveNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_leave_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Насколько большой файл ещё уедет почтой.
          *
-         * Клиенту нужно, чтобы сказать заранее. Без этого числа он узнаёт
-         * о запрете только событием [`FfiEvent::FileWaitsForChannel`], то есть
-         * уже после того, как человек выбрал файл и нажал «отправить».
-         *
-         * Заведомо меньше [`max_file_bytes`]: прямым каналом ходит всё.
+         * Через сеть предел другой и выше: почта — самый узкий из транспортов,
+         * и UI показывает именно этот предел, когда сети нет.
          */ fun `mailFileLimitBytes`(): kotlin.ULong {
             return FfiConverterULong.lift(
     uniffiRustCall() { _status ->
@@ -12207,6 +13675,23 @@ public object FfiConverterSequenceTypeFfiRung: FfiConverterRustBuffer<List<FfiRu
     
 
         /**
+         * Наибольшая длина названия группы, в символах (§11).
+         *
+         * Считать клиенту приходится самому: поле ввода обязано останавливать
+         * человека до нажатия, а не после отказа. **Символы, а не байты** —
+         * предел здесь продуктовый, и кириллица в нём считается так же, как латиница.
+         */ fun `maxGroupTitleChars`(): kotlin.UInt {
+            return FfiConverterUInt.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_max_group_title_chars(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
          * Наибольшая длина локального имени контакта, в символах.
          */ fun `maxLocalNameChars`(): kotlin.UInt {
             return FfiConverterUInt.lift(
@@ -12276,6 +13761,49 @@ public object FfiConverterSequenceTypeFfiRung: FfiConverterRustBuffer<List<FfiRu
     UniffiLib.uniffi_ratatosk_ffi_fn_func_no_pin_warning(
     
         _status)
+}
+    )
+    }
+    
+
+        /**
+         * Что добавить, если из группы выходит её создатель.
+         *
+         * Отдельным текстом, а не припиской ко всем: остальным участникам это
+         * сказать нечего, а предупреждение, которое видят все, перестают читать.
+         * Показывать вместе с [`leave_notice`], когда `owner_ik` группы совпадает
+         * с собственным ключом.
+         */ fun `ownerLeaveNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_owner_leave_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Заглядывает в архив, ничего не открывая (§12).
+         *
+         * **Звать до того, как что-то спрашивать у человека.** Экран, требующий
+         * фразу от архива, в котором её нет, — тупик: человек будет вспоминать
+         * то, чего никогда не было. Ни ключа, ни фразы для этого не нужно: область
+         * вывоза и наличие завёрнутого ключа лежат в архиве открыто и о переписке
+         * ничего не говорят.
+         *
+         * # Errors
+         *
+         * Файла нет, это не архив, он новее этой сборки или оборван.
+         */
+    @Throws(RatatoskException::class) fun `peekArchive`(`archive`: kotlin.String): FfiArchivePeek {
+            return FfiConverterTypeFfiArchivePeek.lift(
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_peek_archive(
+    
+        
+        FfiConverterString.lower(`archive`),_status)
 }
     )
     }

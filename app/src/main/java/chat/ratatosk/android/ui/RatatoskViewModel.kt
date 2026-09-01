@@ -29,6 +29,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _contacts = MutableStateFlow<List<FfiContact>>(emptyList())
     val contacts = _contacts.asStateFlow()
 
+    private val _groups = MutableStateFlow<List<FfiGroup>>(emptyList())
+    val groups = _groups.asStateFlow()
+
     private val _messages = MutableStateFlow<Map<String, List<FfiMessage>>>(emptyMap())
     val messages = _messages.asStateFlow()
 
@@ -87,9 +90,27 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _isCreatingNewAccount = MutableStateFlow(false)
     val isCreatingNewAccount = _isCreatingNewAccount.asStateFlow()
 
+    private val _isCompanionMode = MutableStateFlow<Boolean>(RatatoskCore.isCompanionMode())
+    val isCompanionMode: StateFlow<Boolean> = _isCompanionMode.asStateFlow()
+
+    private val _isCompanionLinked = MutableStateFlow(false)
+    val isCompanionLinked = _isCompanionLinked.asStateFlow()
+
+    val companionLinks: StateFlow<List<chat.ratatosk.android.data.CompanionLink>> = settingsRepository.companionLinks.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
     val totalUnreadCount: StateFlow<Int> = _unreadCounts
         .map { it.values.sum() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    val lastAccountId = settingsRepository.lastAccountId.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 
     private val _activeChatIdFlow = MutableStateFlow<ByteArray?>(null)
     val activeChatIdFlow = _activeChatIdFlow.asStateFlow()
@@ -109,7 +130,13 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _mediaExportedPath = MutableStateFlow<String?>(null)
     val mediaExportedPath = _mediaExportedPath.asStateFlow()
 
+    private val pendingCompanionSaves = ConcurrentHashMap<String, (java.io.File) -> Unit>()
+    private val pendingCompanionPaths = ConcurrentHashMap<String, String>()
+    private var currentCompanionSaveFileId: String? = null
+    private val companionAvatarMs = ConcurrentHashMap<String, ULong>()
+
     private var activeChatId: String? = null
+    private var currentCompanionLabel: String? = null
 
     private val _honestNotices = MutableStateFlow<List<String>>(emptyList())
     val honestNotices = _honestNotices.asStateFlow()
@@ -123,6 +150,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _myIk = MutableStateFlow<ByteArray?>(null)
+    val myIk = _myIk.asStateFlow()
+
     private val _fingerprint = MutableStateFlow<String?>(null)
     val fingerprint = _fingerprint.asStateFlow()
 
@@ -130,7 +160,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     val maxAvatarBytes = _maxAvatarBytes.asStateFlow()
 
     val userName = activeAccountId.flatMapLatest { id ->
-        if (id == null) flowOf(null) else settingsRepository.getDisplayName(id)
+        when {
+            id == null -> flowOf(null)
+            id.startsWith("companion:") -> flowOf(currentCompanionLabel)
+            else -> settingsRepository.getDisplayName(id)
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     private val _myAvatar = MutableStateFlow<ByteArray?>(null)
@@ -227,17 +261,206 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     private var eventsJob: kotlinx.coroutines.Job? = null
+    private var companionEventsJob: kotlinx.coroutines.Job? = null
 
-    private fun setupEngine() {
-        android.util.Log.d("RatatoskVM", "Setting up engine components...")
+    private fun setupCompanionEngine() {
+        android.util.Log.d("RatatoskVM", "Setting up companion engine...")
+        
+        // Start collecting events BEFORE making calls
+        viewModelScope.launch(Dispatchers.Main) {
+            if (companionEventsJob == null) {
+                companionEventsJob = RatatoskCore.companionEvents
+                    .onEach { handleCompanionEvent(it) }
+                    .launchIn(viewModelScope)
+            }
+            
+            if (eventsJob == null) {
+                eventsJob = RatatoskCore.events
+                    .onEach { handleEvent(it) }
+                    .launchIn(viewModelScope)
+            }
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val companion = RatatoskCore.getCompanion()
+                val ik = companion.deviceId()
+                val fingerprint = ik.toHexString()
+                val phoneName = try { companion.phoneName() } catch (e: Exception) { "Companion" }
+                
+                withContext(Dispatchers.Main) {
+                    _myIk.value = ik
+                    _fingerprint.value = fingerprint
+                    if (currentCompanionLabel == null) currentCompanionLabel = phoneName
+                    _isInitialized.value = true
+                    _isCompanionLinked.value = false
+                }
+
+                android.util.Log.d("RatatoskVM", "Initial companion chats() call for cache")
+                companion.chats()
+                
+                // Fetch own avatar
+                try {
+                    companion.avatar(null)
+                } catch (e: Exception) { /* ignore */ }
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to setup companion engine", e)
+            }
+        }
+    }
+
+    private fun handleCompanionEvent(event: FfiCompanionEvent) {
+        when (event) {
+            is FfiCompanionEvent.Chats -> {
+                android.util.Log.d("RatatoskVM", "Companion received ${event.chats.size} chats, fresh=${event.fresh}")
+                val mappedContacts = event.chats.map { mapCompanionChat(it) }
+                _contacts.value = mappedContacts
+                mappedContacts.forEach { loadMessages(it.chatId) }
+            }
+            is FfiCompanionEvent.History -> {
+                android.util.Log.d("RatatoskVM", "Companion received ${event.page.size} messages for chat ${event.chatId.toHexString()}, fresh=${event.fresh}")
+                val mappedMessages = event.page.map { mapCompanionMessage(it) }
+                val chatIdHex = event.chatId.toHexString()
+                _messages.update { it + (chatIdHex to mappedMessages) }
+            }
+            is FfiCompanionEvent.Arrived -> {
+                loadMessages(event.message.chatId)
+            }
+            is FfiCompanionEvent.Linked -> {
+                android.util.Log.i("RatatoskVM", "Companion LINKED")
+                _isCompanionLinked.value = true
+                RatatoskCore.getCompanion().chats()
+            }
+            is FfiCompanionEvent.Unlinked -> {
+                android.util.Log.w("RatatoskVM", "Companion UNLINKED")
+                _isCompanionLinked.value = false
+            }
+            is FfiCompanionEvent.FileSaved -> {
+                val hex = event.fileId.toHexString()
+                _fileProgress.update { it + (hex to 1f) }
+                _activeJobsFlow.update { it - hex }
+                if (currentCompanionSaveFileId == hex) currentCompanionSaveFileId = null
+                pendingCompanionSaves.remove(hex)?.let { callback ->
+                    pendingCompanionPaths.remove(hex)?.let { path ->
+                        viewModelScope.launch(Dispatchers.Main) {
+                            callback(java.io.File(path))
+                        }
+                    }
+                }
+            }
+            is FfiCompanionEvent.FilePreview -> {
+                val hex = event.fileId.toHexString()
+                if (event.bytes != null) {
+                    _filePreviews.update { it + (hex to event.bytes) }
+                }
+            }
+            is FfiCompanionEvent.Avatar -> {
+                val hex = event.chatId?.toHexString() ?: "mine"
+                if (event.bytes != null) {
+                    if (hex == "mine") {
+                        _myAvatar.value = event.bytes
+                    } else {
+                        _contactAvatars.update { it + (hex to event.bytes) }
+                    }
+                } else {
+                    if (hex == "mine") _myAvatar.value = null
+                    else _contactAvatars.update { it - hex }
+                }
+            }
+            is FfiCompanionEvent.FileGone -> {
+                val hex = event.fileId.toHexString()
+                _activeJobsFlow.update { it - hex }
+                if (currentCompanionSaveFileId == hex) currentCompanionSaveFileId = null
+                pendingCompanionSaves.remove(hex)
+                pendingCompanionPaths.remove(hex)
+            }
+            is FfiCompanionEvent.Refused -> {
+                _error.value = event.reason
+            }
+            else -> {}
+        }
+    }
+
+    private fun mapCompanionChat(chat: FfiCompanionChat): FfiContact {
+        val chatIdHex = chat.chatId.toHexString()
+        val oldMs = companionAvatarMs[chatIdHex] ?: 0UL
+        if (chat.avatarMs != 0UL && chat.avatarMs != oldMs) {
+            companionAvatarMs[chatIdHex] = chat.avatarMs
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    RatatoskCore.getCompanion().avatar(chat.chatId)
+                } catch (e: Exception) { /* ignore */ }
+            }
+        }
+
+        return FfiContact(
+            peerIk = chat.chatId,
+            chatId = chat.chatId,
+            fingerprint = "",
+            displayName = chat.title,
+            localName = null,
+            verified = chat.verified,
+            seenOnLan = false,
+            hasAvatar = chat.avatarMs != 0UL,
+            onion = null,
+            chatmail = null,
+            cardVersion = 0UL,
+            addedMs = 0UL,
+            reachability = FfiReachability(emptyList(), null, null),
+            directChannel = null,
+            anomalies = FfiAnomalies(0UL, 0UL, 0UL, 0UL, 0UL)
+        )
+    }
+
+    private fun mapCompanionMessage(msg: FfiCompanionMessage): FfiMessage {
+        return FfiMessage(
+            msgId = msg.msgId,
+            body = msg.body,
+            mine = msg.mine,
+            wallMs = msg.wallMs,
+            status = msg.status,
+            editedAtMs = msg.editedAtMs,
+            forwarded = msg.forwarded,
+            reactions = msg.reactions.map { FfiReaction(it.emoji, if (it.mine) _fingerprint.value?.hexToByteArray() ?: ByteArray(0) else ByteArray(0), it.mine) },
+            files = msg.files.map { mapCompanionAttachment(it, msg.mine) },
+            replyTo = msg.replyTo,
+            sharedContact = null
+        )
+    }
+
+    private fun mapCompanionAttachment(att: FfiCompanionAttachment, mine: Boolean): FfiFile {
+        return FfiFile(
+            fileId = att.fileId,
+            name = att.name,
+            sizeBytes = att.sizeBytes,
+            incoming = !mine,
+            accepted = att.accepted,
+            complete = att.haveChunks == att.chunkTotal,
+            receivedChunks = att.haveChunks,
+            chunkTotal = att.chunkTotal,
+            hasPreview = att.hasPreview
+        )
+    }
+
+    private fun setupEngine() {
+        android.util.Log.d("RatatoskVM", "Setting up engine components... Companion mode: ${RatatoskCore.isCompanionMode()}")
+        _isCompanionMode.value = RatatoskCore.isCompanionMode()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (RatatoskCore.isCompanionMode()) {
+                    setupCompanionEngine()
+                    return@launch
+                }
+
                 android.util.Log.d("RatatoskVM", "Engine setup: getting fingerprint and limits")
                 val client = RatatoskCore.getClient()
                 val fingerprint = client.fingerprint()
+                val ik = activeAccountId.value?.hexToByteArray()
                 val maxAvatar = try { maxAvatarBytes().toInt() } catch (e: Exception) { 32768 }
                 
                 withContext(Dispatchers.Main) {
+                    _myIk.value = ik
                     _fingerprint.value = fingerprint
                     _maxAvatarBytes.value = maxAvatar
                 }
@@ -303,8 +526,16 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun refreshContacts() {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val list = RatatoskCore.getClient().contacts()
-                _contacts.value = list
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().chats()
+                } else {
+                    val contactList = RatatoskCore.getClient().contacts()
+                    val groupList = RatatoskCore.getClient().groups()
+                    withContext(Dispatchers.Main) {
+                        _contacts.value = contactList
+                        _groups.value = groupList
+                    }
+                }
             } catch (e: Exception) {
                 viewModelScope.launch {
                     _error.value = "Failed to refresh contacts: ${e.message}"
@@ -314,6 +545,16 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun loadMessages(chatId: ByteArray, limit: Int? = null) {
+        if (RatatoskCore.isCompanionMode()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    RatatoskCore.getCompanion().history(chatId, limit?.toUInt() ?: 100u, null)
+                } catch (e: Exception) {
+                    android.util.Log.e("RatatoskVM", "Failed to load companion messages", e)
+                }
+            }
+            return
+        }
         val chatIdHex = chatId.toHexString()
         val currentSize = _messages.value[chatIdHex]?.size ?: 0
         
@@ -361,6 +602,73 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         _availableAccounts.value = RatatoskCore.listAccounts()
     }
 
+    fun wipeAccount(id: ByteArray) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.wipeAccount(id)
+                refreshAccounts()
+            } catch (e: Exception) {
+                _error.value = "Failed to wipe account: ${e.message}"
+            }
+        }
+    }
+
+    fun exportHistory(scope: FfiExportScope, phrase: String?, onResult: (FfiExported) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                val ratatoskDir = java.io.File(downloadsDir, "ratatosk_backups")
+                ratatoskDir.mkdirs()
+                val fileName = "ratatosk_backup_${System.currentTimeMillis()}.db"
+                val dest = java.io.File(ratatoskDir, fileName)
+                
+                val result = RatatoskCore.exportHistory(dest.absolutePath, scope, phrase)
+                withContext(Dispatchers.Main) {
+                    onResult(result)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Export failed", e)
+                withContext(Dispatchers.Main) {
+                    _error.value = "Export failed: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun importArchive(path: String, unlock: FfiArchiveUnlock, label: String, onResult: (Result<FfiImported>) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val result = RatatoskCore.importArchive(getApplication(), path, unlock, label)
+                withContext(Dispatchers.Main) {
+                    refreshAccounts()
+                    onResult(Result.success(result))
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Import failed", e)
+                withContext(Dispatchers.Main) {
+                    onResult(Result.failure(e))
+                }
+            }
+        }
+    }
+
+    fun peekArchive(path: String, onResult: (FfiArchivePeek?) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val result = RatatoskCore.peekArchive(path)
+                withContext(Dispatchers.Main) {
+                    onResult(result)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Peek failed", e)
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to peek archive: ${e.message}"
+                    onResult(null)
+                }
+            }
+        }
+    }
+
     fun findHiddenAccount(pin: String, onFound: (ByteArray) -> Unit, onNotFound: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             _isFindingHidden.value = true
@@ -390,12 +698,39 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 withContext(Dispatchers.Main) {
                     _isInitialized.value = true
                     _activeAccountId.value = idHex
+                    _isCompanionMode.value = false
+                    settingsRepository.setLastAccountId(idHex)
                     setupEngine()
                     refreshAccounts()
                     _error.value = null
                 }
             } catch (e: Exception) {
                 _error.value = "Failed to initialize: ${e.message}"
+            }
+        }
+    }
+
+    fun initializeCompanion(inviteUri: String, port: Int, peerAddr: String?, cachePath: String?, label: String, torDir: String? = null) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.initializeCompanion(inviteUri, port.toUShort(), peerAddr, cachePath, torDir)
+                currentCompanionLabel = label
+                if (cachePath != null) {
+                    settingsRepository.saveCompanionLink(
+                        chat.ratatosk.android.data.CompanionLink(label, inviteUri, port, peerAddr, cachePath, torDir)
+                    )
+                }
+                withContext(Dispatchers.Main) {
+                    _isInitialized.value = true
+                    _isCompanionMode.value = true
+                    val id = "companion:${inviteUri.hashCode()}"
+                    _activeAccountId.value = id
+                    settingsRepository.setLastAccountId(id)
+                    setupEngine()
+                    _error.value = null
+                }
+            } catch (e: Exception) {
+                _error.value = "Failed to link: ${e.message}"
             }
         }
     }
@@ -409,26 +744,72 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 withContext(Dispatchers.Main) {
                     _isInitialized.value = true
                     _activeAccountId.value = idHex
+                    _isCompanionMode.value = false
+                    settingsRepository.setLastAccountId(idHex)
                     setupEngine()
                     _error.value = null
                 }
             } catch (e: Exception) {
+                if (pin == null && e is RatatoskException.Locked) {
+                    // Account is locked and needs a PIN, we stay on the unlock screen
+                    android.util.Log.d("RatatoskVM", "Account needs PIN to unlock")
+                    return@launch
+                }
                 _error.value = "Failed to unlock: ${e.message}"
             }
         }
     }
 
+    fun unlockCompanion(link: chat.ratatosk.android.data.CompanionLink) {
+        initializeCompanion(link.inviteUri, link.port, link.peerAddr, link.cachePath, link.label, link.torDir)
+    }
+
+    fun removeCompanionLink(inviteUri: String) {
+        viewModelScope.launch {
+            settingsRepository.removeCompanionLink(inviteUri)
+        }
+    }
+
     fun logout() {
         RatatoskCore.logout()
+        viewModelScope.launch {
+            settingsRepository.setLastAccountId(null)
+        }
+        
+        eventsJob?.cancel()
+        eventsJob = null
+        companionEventsJob?.cancel()
+        companionEventsJob = null
+        
         _isInitialized.value = false
+        _isCompanionLinked.value = false
+        currentCompanionLabel = null
         _activeAccountId.value = null
         _selectedAccount.value = null
         _isCreatingNewAccount.value = false
+        
         // Clear all session state
         _contacts.value = emptyList()
         _messages.value = emptyMap()
         _messageStatuses.value = emptyMap()
         _unreadCounts.value = emptyMap()
+        _fileProgress.value = emptyMap()
+        _filePreviews.value = emptyMap()
+        _repliedMessages.value = emptyMap()
+        _activeJobsFlow.value = emptySet()
+        _searchResults.value = emptyList()
+        _pairedDevices.value = emptyList()
+        _pairingUri.value = null
+        _myAvatar.value = null
+        _contactAvatars.value = emptyMap()
+        _torStatus.value = null
+        _mailStatus.value = null
+        _mailAccount.value = null
+        
+        companionAvatarMs.clear()
+        pendingCompanionSaves.clear()
+        pendingCompanionPaths.clear()
+        currentCompanionSaveFileId = null
     }
 
     fun clearError() {
@@ -437,7 +818,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     fun selectAccount(account: FfiAccount?) {
         _selectedAccount.value = account
-        if (account == null) {
+        if (account != null) {
+            // Automatically attempt to unlock with no PIN
+            unlock(account, null)
+        } else {
             _isCreatingNewAccount.value = false
         }
     }
@@ -461,8 +845,13 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         _isSearching.value = true
         searchJob = viewModelScope.launch(Dispatchers.IO) {
             try {
-                val results = RatatoskCore.getClient().search(chatId, query, 50u)
-                _searchResults.value = results
+                if (RatatoskCore.isCompanionMode()) {
+                    // Search not supported in companion mode yet
+                    _searchResults.value = emptyList()
+                } else {
+                    val results = RatatoskCore.getClient().search(chatId, query, 50u)
+                    _searchResults.value = results
+                }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Search failed", e)
             } finally {
@@ -480,8 +869,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun sendMessage(chatId: ByteArray, text: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().sendText(chatId, text)
-                loadMessages(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().sendText(chatId, text)
+                } else {
+                    RatatoskCore.getClient().sendText(chatId, text)
+                    loadMessages(chatId)
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     _error.value = "Failed to send: ${e.message}"
@@ -497,14 +890,24 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun sendFiles(chatId: ByteArray, files: List<java.io.File>, text: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val outgoingFiles = files.map { file ->
-                    val preview = if (file.extension.lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
-                        generatePreview(file)
-                    } else null
-                    FfiOutgoingFile(file.absolutePath, preview)
+                if (RatatoskCore.isCompanionMode()) {
+                    val companionFiles = files.map { file ->
+                        val preview = if (file.extension.lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
+                            generatePreview(file)
+                        } else null
+                        FfiCompanionOutgoing(file.absolutePath, preview)
+                    }
+                    RatatoskCore.getCompanion().sendFiles(chatId, companionFiles, text)
+                } else {
+                    val outgoingFiles = files.map { file ->
+                        val preview = if (file.extension.lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
+                            generatePreview(file)
+                        } else null
+                        FfiOutgoingFile(file.absolutePath, preview)
+                    }
+                    RatatoskCore.getClient().sendFiles(chatId, outgoingFiles, text)
+                    loadMessages(chatId)
                 }
-                RatatoskCore.getClient().sendFiles(chatId, outgoingFiles, text)
-                loadMessages(chatId)
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     _error.value = "Failed to send files: ${e.message}"
@@ -536,8 +939,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun acceptFile(chatId: ByteArray, fileId: ByteArray) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().acceptFile(fileId)
-                loadMessages(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().acceptFile(fileId)
+                } else {
+                    RatatoskCore.getClient().acceptFile(fileId)
+                    loadMessages(chatId)
+                }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to accept file", e)
             }
@@ -547,8 +954,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun declineFile(chatId: ByteArray, fileId: ByteArray) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().declineFile(fileId)
-                loadMessages(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().declineFile(fileId)
+                } else {
+                    RatatoskCore.getClient().declineFile(fileId)
+                    loadMessages(chatId)
+                }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to decline file", e)
             }
@@ -561,9 +972,13 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val bytes = RatatoskCore.getClient().previewOf(fileId)
-                if (bytes != null) {
-                    _filePreviews.update { it + (hex to bytes) }
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().preview(fileId)
+                } else {
+                    val bytes = RatatoskCore.getClient().previewOf(fileId)
+                    if (bytes != null) {
+                        _filePreviews.update { it + (hex to bytes) }
+                    }
                 }
             } catch (e: Exception) { /* ignore */ }
         }
@@ -573,6 +988,32 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun saveFile(file: FfiFile, destination: java.io.File, onComplete: (java.io.File) -> Unit) {
         val fileIdHex = file.fileId.toHexString()
         
+        if (RatatoskCore.isCompanionMode()) {
+            if (currentCompanionSaveFileId != null && currentCompanionSaveFileId != fileIdHex) {
+                // Automatically cancel previous save if a new one is requested
+                cancelFileJob(currentCompanionSaveFileId!!.hexToByteArray())
+            }
+
+            currentCompanionSaveFileId = fileIdHex
+            pendingCompanionSaves[fileIdHex] = onComplete
+            pendingCompanionPaths[fileIdHex] = destination.absolutePath
+            _activeJobsFlow.update { it + fileIdHex }
+
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    destination.parentFile?.mkdirs()
+                    RatatoskCore.getCompanion().saveFile(file.fileId, file.chunkTotal, destination.absolutePath)
+                } catch (e: Exception) {
+                    android.util.Log.e("RatatoskVM", "Failed companion save", e)
+                    pendingCompanionSaves.remove(fileIdHex)
+                    pendingCompanionPaths.remove(fileIdHex)
+                    _activeJobsFlow.update { it - fileIdHex }
+                    if (currentCompanionSaveFileId == fileIdHex) currentCompanionSaveFileId = null
+                }
+            }
+            return
+        }
+
         val job = viewModelScope.launch(Dispatchers.IO) {
             var reader: FfiFileReader? = null
             try {
@@ -615,6 +1056,47 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     fun downloadFile(file: FfiFile, onComplete: (String) -> Unit) {
         val fileIdHex = file.fileId.toHexString()
+
+        if (RatatoskCore.isCompanionMode()) {
+            val tempFile = java.io.File(getApplication<Application>().cacheDir, "downloads/${file.fileId.toHexString()}_${file.name}")
+            saveFile(file, tempFile) { savedFile ->
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        val dirUriString = downloadDirUri.value
+                        val dirUri = dirUriString?.let { android.net.Uri.parse(it) }
+                        
+                        if (dirUri != null) {
+                            val root = DocumentFile.fromTreeUri(getApplication(), dirUri)
+                            if (root != null && root.canWrite()) {
+                                val target = root.createFile("*/*", file.name)
+                                if (target != null) {
+                                    getApplication<Application>().contentResolver.openOutputStream(target.uri)?.use { output ->
+                                        savedFile.inputStream().use { input ->
+                                            input.copyTo(output)
+                                        }
+                                    }
+                                    viewModelScope.launch { onComplete(file.name) }
+                                    savedFile.delete()
+                                    return@launch
+                                }
+                            }
+                        }
+                        
+                        // Default downloads if SAF fails
+                        val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                        val ratatoskDir = java.io.File(downloadsDir, "ratatosk")
+                        ratatoskDir.mkdirs()
+                        val dest = java.io.File(ratatoskDir, file.name)
+                        savedFile.copyTo(dest, overwrite = true)
+                        savedFile.delete()
+                        viewModelScope.launch { onComplete(dest.absolutePath) }
+                    } catch (e: Exception) {
+                        android.util.Log.e("RatatoskVM", "Failed companion download copy", e)
+                    }
+                }
+            }
+            return
+        }
 
         val job = viewModelScope.launch(Dispatchers.IO) {
             var reader: FfiFileReader? = null
@@ -686,12 +1168,29 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     fun cancelFileJob(fileId: ByteArray) {
         val hex = fileId.toHexString()
+        if (RatatoskCore.isCompanionMode()) {
+            if (currentCompanionSaveFileId == hex) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        RatatoskCore.getCompanion().cancelSave()
+                    } catch (e: Exception) {
+                        android.util.Log.e("RatatoskVM", "Failed to cancel companion save", e)
+                    }
+                }
+                currentCompanionSaveFileId = null
+                pendingCompanionSaves.remove(hex)
+                pendingCompanionPaths.remove(hex)
+                _activeJobsFlow.update { it - hex }
+            }
+            return
+        }
         activeJobs[hex]?.cancel()
         activeJobs.remove(hex)
         _activeJobsFlow.update { it - hex }
     }
 
     fun sweepOrphanFiles(onResult: (FfiSwept) -> Unit) {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val result = RatatoskCore.getClient().sweepOrphanFiles()
@@ -728,6 +1227,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
     
     fun refreshTransportStatus() {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val client = RatatoskCore.getClient()
@@ -808,6 +1308,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun addContact(uri: String, metInPerson: Boolean) {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 RatatoskCore.getClient().addContact(uri, metInPerson)
@@ -816,6 +1317,122 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     _error.value = "Failed to add contact: ${e.message}"
                 }
             }
+        }
+    }
+
+    fun createGroup(title: String) {
+        if (RatatoskCore.isCompanionMode()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().createGroup(title)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to create group: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun inviteToGroup(chatId: ByteArray, peerIk: ByteArray) {
+        if (RatatoskCore.isCompanionMode()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().inviteToGroup(chatId, peerIk)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to invite: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun evictFromGroup(chatId: ByteArray, peerIk: ByteArray) {
+        if (RatatoskCore.isCompanionMode()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().evictFromGroup(chatId, peerIk)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to evict: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun leaveGroup(chatId: ByteArray) {
+        if (RatatoskCore.isCompanionMode()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                RatatoskCore.getClient().leaveGroup(chatId)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to leave group: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun getGroupJoinNotice(): String {
+        return try {
+            groupJoinNotice()
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    fun getEvictionNotice(): String {
+        return try {
+            evictionNotice()
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    fun getDeletionNotice(): String {
+        return try {
+            deletionNotice()
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    fun getEditNotice(): String {
+        return try {
+            editNotice()
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    fun getForwardNotice(): String {
+        return try {
+            forwardNotice()
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    fun getLeaveNotice(): String {
+        return try {
+            leaveNotice()
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    fun getOwnerLeaveNotice(): String {
+        return try {
+            ownerLeaveNotice()
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    fun getMaxGroupTitleChars(): UInt {
+        return try {
+            maxGroupTitleChars()
+        } catch (e: Exception) {
+            255u
         }
     }
 
@@ -847,6 +1464,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     val myContactUri = _myContactUri.asStateFlow()
 
     fun getMyContactUri() {
+        if (RatatoskCore.isCompanionMode()) {
+            _myContactUri.value = null
+            return
+        }
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val uri = RatatoskCore.getClient().myContactUri()
@@ -868,6 +1489,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun setLocalName(peerIk: ByteArray, name: String?) {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 RatatoskCore.getClient().setLocalName(peerIk, name)
@@ -879,6 +1501,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun deleteContact(peerIk: ByteArray, purgeHistory: Boolean) {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 RatatoskCore.getClient().deleteContact(peerIk, purgeHistory)
@@ -896,7 +1519,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun clearChat(chatId: ByteArray) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().clearChat(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().clearChat(chatId)
+                } else {
+                    RatatoskCore.getClient().clearChat(chatId)
+                }
                 _messages.update { it + (chatId.toHexString() to emptyList()) }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to clear chat", e)
@@ -907,8 +1534,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun deleteMessages(chatId: ByteArray, msgIds: List<ByteArray>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().deleteMessages(chatId, msgIds)
-                loadMessages(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().deleteMessages(chatId, msgIds)
+                } else {
+                    RatatoskCore.getClient().deleteMessages(chatId, msgIds)
+                    loadMessages(chatId)
+                }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to delete messages", e)
             }
@@ -918,8 +1549,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun retractMessages(chatId: ByteArray, msgIds: List<ByteArray>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().retractMessages(chatId, msgIds)
-                loadMessages(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().retractMessages(chatId, msgIds)
+                } else {
+                    RatatoskCore.getClient().retractMessages(chatId, msgIds)
+                    loadMessages(chatId)
+                }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to retract messages", e)
             }
@@ -929,8 +1564,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun editMessage(chatId: ByteArray, msgId: ByteArray, text: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().editMessage(chatId, msgId, text)
-                loadMessages(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().editMessage(chatId, msgId, text)
+                } else {
+                    RatatoskCore.getClient().editMessage(chatId, msgId, text)
+                    loadMessages(chatId)
+                }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to edit message", e)
             }
@@ -940,8 +1579,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun reply(chatId: ByteArray, replyTo: ByteArray, text: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().reply(chatId, replyTo, text)
-                loadMessages(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().sendReply(chatId, replyTo, text)
+                } else {
+                    RatatoskCore.getClient().reply(chatId, replyTo, text)
+                    loadMessages(chatId)
+                }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to reply", e)
             }
@@ -951,8 +1594,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun forwardMessages(chatId: ByteArray, msgIds: List<ByteArray>) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().forwardMessages(chatId, msgIds)
-                loadMessages(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().forwardMessages(chatId, msgIds)
+                } else {
+                    RatatoskCore.getClient().forwardMessages(chatId, msgIds)
+                    loadMessages(chatId)
+                }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to forward", e)
             }
@@ -962,7 +1609,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun markRead(chatId: ByteArray, upTo: ByteArray) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().markRead(chatId, upTo)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().markRead(chatId, upTo)
+                } else {
+                    RatatoskCore.getClient().markRead(chatId, upTo)
+                }
                 _unreadCounts.update { it + (chatId.toHexString() to 0) }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to mark read", e)
@@ -971,6 +1622,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun markVerified(peerIk: ByteArray) {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 RatatoskCore.getClient().markVerified(peerIk)
@@ -984,6 +1636,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun revokeVerification(peerIk: ByteArray) {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 RatatoskCore.getClient().revokeVerification(peerIk)
@@ -999,8 +1652,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun setReaction(chatId: ByteArray, msgId: ByteArray, emoji: String?) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().setReaction(chatId, msgId, emoji)
-                loadMessages(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().setReaction(chatId, msgId, emoji ?: "")
+                } else {
+                    RatatoskCore.getClient().setReaction(chatId, msgId, emoji)
+                    loadMessages(chatId)
+                }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to set reaction", e)
             }
@@ -1010,14 +1667,20 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun getAvatarOf(peerIk: ByteArray): ByteArray? {
         val hex = peerIk.toHexString()
         _contactAvatars.value[hex]?.let { return it }
+
+        if (RatatoskCore.isCompanionMode()) return null
         
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val bytes = RatatoskCore.getClient().avatarOf(peerIk)
-                if (bytes != null) {
-                    _contactAvatars.update { it + (hex to bytes) }
+                withContext(Dispatchers.Main) {
+                    if (bytes != null) {
+                        _contactAvatars.update { it + (hex to bytes) }
+                    }
                 }
-            } catch (e: Exception) { /* ignore */ }
+            } catch (t: Throwable) {
+                android.util.Log.w("RatatoskVM", "Failed to get avatar for ${peerIk.toHexString()}: ${t.message}")
+            }
         }
         return null
     }
@@ -1025,7 +1688,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun setMyAvatar(bytes: ByteArray?) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().setAvatar(bytes)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().setAvatar(bytes)
+                } else {
+                    RatatoskCore.getClient().setAvatar(bytes)
+                }
                 _myAvatar.value = bytes
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to set avatar", e)
@@ -1042,18 +1709,22 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun getMessage(msgId: ByteArray): FfiMessage? {
-        return _repliedMessages.value[msgId.toHexString()] ?: run {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    val msg = RatatoskCore.getClient().message(msgId)
-                    _repliedMessages.update { it + (msgId.toHexString() to msg) }
-                } catch (e: Exception) { /* ignore */ }
-            }
-            null
+        val hex = msgId.toHexString()
+        _repliedMessages.value[hex]?.let { return it }
+        
+        if (RatatoskCore.isCompanionMode()) return null
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val msg = RatatoskCore.getClient().message(msgId)
+                _repliedMessages.update { it + (hex to msg) }
+            } catch (e: Exception) { /* ignore */ }
         }
+        return null
     }
 
     fun setAutoAcceptLimit(limit: ULong?) {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 RatatoskCore.getClient().setAutoAcceptBytes(limit)
@@ -1065,6 +1736,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun loadPairedDevices() {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (!RatatoskCore.isInitialized()) return@launch
@@ -1079,6 +1751,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun startPairing(label: String) {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (!RatatoskCore.isInitialized()) return@launch
@@ -1099,6 +1772,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun revokePairing(deviceId: ByteArray) {
+        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (!RatatoskCore.isInitialized()) return@launch
@@ -1116,17 +1790,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         _activeChatIdFlow.value = chatId
         activeChatId = chatId?.toHexString()
         if (chatId != null) {
-            _activeContactIdFlow.value = null
             _unreadCounts.update { it + (chatId.toHexString() to 0) }
         }
     }
 
     fun setActiveContact(chatId: ByteArray?) {
         _activeContactIdFlow.value = chatId
-        if (chatId != null) {
-            _activeChatIdFlow.value = null
-            activeChatId = null
-        }
     }
 
     fun setActiveMediaFile(file: FfiFile?) {
@@ -1154,6 +1823,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun closeMedia() {
+        val fileId = _activeMediaFile.value?.fileId
+        if (fileId != null && RatatoskCore.isCompanionMode()) {
+            cancelFileJob(fileId)
+        }
         _activeMediaFile.value = null
         _mediaExportedPath.value = null
     }
@@ -1229,13 +1902,20 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                                 _contactAvatars.update { it - hex }
                             }
                         }
-                    } catch (e: Exception) { /* ignore */ }
+                    } catch (t: Throwable) {
+                        android.util.Log.w("RatatoskVM", "Failed to refresh avatar for ${event.peerIk.toHexString()}: ${t.message}")
+                    }
                 }
             }
             is FfiEvent.FileProgress -> {
                 val hex = event.fileId.toHexString()
                 val progress = if (event.total > 0UL) event.received.toFloat() / event.total.toFloat() else 0f
                 _fileProgress.update { it + (hex to progress) }
+                
+                if (event.received == event.total && RatatoskCore.isCompanionMode()) {
+                    // Reload active chat to update 'complete' status of FfiFile objects
+                    activeChatId?.let { loadMessages(it.hexToByteArray()) }
+                }
             }
             is FfiEvent.TorStatus -> {
                 android.util.Log.i("RatatoskVM", "TorStatus event: fraction=${event.fraction}, note=${event.note}, blocked=${event.blocked}")
@@ -1305,6 +1985,16 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             is FfiEvent.DeviceLink -> {
                 android.util.Log.i("RatatoskVM", "Device ${event.deviceId.toHexString()} link status: ${event.connected}")
                 loadPairedDevices()
+            }
+            is FfiEvent.GroupCreated -> {
+                android.util.Log.i("RatatoskVM", "Group created: ${event.chatId.toHexString()} (${event.title})")
+                refreshContacts()
+                loadMessages(event.chatId)
+            }
+            is FfiEvent.GroupMembershipChanged -> {
+                android.util.Log.i("RatatoskVM", "Group membership changed: chat=${event.chatId.toHexString()}")
+                refreshContacts()
+                loadMessages(event.chatId)
             }
             else -> {}
         }

@@ -67,6 +67,7 @@ import coil.compose.rememberAsyncImagePainter
 import org.ratatosk.core.FfiDeliveryStatus
 import org.ratatosk.core.FfiFile
 import org.ratatosk.core.FfiMessage
+import androidx.compose.ui.platform.LocalFocusManager
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,6 +90,7 @@ fun ChatScreen(
     val allMessages by viewModel.messages.collectAsState()
     val messageStatuses by viewModel.messageStatuses.collectAsState()
     val contacts by viewModel.contacts.collectAsState()
+    val groups by viewModel.groups.collectAsState()
     val contactAvatars by viewModel.contactAvatars.collectAsState()
     
     val chatIdHex = remember(chatId) { chatId.toHexString() }
@@ -96,17 +98,26 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val screenWidth = remember { context.resources.displayMetrics.widthPixels.toFloat() }
+    val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     val contact = remember(contacts, chatIdHex) {
         contacts.find { it.chatId.toHexString() == chatIdHex }
+    }
+    
+    val group = remember(groups, chatIdHex) {
+        groups.find { it.chatId.toHexString() == chatIdHex }
+    }
+
+    val isMember = remember(group, contact) {
+        contact != null || (group?.joined ?: false)
     }
 
     var highlightedMsgId by remember { mutableStateOf<String?>(null) }
     var pendingScrollToId by remember { mutableStateOf<String?>(null) }
     var showChatMenu by remember { mutableStateOf(false) }
     var showClearChatDialog by remember { mutableStateOf(false) }
+    var showInviteDialog by remember { mutableStateOf(false) }
     
     var isSearchMode by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -115,23 +126,8 @@ fun ChatScreen(
 
     val displayMessages = remember(messages) { messages.reversed() }
 
-    val backOffset = remember(chatIdHex) { Animatable(if (showBackButton) screenWidth else 0f) }
-
     val performBack = {
-        if (showBackButton) {
-            scope.launch {
-                backOffset.animateTo(screenWidth, animationSpec = tween(durationMillis = 200, easing = LinearOutSlowInEasing))
-                onBack()
-            }
-        } else {
-            onBack()
-        }
-    }
-
-    LaunchedEffect(chatIdHex) {
-        if (showBackButton) {
-            backOffset.animateTo(0f, animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing))
-        }
+        onBack()
     }
 
     if (showBackButton) {
@@ -258,100 +254,63 @@ fun ChatScreen(
             }
             
             displayMessages.firstOrNull { !it.mine }?.let { lastPeerMsg ->
-                viewModel.markRead(chatId, lastPeerMsg.msgId)
+                if (group == null) {
+                    viewModel.markRead(chatId, lastPeerMsg.msgId)
+                }
             }
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Dimming layer behind the sliding Scaffold
-        if (backOffset.value > 0f) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = (0.25f * (1f - backOffset.value / screenWidth)).coerceAtLeast(0f)))
-            )
-        }
-
-        // The Sliding Container
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .offset { IntOffset(backOffset.value.roundToInt(), 0) }
-                .shadow(elevation = if (backOffset.value > 0f) 16.dp else 0.dp)
-                .pointerInput(showBackButton, isCompact) {
-                    if (!showBackButton || !isCompact) return@pointerInput
-                    detectHorizontalDragGestures(
-                        onHorizontalDrag = { change, dragAmount ->
-                            if (dragAmount > 0 || backOffset.value > 0) {
-                                scope.launch {
-                                    backOffset.snapTo((backOffset.value + dragAmount).coerceAtLeast(0f))
-                                }
-                                change.consume()
-                            }
-                        },
-                        onDragEnd = {
-                            if (backOffset.value > 250f) {
-                                performBack()
-                            } else {
-                                scope.launch { backOffset.animateTo(0f) }
-                            }
-                        },
-                        onDragCancel = {
-                            scope.launch { backOffset.animateTo(0f) }
-                        }
-                    )
-                }
-        ) {
-            // Screen Background Layer (inside sliding part)
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-            ) {
-                if (chatTheme.backgroundImageUri != null) {
-                    Image(
-                        painter = rememberAsyncImagePainter(
-                            model = coil.request.ImageRequest.Builder(LocalContext.current)
-                                .data(Uri.parse(chatTheme.backgroundImageUri!!))
-                                .build()
-                        ),
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                        alpha = chatTheme.backgroundOpacity
-                    )
-                }
-            }
-
-            Scaffold(
-                containerColor = Color.Transparent, // Opaque layer is behind
-                snackbarHost = { SnackbarHost(snackbarHostState) },
-                topBar = { 
-                    Column {
-                        TopAppBar(
-                            title = { 
-                                if (isSearchMode) {
-                                    TextField(
-                                        value = searchQuery,
-                                        onValueChange = {
-                                            searchQuery = it
-                                            viewModel.searchMessages(chatId, it)
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        placeholder = { Text(stringResource(R.string.search)) },
-                                        singleLine = true,
-                                        colors = TextFieldDefaults.colors(
-                                            focusedContainerColor = Color.Transparent,
-                                            unfocusedContainerColor = Color.Transparent,
-                                            focusedIndicatorColor = Color.Transparent,
-                                            unfocusedIndicatorColor = Color.Transparent
-                                        )
+    Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        Scaffold(
+            containerColor = Color.Transparent, 
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = { 
+                Column {
+                    TopAppBar(
+                        title = { 
+                            if (isSearchMode) {
+                                TextField(
+                                    value = searchQuery,
+                                    onValueChange = {
+                                        searchQuery = it
+                                        viewModel.searchMessages(chatId, it)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    placeholder = { Text(stringResource(R.string.search)) },
+                                    singleLine = true,
+                                    colors = TextFieldDefaults.colors(
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent
                                     )
-                                } else {
-                                    Row(
-                                        modifier = Modifier.clickable { onHeaderClick() },
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
+                                )
+                            } else {
+                                Row(
+                                    modifier = Modifier.clickable { 
+                                        focusManager.clearFocus()
+                                        onHeaderClick() 
+                                    },
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (group != null) {
+                                        Avatar(
+                                            avatarBytes = null,
+                                            name = group.title,
+                                            size = 32.dp,
+                                            icon = Icons.Default.Groups
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column {
+                                            Text(group.title)
+                                            Text(
+                                                text = stringResource(R.string.group_members_count, group.members.size),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.secondary
+                                            )
+                                        }
+                                    } else {
                                         contact?.let {
                                             Avatar(
                                                 avatarBytes = it.peerIk.toHexString().let { ik -> contactAvatars[ik] } ?: viewModel.getAvatarOf(it.peerIk),
@@ -372,76 +331,108 @@ fun ChatScreen(
                                         }
                                     }
                                 }
-                            },
-                            navigationIcon = {
-                                if (isSearchMode) {
-                                    IconButton(onClick = { 
-                                        isSearchMode = false
-                                        searchQuery = ""
-                                        viewModel.clearSearch()
-                                    }) {
-                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel search")
-                                    }
-                                } else if (showBackButton) {
-                                    IconButton(onClick = { performBack() }) {
-                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                                    }
+                            }
+                        },
+                        navigationIcon = {
+                            if (isSearchMode) {
+                                IconButton(onClick = { 
+                                    isSearchMode = false
+                                    searchQuery = ""
+                                    viewModel.clearSearch()
+                                }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Cancel search")
                                 }
-                            },
-                            actions = {
-                                if (!isSearchMode) {
-                                    IconButton(onClick = { isSearchMode = true }) {
-                                        Icon(Icons.Default.Search, contentDescription = "Search")
-                                    }
-                                    IconButton(onClick = { showChatMenu = true }) {
-                                        Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-                                    }
-                                } else if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { 
-                                        searchQuery = ""
-                                        viewModel.clearSearch()
-                                    }) {
-                                        Icon(Icons.Default.Close, contentDescription = "Clear search")
-                                    }
+                            } else if (showBackButton) {
+                                IconButton(onClick = { performBack() }) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                                 }
-                                
-                                DropdownMenu(
-                                    expanded = showChatMenu,
-                                    onDismissRequest = { showChatMenu = false }
-                                ) {
+                            }
+                        },
+                        actions = {
+                            if (!isSearchMode) {
+                                IconButton(onClick = { isSearchMode = true }) {
+                                    Icon(Icons.Default.Search, contentDescription = "Search")
+                                }
+                                IconButton(onClick = { showChatMenu = true }) {
+                                    Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                                }
+                            } else if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { 
+                                    searchQuery = ""
+                                    viewModel.clearSearch()
+                                }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Clear search")
+                                }
+                            }
+                            
+                            DropdownMenu(
+                                expanded = showChatMenu,
+                                onDismissRequest = { showChatMenu = false }
+                            ) {
+                                if (group != null) {
                                     DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.clear_chat)) },
+                                        text = { Text(stringResource(R.string.group_details)) },
                                         onClick = {
                                             showChatMenu = false
-                                            showClearChatDialog = true
+                                            onHeaderClick()
                                         },
-                                        leadingIcon = { Icon(Icons.Default.DeleteSweep, contentDescription = null) }
+                                        leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }
                                     )
                                 }
-                            },
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            ),
-                            windowInsets = WindowInsets(0, 0, 0, 0)
-                        )
+                                if (group != null && group.mine) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.invite_contact)) },
+                                        onClick = {
+                                            showChatMenu = false
+                                            showInviteDialog = true
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.PersonAdd, contentDescription = null) }
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.clear_chat)) },
+                                    onClick = {
+                                        showChatMenu = false
+                                        showClearChatDialog = true
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.DeleteSweep, contentDescription = null) }
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        windowInsets = WindowInsets(0, 0, 0, 0)
+                    )
 
-                        val torStatus by viewModel.torStatus.collectAsState()
-                        val torEnabled by viewModel.torEnabled.collectAsState()
-                        
-                        if (torEnabled && torStatus != null && torStatus!!.fraction < 1.0f) {
-                            LinearProgressIndicator(
-                                progress = { torStatus!!.fraction },
-                                modifier = Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                trackColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        }
+                    val torStatus by viewModel.torStatus.collectAsState()
+                    val torEnabled by viewModel.torEnabled.collectAsState()
+                    val isCompanionMode by viewModel.isCompanionMode.collectAsState()
+                    val isCompanionLinked by viewModel.isCompanionLinked.collectAsState()
+                    
+                    if (torEnabled && torStatus != null && torStatus!!.fraction < 1.0f) {
+                        LinearProgressIndicator(
+                            progress = { torStatus!!.fraction },
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            trackColor = MaterialTheme.colorScheme.primaryContainer
+                        )
                     }
-                },
-                bottomBar = {
-                    if (!isSearchMode) {
+
+                    if (isCompanionMode && !isCompanionLinked) {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.tertiary,
+                            trackColor = MaterialTheme.colorScheme.tertiaryContainer
+                        )
+                    }
+                }
+            },
+            bottomBar = {
+                if (!isSearchMode) {
+                    if (isMember) {
                         Surface(tonalElevation = 2.dp) {
                             Column {
                                 replyingTo?.let { reply ->
@@ -578,147 +569,151 @@ fun ChatScreen(
                                 }
                             }
                         }
+                    } else {
+                        Surface(tonalElevation = 2.dp, color = MaterialTheme.colorScheme.surfaceVariant) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .navigationBarsPadding()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.you_left_group),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
                     }
                 }
-            ) { innerPadding ->
-                Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-                    if (isSearchMode && searchQuery.isNotEmpty()) {
-                        if (isSearching) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator()
-                            }
-                        } else if (searchResults.isEmpty()) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                Text(stringResource(R.string.no_results), style = MaterialTheme.typography.bodyLarge)
-                            }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(searchResults) { msg ->
-                                    Box(modifier = Modifier.fillMaxWidth().clickable {
-                                        isSearchMode = false
-                                        searchQuery = ""
-                                        viewModel.clearSearch()
-                                        pendingScrollToId = msg.msgId.toHexString()
-                                    }) {
-                                        MessageBubble(
-                                            message = msg,
-                                            viewModel = viewModel,
-                                            chatId = chatId,
-                                            snackbarHostState = snackbarHostState,
-                                            outgoingColor = if (chatTheme.themeColor != Color.Unspecified) chatTheme.themeColor else MaterialTheme.colorScheme.primary,
-                                            status = messageStatuses[msg.msgId.toHexString()] ?: msg.status,
-                                            onReplyClick = {},
-                                                isHighlighted = false,
-                                            isCompact = isCompact,
-                                            onRetry = {}, onDelete = {}, onRetract = {}, onEdit = {}, onReply = {}, onForward = {}, onReaction = { _ -> },
-                                            retractionNotice = { "" }, getRepliedMessage = { null },
-                                            onBackDrag = { amount -> scope.launch { backOffset.snapTo((backOffset.value + amount).coerceAtLeast(0f)) } },
-                                            onBackRelease = {
-                                                if (backOffset.value > 250f) {
-                                                    performBack()
-                                                } else {
-                                                    scope.launch { backOffset.animateTo(0f) }
-                                                }
-                                            }
-                                        )
-                                    }
-                                }
-                            }
+            }
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                if (isSearchMode && searchQuery.isNotEmpty()) {
+                    if (isSearching) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    } else if (searchResults.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text(stringResource(R.string.no_results), style = MaterialTheme.typography.bodyLarge)
                         }
                     } else {
                         LazyColumn(
-                            state = listState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(16.dp),
-                            reverseLayout = true,
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(displayMessages, key = { it.msgId.toHexString() }) { msg ->
-                                val status = messageStatuses[msg.msgId.toHexString()] ?: msg.status
-                                Box(modifier = Modifier.fillMaxWidth().animateItem()) {
+                            items(searchResults) { msg ->
+                                Box(modifier = Modifier.fillMaxWidth().clickable {
+                                    isSearchMode = false
+                                    searchQuery = ""
+                                    viewModel.clearSearch()
+                                    pendingScrollToId = msg.msgId.toHexString()
+                                }) {
                                     MessageBubble(
                                         message = msg,
                                         viewModel = viewModel,
                                         chatId = chatId,
                                         snackbarHostState = snackbarHostState,
                                         outgoingColor = if (chatTheme.themeColor != Color.Unspecified) chatTheme.themeColor else MaterialTheme.colorScheme.primary,
-                                        status = status,
-                                        onRetry = { viewModel.resendMessage(chatId, msg.body) },
-                                        onDelete = { viewModel.deleteMessages(chatId, listOf(msg.msgId)) },
-                                        onRetract = { viewModel.retractMessages(chatId, listOf(msg.msgId)) },
-                                        onEdit = { 
-                                            editingMessage = msg
-                                            text = msg.body
-                                        },
-                                        onReply = { replyingTo = msg },
-                                        onForward = { showForwardDialog = listOf(msg.msgId) },
-                                        onReaction = { emoji -> viewModel.setReaction(chatId, msg.msgId, emoji) },
-                                        onReplyClick = { replyId ->
-                                            val hex = replyId.toHexString()
-                                            pendingScrollToId = hex
-                                        },
-                                        retractionNotice = { viewModel.getRetractionNotice() },
-                                        getRepliedMessage = { id -> viewModel.getMessage(id) },
-                                        isHighlighted = highlightedMsgId == msg.msgId.toHexString(),
+                                        status = messageStatuses[msg.msgId.toHexString()] ?: msg.status,
+                                        onReplyClick = {},
+                                        isHighlighted = false,
                                         isCompact = isCompact,
-                                        onBackDrag = { amount -> scope.launch { backOffset.snapTo((backOffset.value + amount).coerceAtLeast(0f)) } },
-                                        onBackRelease = {
-                                            if (backOffset.value > 250f) {
-                                                performBack()
-                                            } else {
-                                                scope.launch { backOffset.animateTo(0f) }
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-
-                            item {
-                                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = stringResource(R.string.encrypted_connection),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.outline
+                                        onRetry = {}, onDelete = {}, onRetract = {}, onEdit = {}, onReply = {}, onForward = {}, onReaction = { _ -> },
+                                        retractionNotice = { "" }, getRepliedMessage = { null },
+                                        showAuthor = group != null,
+                                        isMember = isMember
                                     )
                                 }
                             }
                         }
                     }
-
-                    // Jump to Top/Bottom buttons
-                    AnimatedVisibility(
-                        visible = showToTop,
-                        modifier = Modifier.align(Alignment.TopCenter),
-                        enter = fadeIn() + scaleIn(),
-                        exit = fadeOut() + scaleOut()
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        reverseLayout = true,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        SmallFloatingActionButton(
-                            onClick = { scope.launch { if (displayMessages.isNotEmpty()) listState.animateScrollToItem(displayMessages.size) } },
-                            modifier = Modifier.padding(top = 16.dp),
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                            contentColor = MaterialTheme.colorScheme.primary,
-                            shape = CircleShape
-                        ) { Icon(Icons.Default.KeyboardDoubleArrowUp, contentDescription = null) }
-                    }
+                        items(displayMessages, key = { it.msgId.toHexString() }) { msg ->
+                            val status = messageStatuses[msg.msgId.toHexString()] ?: msg.status
+                            Box(modifier = Modifier.fillMaxWidth().animateItem()) {
+                                MessageBubble(
+                                    message = msg,
+                                    viewModel = viewModel,
+                                    chatId = chatId,
+                                    snackbarHostState = snackbarHostState,
+                                    outgoingColor = if (chatTheme.themeColor != Color.Unspecified) chatTheme.themeColor else MaterialTheme.colorScheme.primary,
+                                    status = status,
+                                    onRetry = { viewModel.resendMessage(chatId, msg.body) },
+                                    onDelete = { viewModel.deleteMessages(chatId, listOf(msg.msgId)) },
+                                    onRetract = { viewModel.retractMessages(chatId, listOf(msg.msgId)) },
+                                    onEdit = { 
+                                        editingMessage = msg
+                                        text = msg.body
+                                    },
+                                    onReply = { replyingTo = msg },
+                                    onForward = { showForwardDialog = listOf(msg.msgId) },
+                                    onReaction = { emoji -> viewModel.setReaction(chatId, msg.msgId, emoji) },
+                                    onReplyClick = { replyId ->
+                                        val hex = replyId.toHexString()
+                                        pendingScrollToId = hex
+                                    },
+                                    retractionNotice = { viewModel.getRetractionNotice() },
+                                    getRepliedMessage = { id -> viewModel.getMessage(id) },
+                                    isHighlighted = highlightedMsgId == msg.msgId.toHexString(),
+                                    isCompact = isCompact,
+                                    showAuthor = group != null,
+                                    isMember = isMember
+                                )
+                            }
+                        }
 
-                    AnimatedVisibility(
-                        visible = showToBottom,
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        enter = fadeIn() + scaleIn(),
-                        exit = fadeOut() + scaleOut()
-                    ) {
-                        SmallFloatingActionButton(
-                            onClick = { scope.launch { listState.animateScrollToItem(0) } },
-                            modifier = Modifier.padding(bottom = 16.dp),
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
-                            contentColor = MaterialTheme.colorScheme.primary,
-                            shape = CircleShape
-                        ) { Icon(Icons.Default.KeyboardDoubleArrowDown, contentDescription = null) }
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = stringResource(R.string.encrypted_connection),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                        }
                     }
+                }
+
+                // Jump to Top/Bottom buttons
+                AnimatedVisibility(
+                    visible = showToTop,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut()
+                ) {
+                    SmallFloatingActionButton(
+                        onClick = { scope.launch { if (displayMessages.isNotEmpty()) listState.animateScrollToItem(displayMessages.size) } },
+                        modifier = Modifier.padding(top = 16.dp),
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape
+                    ) { Icon(Icons.Default.KeyboardDoubleArrowUp, contentDescription = null) }
+                }
+
+                AnimatedVisibility(
+                    visible = showToBottom,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    enter = fadeIn() + scaleIn(),
+                    exit = fadeOut() + scaleOut()
+                ) {
+                    SmallFloatingActionButton(
+                        onClick = { scope.launch { listState.animateScrollToItem(0) } },
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.8f),
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape
+                    ) { Icon(Icons.Default.KeyboardDoubleArrowDown, contentDescription = null) }
                 }
             }
         }
@@ -775,6 +770,45 @@ fun ChatScreen(
             }
         )
     }
+
+    if (showInviteDialog && group != null) {
+        val allContacts by viewModel.contacts.collectAsState()
+        AlertDialog(
+            onDismissRequest = { showInviteDialog = false },
+            title = { Text(stringResource(R.string.invite_contact)) },
+            text = {
+                val availableToInvite = allContacts.filter { contact ->
+                    !group.members.any { it.contentEquals(contact.peerIk) }
+                }
+                if (availableToInvite.isEmpty()) {
+                    Text(stringResource(R.string.no_contacts_to_invite))
+                } else {
+                    LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
+                        items(availableToInvite) { contact ->
+                            ListItem(
+                                headlineContent = { Text(contact.localName ?: contact.displayName) },
+                                leadingContent = {
+                                    val contactAvatars by viewModel.contactAvatars.collectAsState()
+                                    Avatar(
+                                        avatarBytes = contactAvatars[contact.peerIk.toHexString()] ?: viewModel.getAvatarOf(contact.peerIk),
+                                        name = contact.localName ?: contact.displayName
+                                    )
+                                },
+                                modifier = Modifier.clickable {
+                                    viewModel.inviteToGroup(chatId, contact.peerIk)
+                                    showInviteDialog = false
+                                }
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showInviteDialog = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -798,20 +832,24 @@ fun MessageBubble(
     getRepliedMessage: (ByteArray) -> FfiMessage?,
     isHighlighted: Boolean,
     isCompact: Boolean = true,
-    onBackDrag: (Float) -> Unit = {},
-    onBackRelease: () -> Unit = {}
+    showAuthor: Boolean = false,
+    isMember: Boolean = true
 ) {
     val alignment = if (message.mine) Alignment.CenterEnd else Alignment.CenterStart
     val bubbleColor = if (message.mine) outgoingColor else MaterialTheme.colorScheme.surfaceVariant
     
-    var offsetX by remember { mutableStateOf(0f) }
-    val animatedOffset by animateFloatAsState(targetValue = offsetX, label = "swipe_reply")
+    val authorIk = remember(message) {
+        if (message.mine || !showAuthor) null
+        else if (message.msgId.size >= 32) message.msgId.take(32).toByteArray()
+        else null
+    }
 
-    val highlightColor by animateColorAsState(
-        targetValue = if (isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else Color.Transparent,
-        animationSpec = tween(durationMillis = 500),
-        label = "highlight"
-    )
+    val contacts by viewModel.contacts.collectAsState()
+    val contactAvatars by viewModel.contactAvatars.collectAsState()
+    val authorContact = remember(contacts, authorIk) {
+        authorIk?.let { ik -> contacts.find { it.peerIk.contentEquals(ik) } }
+    }
+    val authorName = authorContact?.let { it.localName ?: it.displayName } ?: authorIk?.toHexString()?.take(8)
 
     val contentColor = if (message.mine) {
         if (bubbleColor.luminance() > 0.5f) Color.Black else Color.White
@@ -826,14 +864,6 @@ fun MessageBubble(
 
     var isExpanded by remember { mutableStateOf(false) }
     var revealedSpoilers by remember { mutableStateOf(setOf<Int>()) }
-    val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    
-    LaunchedEffect(isExpanded) {
-        if (isExpanded) {
-            kotlinx.coroutines.yield()
-            bringIntoViewRequester.bringIntoView(Rect(0f, 0f, 10f, 10f))
-        }
-    }
     
     val threshold = 300
     val isLong = message.body.length > threshold
@@ -885,48 +915,13 @@ fun MessageBubble(
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
 
     Box(
-        modifier = Modifier.fillMaxWidth()
-            .pointerInput(isCompact) {
-                detectHorizontalDragGestures(
-                    onHorizontalDrag = { change, dragAmount ->
-                        if (dragAmount < 0 || offsetX < 0) {
-                            offsetX = (offsetX + dragAmount).coerceIn(-150f, 0f)
-                            if (offsetX < 0) change.consume()
-                        } else if (isCompact) {
-                            onBackDrag(dragAmount)
-                            change.consume()
-                        }
-                    },
-                    onDragEnd = {
-                        if (offsetX < -80f) { onReply() }
-                        offsetX = 0f
-                        if (isCompact) onBackRelease()
-                    },
-                    onDragCancel = {
-                        offsetX = 0f
-                        if (isCompact) onBackRelease()
-                    }
-                )
-            },
+        modifier = Modifier.fillMaxWidth().background(if (isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent),
         contentAlignment = alignment
     ) {
-        if (animatedOffset < 0) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Reply,
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 16.dp)
-                    .size(24.dp),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = (animatedOffset / -80f).coerceAtMost(1f))
-            )
-        }
-
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = if (message.mine) Arrangement.End else Arrangement.Start,
             modifier = Modifier.fillMaxWidth()
-                .offset { IntOffset(animatedOffset.roundToInt(), 0) }
         ) {
             if (message.mine && status == FfiDeliveryStatus.UNDELIVERABLE) {
                 IconButton(onClick = onRetry) {
@@ -949,10 +944,7 @@ fun MessageBubble(
                     containerColor = bubbleColor,
                     contentColor = contentColor
                 ),
-                modifier = Modifier
-                    .widthIn(max = 280.dp)
-                    .background(highlightColor, RoundedCornerShape(16.dp))
-                    .bringIntoViewRequester(bringIntoViewRequester)
+                modifier = Modifier.widthIn(max = 280.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -986,6 +978,27 @@ fun MessageBubble(
                             )
                         }
                 ) {
+                    if (authorIk != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        ) {
+                            val avatarBytes = authorIk.toHexString().let { contactAvatars[it] } ?: viewModel.getAvatarOf(authorIk)
+                            Avatar(
+                                avatarBytes = avatarBytes,
+                                name = authorName ?: "",
+                                size = 24.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = authorName ?: "",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = linkColor
+                            )
+                        }
+                    }
+
                     message.replyTo?.let { replyId ->
                         val repliedMsg = getRepliedMessage(replyId)
                         Row(
@@ -1110,29 +1123,31 @@ fun MessageBubble(
                 sheetState = rememberModalBottomSheetState()
             ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        val emojis = listOf("👍", "❤️", "😂", "😮", "😢", "🙏")
-                        emojis.forEach { emoji ->
-                            val isSelected = message.reactions.any { it.mine && it.emoji == emoji }
-                            Surface(
-                                modifier = Modifier.size(44.dp).clickable {
-                                    onReaction(if (isSelected) null else emoji)
-                                    showMenu = false
-                                },
-                                shape = CircleShape,
-                                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(emoji, style = MaterialTheme.typography.headlineSmall)
+                    if (isMember) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            val emojis = listOf("👍", "❤️", "😂", "😮", "😢", "🙏")
+                            emojis.forEach { emoji ->
+                                val isSelected = message.reactions.any { it.mine && it.emoji == emoji }
+                                Surface(
+                                    modifier = Modifier.size(44.dp).clickable {
+                                        onReaction(if (isSelected) null else emoji)
+                                        showMenu = false
+                                    },
+                                    shape = CircleShape,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(emoji, style = MaterialTheme.typography.headlineSmall)
+                                    }
                                 }
                             }
                         }
                     }
 
-                    if (message.mine && status == FfiDeliveryStatus.UNDELIVERABLE) {
+                    if (message.mine && status == FfiDeliveryStatus.UNDELIVERABLE && isMember) {
                         ListItem(
                             headlineContent = { Text("Retry") },
                             leadingContent = { Icon(Icons.Default.Refresh, contentDescription = null) },
@@ -1147,24 +1162,26 @@ fun MessageBubble(
                             showMenu = false
                         }
                     )
-                    if (message.mine) {
+                    if (message.mine && isMember) {
                         ListItem(
                             headlineContent = { Text(stringResource(R.string.edit)) },
                             leadingContent = { Icon(Icons.Default.Edit, contentDescription = null) },
                             modifier = Modifier.clickable { showMenu = false; onEdit() }
                         )
                     }
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.reply)) },
-                        leadingContent = { Icon(Icons.AutoMirrored.Filled.Reply, contentDescription = null) },
-                        modifier = Modifier.clickable { showMenu = false; onReply() }
-                    )
+                    if (isMember) {
+                        ListItem(
+                            headlineContent = { Text(stringResource(R.string.reply)) },
+                            leadingContent = { Icon(Icons.AutoMirrored.Filled.Reply, contentDescription = null) },
+                            modifier = Modifier.clickable { showMenu = false; onReply() }
+                        )
+                    }
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.forward)) },
                         leadingContent = { Icon(Icons.Default.ArrowForward, contentDescription = null) },
                         modifier = Modifier.clickable { showMenu = false; onForward() }
                     )
-                    if (message.mine) {
+                    if (message.mine && isMember) {
                         ListItem(
                             headlineContent = { Text(stringResource(R.string.retract)) },
                             leadingContent = { Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null) },

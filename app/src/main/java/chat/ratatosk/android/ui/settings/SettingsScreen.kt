@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -90,6 +93,8 @@ fun SettingsScreen(
         }
     }
 
+    val isCompanionMode by viewModel.isCompanionMode.collectAsState()
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
@@ -116,52 +121,68 @@ fun SettingsScreen(
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    SettingsTransportsSection(
-                        transportsEnabled = transportsEnabled,
-                        transportsReady = transportsReady,
-                        torStatus = torStatus,
-                        mailStatus = mailStatus,
-                        onToggleLan = { if (it) showLanWarning = true else viewModel.setTransportEnabled(FfiTransport.LAN, false) },
-                        onToggleTor = { viewModel.setTransportEnabled(FfiTransport.ONION, it) },
-                        onToggleMail = { viewModel.setTransportEnabled(FfiTransport.MAIL, it) },
-                        onShowMailSetup = { showMailSetup = true },
-                        onShowMailCreate = { showMailCreate = true },
-                        onClearMailAccount = { viewModel.clearMailAccount() }
-                    )
+                    if (!isCompanionMode) {
+                        SettingsTransportsSection(
+                            transportsEnabled = transportsEnabled,
+                            transportsReady = transportsReady,
+                            torStatus = torStatus,
+                            mailStatus = mailStatus,
+                            onToggleLan = { if (it) showLanWarning = true else viewModel.setTransportEnabled(FfiTransport.LAN, false) },
+                            onToggleTor = { viewModel.setTransportEnabled(FfiTransport.ONION, it) },
+                            onToggleMail = { viewModel.setTransportEnabled(FfiTransport.MAIL, it) },
+                            onShowMailSetup = { showMailSetup = true },
+                            onShowMailCreate = { showMailCreate = true },
+                            onClearMailAccount = { viewModel.clearMailAccount() }
+                        )
 
-                    Spacer(modifier = Modifier.height(24.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(24.dp))
 
-                    SettingsCompanionSection(onPairedDevicesClick = onPairedDevicesClick)
-                }
+                        SettingsCompanionSection(onPairedDevicesClick = onPairedDevicesClick)
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
 
-                // Column 2: Privacy, Storage, Theme
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                ) {
                     SettingsPrivacySection(
                         showName = showName,
                         showText = showText,
                         onToggleShowName = { viewModel.setNotificationsShowName(it) },
                         onToggleShowText = { viewModel.setNotificationsShowText(it) }
                     )
+                }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(24.dp))
+                // Column 2: Storage, Theme
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    if (!isCompanionMode) {
+                        SettingsStorageSection(
+                            viewModel = viewModel,
+                            snackbarHostState = snackbarHostState,
+                            scope = scope
+                        )
 
-                    SettingsStorageSection(
-                        viewModel = viewModel,
-                        snackbarHostState = snackbarHostState,
-                        scope = scope
-                    )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        SettingsBackupSection(viewModel = viewModel, snackbarHostState = snackbarHostState)
 
-                    Spacer(modifier = Modifier.height(24.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(24.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(24.dp))
+                    } else {
+                        SettingsDownloadPathSection(viewModel = viewModel)
+
+                        Spacer(modifier = Modifier.height(24.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
 
                     SettingsThemeSection(
                         viewModel = viewModel,
@@ -176,24 +197,26 @@ fun SettingsScreen(
                     .padding(16.dp)
                     .verticalScroll(scrollState)
             ) {
-                SettingsTransportsSection(
-                    transportsEnabled = transportsEnabled,
-                    transportsReady = transportsReady,
-                    torStatus = torStatus,
-                    mailStatus = mailStatus,
-                    onToggleLan = { if (it) showLanWarning = true else viewModel.setTransportEnabled(FfiTransport.LAN, false) },
-                    onToggleTor = { viewModel.setTransportEnabled(FfiTransport.ONION, it) },
-                    onToggleMail = { viewModel.setTransportEnabled(FfiTransport.MAIL, it) },
-                    onShowMailSetup = { showMailSetup = true },
-                    onShowMailCreate = { showMailCreate = true },
-                    onClearMailAccount = { viewModel.clearMailAccount() }
-                )
+                if (!isCompanionMode) {
+                    SettingsTransportsSection(
+                        transportsEnabled = transportsEnabled,
+                        transportsReady = transportsReady,
+                        torStatus = torStatus,
+                        mailStatus = mailStatus,
+                        onToggleLan = { if (it) showLanWarning = true else viewModel.setTransportEnabled(FfiTransport.LAN, false) },
+                        onToggleTor = { viewModel.setTransportEnabled(FfiTransport.ONION, it) },
+                        onToggleMail = { viewModel.setTransportEnabled(FfiTransport.MAIL, it) },
+                        onShowMailSetup = { showMailSetup = true },
+                        onShowMailCreate = { showMailCreate = true },
+                        onClearMailAccount = { viewModel.clearMailAccount() }
+                    )
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
-                SettingsCompanionSection(onPairedDevicesClick = onPairedDevicesClick)
+                    SettingsCompanionSection(onPairedDevicesClick = onPairedDevicesClick)
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                }
 
                 SettingsPrivacySection(
                     showName = showName,
@@ -204,13 +227,24 @@ fun SettingsScreen(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
-                SettingsStorageSection(
-                    viewModel = viewModel,
-                    snackbarHostState = snackbarHostState,
-                    scope = scope
-                )
+                if (!isCompanionMode) {
+                    SettingsStorageSection(
+                        viewModel = viewModel,
+                        snackbarHostState = snackbarHostState,
+                        scope = scope
+                    )
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+                    SettingsBackupSection(viewModel = viewModel, snackbarHostState = snackbarHostState)
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                } else {
+                    // In companion mode, we only show Download Path from Storage section
+                    SettingsDownloadPathSection(viewModel = viewModel)
+                    
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                }
 
                 SettingsThemeSection(
                     viewModel = viewModel,
@@ -286,7 +320,7 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.create_mail)) },
             text = {
                 Column {
-                    OutlinedTextField(value = url, onValueChange = { url = it }, label = { Text("Server URL") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = url, onValueChange = { url = it }, label = { Text(stringResource(R.string.server_url)) }, modifier = Modifier.fillMaxWidth())
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = viaT, onCheckedChange = { viaT = it })
                         Text(stringResource(R.string.via_tor))
@@ -294,7 +328,7 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { viewModel.createMailAccount(url, viaT); showMailCreate = false }) { Text("Register") }
+                TextButton(onClick = { viewModel.createMailAccount(url, viaT); showMailCreate = false }) { Text(stringResource(R.string.register)) }
             },
             dismissButton = { TextButton(onClick = { showMailCreate = false }) { Text(stringResource(R.string.cancel)) } }
         )
@@ -314,7 +348,7 @@ fun SettingsTransportsSection(
     onShowMailCreate: () -> Unit,
     onClearMailAccount: () -> Unit
 ) {
-    Text(text = "Transports", style = MaterialTheme.typography.titleMedium)
+    Text(text = stringResource(R.string.transports), style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(16.dp))
 
     // LAN
@@ -403,7 +437,7 @@ fun SettingsTransportsSection(
                     }
                     if (status.state != FfiMailState.NO_ACCOUNT) {
                         TextButton(onClick = onClearMailAccount, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
-                            Text("Clear Mail Account")
+                            Text(stringResource(R.string.remove))
                         }
                     }
                 }
@@ -414,7 +448,7 @@ fun SettingsTransportsSection(
 
 @Composable
 fun SettingsCompanionSection(onPairedDevicesClick: () -> Unit) {
-    Text(text = "Companion Devices", style = MaterialTheme.typography.titleMedium)
+    Text(text = stringResource(R.string.companion_devices), style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(8.dp))
     OutlinedButton(
         onClick = onPairedDevicesClick,
@@ -422,7 +456,7 @@ fun SettingsCompanionSection(onPairedDevicesClick: () -> Unit) {
     ) {
         Icon(Icons.Default.Computer, contentDescription = null)
         Spacer(modifier = Modifier.width(8.dp))
-        Text("Manage Paired Devices")
+        Text(stringResource(R.string.paired_devices))
     }
 }
 
@@ -461,13 +495,182 @@ fun SettingsPrivacySection(
 }
 
 @Composable
+fun SettingsDownloadPathSection(viewModel: RatatoskViewModel) {
+    val context = LocalContext.current
+    Text(text = stringResource(R.string.storage), style = MaterialTheme.typography.titleMedium)
+    Spacer(modifier = Modifier.height(16.dp))
+
+    val downloadDirUri by viewModel.downloadDirUri.collectAsState()
+    val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        uri?.let {
+            context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            viewModel.setDownloadDirUri(it)
+        }
+    }
+    OutlinedButton(onClick = { folderLauncher.launch(null) }, modifier = Modifier.fillMaxWidth()) {
+        val folderName = if (downloadDirUri != null) {
+            val doc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, android.net.Uri.parse(downloadDirUri!!))
+            doc?.name ?: stringResource(R.string.settings)
+        } else "Downloads/ratatosk"
+        Text("${stringResource(R.string.save_folder)}: $folderName")
+    }
+}
+
+@Composable
+fun SettingsBackupSection(
+    viewModel: RatatoskViewModel,
+    snackbarHostState: SnackbarHostState
+) {
+    var showExportDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    Text(text = stringResource(R.string.backup_recovery), style = MaterialTheme.typography.titleMedium)
+    Spacer(modifier = Modifier.height(16.dp))
+
+    OutlinedButton(
+        onClick = { showExportDialog = true },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Icon(Icons.Default.Backup, contentDescription = null)
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(stringResource(R.string.create_backup_archive))
+    }
+
+    if (showExportDialog) {
+        ExportArchiveDialog(
+            viewModel = viewModel,
+            onDismiss = { showExportDialog = false },
+            onSuccess = { path, _ ->
+                scope.launch {
+                    snackbarHostState.showSnackbar("Backup saved to $path")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun ExportArchiveDialog(
+    viewModel: RatatoskViewModel,
+    onDismiss: () -> Unit,
+    onSuccess: (String, String) -> Unit
+) {
+    var passphrase by remember { mutableStateOf("") }
+    var selectedScope by remember { mutableStateOf(FfiExportScope.EVERYTHING) }
+    var isExporting by remember { mutableStateOf(false) }
+    var exportResult by remember { mutableStateOf<org.ratatosk.core.FfiExported?>(null) }
+    
+    val clipboardManager = LocalClipboardManager.current
+
+    AlertDialog(
+        onDismissRequest = { if (!isExporting) onDismiss() },
+        title = { Text(stringResource(R.string.create_backup)) },
+        text = {
+            Column {
+                if (exportResult == null) {
+                    Text(stringResource(R.string.export_scope_desc))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(stringResource(R.string.scope), style = MaterialTheme.typography.labelMedium)
+                    FfiExportScope.entries.forEach { scope ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().clickable { selectedScope = scope }
+                        ) {
+                            RadioButton(selected = selectedScope == scope, onClick = { selectedScope = scope })
+                            val label = when(scope) {
+                                FfiExportScope.EVERYTHING -> stringResource(R.string.scope_everything)
+                                FfiExportScope.WITHOUT_ATTACHMENTS -> stringResource(R.string.scope_without_attachments)
+                                FfiExportScope.SOCIAL_GRAPH -> stringResource(R.string.scope_social_graph)
+                            }
+                            Text(label)
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    OutlinedTextField(
+                        value = passphrase,
+                        onValueChange = { passphrase = it },
+                        label = { Text(stringResource(R.string.passphrase_optional)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                    
+                    if (isExporting) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                        Text(stringResource(R.string.creating_archive), modifier = Modifier.align(Alignment.CenterHorizontally))
+                    }
+                } else {
+                    Text(stringResource(R.string.backup_success), fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(stringResource(R.string.backup_path, exportResult!!.path), style = MaterialTheme.typography.labelSmall)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(stringResource(R.string.recovery_key_critical), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    OutlinedCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = exportResult!!.keyText,
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            IconButton(onClick = { clipboardManager.setText(AnnotatedString(exportResult!!.keyText)) }) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (exportResult == null) {
+                Button(
+                    onClick = {
+                        isExporting = true
+                        viewModel.exportHistory(selectedScope, passphrase.takeIf { it.isNotBlank() }) { result ->
+                            exportResult = result
+                            isExporting = false
+                            onSuccess(result.path, result.keyText)
+                        }
+                    },
+                    enabled = !isExporting
+                ) {
+                    Text(stringResource(R.string.export))
+                }
+            } else {
+                Button(onClick = onDismiss) {
+                    Text(stringResource(R.string.close))
+                }
+            }
+        },
+        dismissButton = {
+            if (exportResult == null) {
+                TextButton(onClick = onDismiss, enabled = !isExporting) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        }
+    )
+}
+
+@Composable
 fun SettingsStorageSection(
     viewModel: RatatoskViewModel,
     snackbarHostState: SnackbarHostState,
     scope: kotlinx.coroutines.CoroutineScope
 ) {
     val context = LocalContext.current
-    Text(text = "Storage & Cleanup", style = MaterialTheme.typography.titleMedium)
+    Text(text = stringResource(R.string.storage), style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(16.dp))
 
     val autoAcceptLimit by viewModel.autoAcceptLimit.collectAsState()

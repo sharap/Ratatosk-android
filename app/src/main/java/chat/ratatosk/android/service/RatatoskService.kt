@@ -31,6 +31,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.ratatosk.core.FfiEvent
+import org.ratatosk.core.FfiCompanionEvent
+import org.ratatosk.core.FfiCompanionMessage
 
 class RatatoskService : Service() {
     private var multicastLock: WifiManager.MulticastLock? = null
@@ -75,8 +77,17 @@ class RatatoskService : Service() {
         RatatoskCore.events
             .onEach { event ->
                 android.util.Log.d("RatatoskService", "Service received event: $event")
-                if (event is FfiEvent.MessageReceived) {
+                if (event is FfiEvent.MessageReceived && !RatatoskCore.isCompanionMode()) {
                     showIncomingMessageNotification(event)
+                }
+            }
+            .launchIn(serviceScope)
+
+        RatatoskCore.companionEvents
+            .onEach { event ->
+                android.util.Log.d("RatatoskService", "Service received companion event: $event")
+                if (event is FfiCompanionEvent.Arrived && !event.message.mine) {
+                    showCompanionMessageNotification(event.message)
                 }
             }
             .launchIn(serviceScope)
@@ -235,6 +246,56 @@ class RatatoskService : Service() {
             val notification = NotificationCompat.Builder(this@RatatoskService, MESSAGE_CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setLargeIcon(avatarBitmap)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .build()
+
+            try {
+                NotificationManagerCompat.from(this@RatatoskService).notify(chatIdHex.hashCode(), notification)
+            } catch (e: SecurityException) {
+                // Permission not granted yet
+            }
+        }
+    }
+
+    private fun showCompanionMessageNotification(message: FfiCompanionMessage) {
+        val chatIdHex = message.chatId.toHexString()
+        val accountId = RatatoskCore.getActiveAccountId() ?: return
+        
+        serviceScope.launch {
+            val settings = SettingsRepository(this@RatatoskService)
+            val showName = settings.getNotificationsShowName(accountId).first()
+            val showText = settings.getNotificationsShowText(accountId).first()
+
+            val title = if (showName) {
+                RatatoskCore.getCompanionChatTitle(message.chatId) ?: getString(R.string.chat)
+            } else {
+                getString(R.string.app_name)
+            }
+
+            val body = if (showText) {
+                MarkdownUtils.formatForNotification(message.body, getString(R.string.spoiler))
+            } else {
+                getString(R.string.message)
+            }
+
+            val intent = Intent(this@RatatoskService, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("chatId", chatIdHex)
+            }
+            
+            val pendingIntent = PendingIntent.getActivity(
+                this@RatatoskService, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            // Avatars are harder in companion mode as we don't have peerIk easily for all chats
+            // and no sync avatarOf fetch. Skip for now or use chatId if it matches peerIk.
+            val notification = NotificationCompat.Builder(this@RatatoskService, MESSAGE_CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)

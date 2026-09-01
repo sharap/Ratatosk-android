@@ -22,20 +22,31 @@ fun Avatar(
     avatarBytes: ByteArray?,
     name: String,
     modifier: Modifier = Modifier,
-    size: androidx.compose.ui.unit.Dp = 40.dp
+    size: androidx.compose.ui.unit.Dp = 40.dp,
+    shape: androidx.compose.ui.graphics.Shape = CircleShape,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null
 ) {
     Surface(
         modifier = modifier.size(size),
-        shape = CircleShape,
+        shape = shape,
         color = MaterialTheme.colorScheme.secondaryContainer
     ) {
         if (avatarBytes != null) {
             Image(
                 painter = rememberAsyncImagePainter(model = avatarBytes),
                 contentDescription = name,
-                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                modifier = Modifier.fillMaxSize().clip(shape),
                 contentScale = ContentScale.Crop
             )
+        } else if (icon != null) {
+            Box(contentAlignment = Alignment.Center) {
+                androidx.compose.material3.Icon(
+                    imageVector = icon,
+                    contentDescription = name,
+                    modifier = Modifier.size(size * 0.6f),
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
         } else {
             Box(contentAlignment = Alignment.Center) {
                 Text(

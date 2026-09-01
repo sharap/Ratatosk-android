@@ -47,6 +47,7 @@ fun ProfileScreen(
     val onionAddress by viewModel.onionAddress.collectAsState()
     val cardVersion by viewModel.cardVersion.collectAsState()
     val myContactUri by viewModel.myContactUri.collectAsState()
+    val isCompanionMode by viewModel.isCompanionMode.collectAsState()
     val clipboardManager = LocalClipboardManager.current
     
     var showMyQr by remember { mutableStateOf(false) }
@@ -107,7 +108,7 @@ fun ProfileScreen(
                     ) {
                         Icon(Icons.Default.Logout, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Switch Account")
+                        Text(stringResource(R.string.switch_account_btn))
                     }
                 }
 
@@ -117,24 +118,34 @@ fun ProfileScreen(
                         .weight(1f)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    ProfileDetailsSection(
-                        fingerprint = fingerprint,
-                        cardVersion = cardVersion,
-                        torEnabled = torEnabled,
-                        onionAddress = onionAddress,
-                        myContactUri = myContactUri,
-                        onCopyFingerprint = { fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) } },
-                        onCopyOnion = { onionAddress?.let { clipboardManager.setText(AnnotatedString(it)) } },
-                        onShowQr = { showMyQr = true },
-                        onCopyLink = {
-                            viewModel.getMyContactUri()
-                            myContactUri?.let { uri -> clipboardManager.setText(AnnotatedString(uri)) }
+                    if (!isCompanionMode) {
+                        ProfileDetailsSection(
+                            fingerprint = fingerprint,
+                            cardVersion = cardVersion,
+                            torEnabled = torEnabled,
+                            onionAddress = onionAddress,
+                            myContactUri = myContactUri,
+                            onCopyFingerprint = { fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) } },
+                            onCopyOnion = { onionAddress?.let { clipboardManager.setText(AnnotatedString(it)) } },
+                            onShowQr = { showMyQr = true },
+                            onCopyLink = {
+                                viewModel.getMyContactUri()
+                                myContactUri?.let { uri -> clipboardManager.setText(AnnotatedString(uri)) }
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(32.dp))
+
+                        ProfileNoticesSection(notices = notices)
+                    } else {
+                        Box(modifier = Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                stringResource(R.string.companion_mode_minimal_profile_desc),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    ProfileNoticesSection(notices = notices)
+                    }
                 }
             }
         } else {
@@ -158,22 +169,24 @@ fun ProfileScreen(
                 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                ProfileDetailsSection(
-                    fingerprint = fingerprint,
-                    cardVersion = cardVersion,
-                    torEnabled = torEnabled,
-                    onionAddress = onionAddress,
-                    myContactUri = myContactUri,
-                    onCopyFingerprint = { fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) } },
-                    onCopyOnion = { onionAddress?.let { clipboardManager.setText(AnnotatedString(it)) } },
-                    onShowQr = { showMyQr = true },
-                    onCopyLink = {
-                        viewModel.getMyContactUri()
-                        myContactUri?.let { uri -> clipboardManager.setText(AnnotatedString(uri)) }
-                    }
-                )
+                if (!isCompanionMode) {
+                    ProfileDetailsSection(
+                        fingerprint = fingerprint,
+                        cardVersion = cardVersion,
+                        torEnabled = torEnabled,
+                        onionAddress = onionAddress,
+                        myContactUri = myContactUri,
+                        onCopyFingerprint = { fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) } },
+                        onCopyOnion = { onionAddress?.let { clipboardManager.setText(AnnotatedString(it)) } },
+                        onShowQr = { showMyQr = true },
+                        onCopyLink = {
+                            viewModel.getMyContactUri()
+                            myContactUri?.let { uri -> clipboardManager.setText(AnnotatedString(uri)) }
+                        }
+                    )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
 
                 OutlinedButton(
                     onClick = { viewModel.logout() },
@@ -182,12 +195,14 @@ fun ProfileScreen(
                 ) {
                     Icon(Icons.Default.Logout, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Switch Account")
+                    Text(stringResource(R.string.switch_account_btn))
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                ProfileNoticesSection(notices = notices)
+                if (!isCompanionMode) {
+                    ProfileNoticesSection(notices = notices)
+                }
             }
         }
     }
@@ -360,13 +375,13 @@ fun ProfileDetailsSection(
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Onion Address",
+                    text = stringResource(R.string.onion_address),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.outline
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = onionAddress ?: "Waiting for Tor...",
+                        text = onionAddress ?: stringResource(R.string.waiting_for_tor),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f)
                     )
