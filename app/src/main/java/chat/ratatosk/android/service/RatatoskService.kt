@@ -127,7 +127,7 @@ class RatatoskService : Service() {
     private fun notifyCore() {
         serviceScope.launch {
             try {
-                if (RatatoskCore.isInitialized()) {
+                if (RatatoskCore.isInitialized() && !RatatoskCore.isCompanionMode()) {
                     android.util.Log.d("RatatoskService", "Notifying core about network change")
                     RatatoskCore.getClient().networkChanged()
                 }
@@ -189,36 +189,50 @@ class RatatoskService : Service() {
         val accountId = RatatoskCore.getActiveAccountId() ?: return
         
         serviceScope.launch {
-            val settings = SettingsRepository(this@RatatoskService)
-            val showName = settings.getNotificationsShowName(accountId).first()
-            val showText = settings.getNotificationsShowText(accountId).first()
-
-            val contact = try {
-                if (RatatoskCore.isInitialized()) {
-                    RatatoskCore.getClient().contacts().find { it.chatId.contentEquals(event.chatId) }
+            val msg = try {
+                if (RatatoskCore.isInitialized() && !RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getClient().message(event.msgId)
+                        ?: RatatoskCore.getClient().messages(event.chatId, 10u).firstOrNull { it.msgId.contentEquals(event.msgId) }
                 } else null
             } catch (e: Exception) {
                 null
             }
 
+            if (msg != null && msg.mine) {
+                android.util.Log.d("RatatoskService", "Skipping notification for own message (msgId=${event.msgId.toHexString()})")
+                return@launch
+            }
+
+            val settings = SettingsRepository(this@RatatoskService)
+            val showName = settings.getNotificationsShowName(accountId).first()
+            val showText = settings.getNotificationsShowText(accountId).first()
+
+            val (contact, group) = try {
+                if (RatatoskCore.isInitialized() && !RatatoskCore.isCompanionMode()) {
+                    val client = RatatoskCore.getClient()
+                    val c = client.contacts().find { it.chatId.contentEquals(event.chatId) }
+                    val g = if (c == null) client.groups().find { it.chatId.contentEquals(event.chatId) } else null
+                    Pair(c, g)
+                } else Pair(null, null)
+            } catch (e: Exception) {
+                Pair(null, null)
+            }
+
             val title = if (showName) {
-                contact?.let { it.localName ?: it.displayName } ?: getString(R.string.chat)
+                contact?.let { it.localName ?: it.displayName }
+                    ?: group?.title
+                    ?: getString(R.string.chat)
             } else {
                 getString(R.string.app_name)
             }
 
             val body = if (showText) {
-                try {
-                    if (RatatoskCore.isInitialized()) {
-                        // Get last message to get the body
-                        val rawBody = RatatoskCore.getClient().messages(event.chatId, 1u).firstOrNull { it.msgId.contentEquals(event.msgId) }?.body
-                            ?: getString(R.string.message)
-                        MarkdownUtils.formatForNotification(rawBody, getString(R.string.spoiler))
-                    } else {
-                        getString(R.string.message)
-                    }
-                } catch (e: Exception) {
-                    getString(R.string.message)
+                val rawBody = msg?.body ?: getString(R.string.message)
+                val formatted = MarkdownUtils.formatForNotification(rawBody, getString(R.string.spoiler))
+                if (group != null && !msg?.author.isNullOrBlank()) {
+                    "${msg.author}: $formatted"
+                } else {
+                    formatted
                 }
             } else {
                 getString(R.string.message)
@@ -234,10 +248,15 @@ class RatatoskService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            val avatarBitmap = if (showName && contact != null) {
+            val avatarBitmap = if (showName) {
                 try {
-                    if (RatatoskCore.isInitialized()) {
-                        val bytes = RatatoskCore.getClient().avatarOf(contact.peerIk)
+                    if (RatatoskCore.isInitialized() && !RatatoskCore.isCompanionMode()) {
+                        val client = RatatoskCore.getClient()
+                        val bytes = if (contact != null) {
+                            client.avatarOf(contact.peerIk)
+                        } else if (group != null) {
+                            client.groupAvatar(group.chatId)
+                        } else null
                         bytes?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
                     } else null
                 } catch (e: Exception) { null }
@@ -262,6 +281,11 @@ class RatatoskService : Service() {
     }
 
     private fun showCompanionMessageNotification(message: FfiCompanionMessage) {
+        if (message.mine) {
+            android.util.Log.d("RatatoskService", "Skipping notification for own companion message (msgId=${message.msgId.toHexString()})")
+            return
+        }
+
         val chatIdHex = message.chatId.toHexString()
         val accountId = RatatoskCore.getActiveAccountId() ?: return
         
@@ -277,7 +301,12 @@ class RatatoskService : Service() {
             }
 
             val body = if (showText) {
-                MarkdownUtils.formatForNotification(message.body, getString(R.string.spoiler))
+                val formatted = MarkdownUtils.formatForNotification(message.body, getString(R.string.spoiler))
+                if (!message.author.isNullOrBlank()) {
+                    "${message.author}: $formatted"
+                } else {
+                    formatted
+                }
             } else {
                 getString(R.string.message)
             }
@@ -292,8 +321,6 @@ class RatatoskService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            // Avatars are harder in companion mode as we don't have peerIk easily for all chats
-            // and no sync avatarOf fetch. Skip for now or use chatId if it matches peerIk.
             val notification = NotificationCompat.Builder(this@RatatoskService, MESSAGE_CHANNEL_ID)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(title)

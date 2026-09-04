@@ -22,6 +22,7 @@
     <string name="read">Read</string>
     <string name="add_contact">Add Contact</string>
     <string name="create_group">Create Group</string>
+    <string name="rename_group">Rename Group</string>
     <string name="group_title">Group Title</string>
     <string name="create">Create</string>
     <string name="group_chat">Group Chat</string>

@@ -1,6 +1,9 @@
 package chat.ratatosk.android.ui.main
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,7 +16,6 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
-import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.*
 import androidx.compose.material.icons.filled.AccountCircle
@@ -25,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -53,14 +56,27 @@ fun AdaptiveMainScreen(
     onCropAvatar: () -> Unit,
     onPairedDevicesClick: () -> Unit,
 ) {
-    val navigator = rememberListDetailPaneScaffoldNavigator<String>()
+    val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+    val adaptiveInfo = currentWindowAdaptiveInfo()
+    
+    // Tablet/multi-pane UI is disabled for now; smartphone (single-pane) UI only.
+    val isCompact = true
+
+    val scaffoldDirective = remember(adaptiveInfo) {
+        val baseDirective = androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective(adaptiveInfo)
+        baseDirective.copy(
+            maxHorizontalPartitions = 1
+        )
+    }
+
+    val navigator = rememberListDetailPaneScaffoldNavigator<String>(
+        scaffoldDirective = scaffoldDirective
+    )
+
     val activeChatId by viewModel.activeChatIdFlow.collectAsState()
     val activeContactId by viewModel.activeContactIdFlow.collectAsState()
-    val contacts by viewModel.contacts.collectAsState()
-    val contactAvatars by viewModel.contactAvatars.collectAsState()
 
-    val selectedAccount by viewModel.selectedAccount.collectAsState()
     val totalUnreadCount by viewModel.totalUnreadCount.collectAsState()
     val isCompanionMode by viewModel.isCompanionMode.collectAsState()
     var showAddContactDialog by remember { mutableStateOf(false) }
@@ -77,10 +93,6 @@ fun AdaptiveMainScreen(
             selectedTab = MainTab.CHATS
         }
     }
-
-    val scope = rememberCoroutineScope()
-    val adaptiveInfo = currentWindowAdaptiveInfo()
-    val isCompact = adaptiveInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
 
     // Selection logic: UI only
     LaunchedEffect(activeChatId) {
@@ -106,7 +118,6 @@ fun AdaptiveMainScreen(
     LaunchedEffect(navigator.currentDestination) {
         focusManager.clearFocus()
         val currentKey = navigator.currentDestination?.contentKey
-        val currentPane = navigator.currentDestination?.pane
         
         if (currentKey == null) {
             viewModel.setActiveChat(null)
@@ -118,138 +129,115 @@ fun AdaptiveMainScreen(
             val id = try { currentKey.drop(5).hexToByteArray() } catch (e: Exception) { null }
             if (id != null) {
                 viewModel.setActiveChat(id)
-                // If we are in compact mode and navigated to a chat, clear contact
-                if (isCompact) viewModel.setActiveContact(null)
             }
         } else if (currentKey.startsWith("contact_")) {
             val id = try { currentKey.drop(8).hexToByteArray() } catch (e: Exception) { null }
             if (id != null) {
                 viewModel.setActiveContact(id)
-                // If we are in compact mode and navigated to a contact, clear chat
-                if (isCompact) viewModel.setActiveChat(null)
             }
         }
     }
 
     val chatGridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
     val contactsGridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState()
+    val showBackButton = navigator.scaffoldValue[ListDetailPaneScaffoldRole.List] == PaneAdaptedValue.Hidden
     
-    val isListVisible = navigator.scaffoldValue[ListDetailPaneScaffoldRole.List] != PaneAdaptedValue.Hidden
-    val isDetailVisible = navigator.scaffoldValue[ListDetailPaneScaffoldRole.Detail] != PaneAdaptedValue.Hidden
-    
-    val showBottomBar = isCompact && isListVisible && !isDetailVisible
-    val showBackButton = !isListVisible
+    if (showBackButton) {
+        BackHandler(enabled = true) {
+            scope.launch { navigator.navigateBack() }
+        }
+    }
 
-    Scaffold(
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar {
-                    visibleTabs.forEach { tab ->
-                        NavigationBarItem(
-                            icon = {
-                                BadgedBox(
-                                    badge = {
-                                        if (tab == MainTab.CHATS && totalUnreadCount > 0) {
-                                            Badge { Text(totalUnreadCount.toString()) }
-                                        }
-                                    }
-                                ) { Icon(tab.icon, contentDescription = null) }
-                            },
-                            label = { Text(stringResource(tab.labelRes)) },
-                            selected = selectedTab == tab,
-                            onClick = { 
-                                selectedTab = tab
+    Box(Modifier.fillMaxSize()) {
+        ListDetailPaneScaffold(
+            modifier = Modifier.fillMaxSize(),
+            directive = navigator.scaffoldDirective,
+            scaffoldState = navigator.scaffoldState,
+            listPane = {
+                AnimatedPane(
+                    boundsAnimationSpec = snap(),
+                    enterTransition = fadeIn(animationSpec = tween(150)),
+                    exitTransition = fadeOut(animationSpec = tween(150))
+                ) {
+                    Scaffold(
+                        bottomBar = {
+                            NavigationBar {
+                                visibleTabs.forEach { tab ->
+                                    NavigationBarItem(
+                                        icon = {
+                                            BadgedBox(
+                                                badge = {
+                                                    if (tab == MainTab.CHATS && totalUnreadCount > 0) {
+                                                        Badge { Text(totalUnreadCount.toString()) }
+                                                    }
+                                                }
+                                            ) { Icon(tab.icon, contentDescription = null) }
+                                        },
+                                        label = { Text(stringResource(tab.labelRes)) },
+                                        selected = selectedTab == tab,
+                                        onClick = { selectedTab = tab }
+                                    )
+                                }
                             }
-                        )
-                    }
-                }
-            }
-        }
-    ) { innerPadding ->
-        Row(Modifier.fillMaxSize()) {
-            if (!isCompact) {
-                UnifiedNavigationRail(
-                    selectedAccount = selectedAccount,
-                    contacts = contacts,
-                    contactAvatars = contactAvatars,
-                    currentTab = selectedTab,
-                    visibleTabs = visibleTabs,
-                    totalUnreadCount = totalUnreadCount,
-                    hasChats = contacts.isNotEmpty(),
-                    onAccountSelect = { account ->
-                        viewModel.selectAccount(account)
-                        viewModel.setActiveChat(null)
-                        viewModel.setActiveContact(null)
-                        selectedTab = MainTab.PROFILE
-                        scope.launch { 
-                            navigator.navigateBack()
                         }
-                    },
-                    onAddContactClick = { showAddContactDialog = true },
-                    onChatSelect = { chatId ->
-                        viewModel.setActiveChat(chatId)
-                    },
-                    onTabSelect = { tab ->
-                        selectedTab = tab
-                        if (tab != MainTab.CHATS && tab != MainTab.CONTACTS) {
-                            viewModel.setActiveChat(null)
-                            viewModel.setActiveContact(null)
-                            scope.launch { 
-                                navigator.navigateBack()
+                    ) { innerPadding ->
+                        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                            key(selectedTab) {
+                                MainTabContent(
+                                    currentTab = selectedTab,
+                                    viewModel = viewModel,
+                                    onScanClick = onScanClick,
+                                    onCropAvatar = onCropAvatar,
+                                    onPairedDevicesClick = onPairedDevicesClick,
+                                    onChatClick = { chatId -> viewModel.setActiveChat(chatId) },
+                                    onContactClick = { contactId -> 
+                                        viewModel.setActiveContact(contactId)
+                                    },
+                                    chatGridState = chatGridState,
+                                    contactsGridState = contactsGridState,
+                                    showFab = true
+                                )
                             }
                         }
                     }
-                )
-            }
-            
-            NavigableListDetailPaneScaffold(
-                modifier = Modifier.padding(innerPadding).weight(1f),
-                navigator = navigator,
-                listPane = {
-                    AnimatedPane {
-                        key(selectedTab) {
-                            MainTabContent(
-                                currentTab = selectedTab,
-                                viewModel = viewModel,
-                                onScanClick = onScanClick,
-                                onCropAvatar = onCropAvatar,
-                                onPairedDevicesClick = onPairedDevicesClick,
-                                onChatClick = { chatId -> viewModel.setActiveChat(chatId) },
-                                onContactClick = { contactId -> 
-                                    viewModel.setActiveContact(contactId)
-                                },
-                                chatGridState = chatGridState,
-                                contactsGridState = contactsGridState,
-                                showFab = !isCompanionMode
-                            )
-                        }
-                    }
-                },
-                detailPane = {
-                    AnimatedPane {
-                        DetailPaneContent(
-                            navigator = navigator,
-                            viewModel = viewModel,
-                            isCompanionMode = isCompanionMode,
-                            showBackButton = showBackButton,
-                            isCompact = isCompact,
-                            activeChatId = activeChatId,
-                            activeContactId = activeContactId
-                        )
-                    }
-                },
-                extraPane = {
-                    AnimatedPane {
-                        ExtraPaneContent(
-                            navigator = navigator,
-                            viewModel = viewModel,
-                            isCompact = isCompact,
-                            activeContactId = activeContactId
-                        )
-                    }
                 }
-            )
-        }
+            },
+            detailPane = {
+                AnimatedPane(
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                    boundsAnimationSpec = snap(),
+                    enterTransition = fadeIn(animationSpec = tween(150)),
+                    exitTransition = fadeOut(animationSpec = tween(150))
+                ) {
+                    DetailPaneContent(
+                        navigator = navigator,
+                        viewModel = viewModel,
+                        isCompanionMode = isCompanionMode,
+                        showBackButton = showBackButton,
+                        isCompact = isCompact,
+                        activeChatId = activeChatId,
+                        activeContactId = activeContactId,
+                        onCropAvatar = onCropAvatar
+                    )
+                }
+            },
+            extraPane = {
+                AnimatedPane(
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                    boundsAnimationSpec = snap(),
+                    enterTransition = fadeIn(animationSpec = tween(150)),
+                    exitTransition = fadeOut(animationSpec = tween(150))
+                ) {
+                    ExtraPaneContent(
+                        navigator = navigator,
+                        viewModel = viewModel,
+                        isCompact = isCompact,
+                        activeContactId = activeContactId,
+                        onCropAvatar = onCropAvatar
+                    )
+                }
+            }
+        )
     }
 
     if (showAddContactDialog) {
@@ -322,46 +310,45 @@ fun DetailPaneContent(
     showBackButton: Boolean,
     isCompact: Boolean,
     activeChatId: ByteArray?,
-    activeContactId: ByteArray?
+    activeContactId: ByteArray?,
+    onCropAvatar: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val currentDestination = navigator.currentDestination
-    val currentPane = currentDestination?.pane
     val currentKey = currentDestination?.contentKey
     val groups by viewModel.groups.collectAsState()
 
+    val detailContactId = remember(currentKey, activeContactId) {
+        if (currentKey?.startsWith("contact_") == true) {
+            try { currentKey.drop(8).hexToByteArray() } catch (e: Exception) { activeContactId }
+        } else activeContactId
+    }
+
+    val detailChatId = remember(currentKey, activeChatId) {
+        if (currentKey?.startsWith("chat_") == true) {
+            try { currentKey.drop(5).hexToByteArray() } catch (e: Exception) { activeChatId }
+        } else activeChatId
+    }
+
     when {
-        activeChatId != null -> {
-            ChatScreen(
-                viewModel = viewModel,
-                chatId = activeChatId,
-                onBack = { scope.launch { navigator.navigateBack() } },
-                onHeaderClick = { 
-                    if (!isCompanionMode) {
-                        viewModel.setActiveContact(activeChatId)
-                    }
-                },
-                showBackButton = showBackButton,
-                isCompact = isCompact
-            )
-        }
-        activeContactId != null && (currentKey?.startsWith("contact_") == true && currentPane == ListDetailPaneScaffoldRole.Detail) -> {
-            val isGroup = groups.any { it.chatId.contentEquals(activeContactId) }
+        currentKey?.startsWith("contact_") == true && detailContactId != null -> {
+            val isGroup = groups.any { it.chatId.contentEquals(detailContactId) }
             if (isGroup) {
                 chat.ratatosk.android.ui.groups.GroupDetailsScreen(
                     viewModel = viewModel,
-                    chatId = activeContactId,
+                    chatId = detailContactId,
                     onBack = { scope.launch { navigator.navigateBack() } },
-                    onChatClick = { chatId ->
+                    onChatClick = { chatId: ByteArray ->
                         viewModel.setActiveChat(chatId)
                     },
+                    onCropAvatar = onCropAvatar,
                     showBackButton = showBackButton,
                     isCompact = isCompact
                 )
             } else {
                 ContactDetailsScreen(
                     viewModel = viewModel,
-                    chatId = activeContactId,
+                    chatId = detailContactId,
                     onBack = { scope.launch { navigator.navigateBack() } },
                     onChatClick = { chatId ->
                         viewModel.setActiveChat(chatId)
@@ -370,6 +357,18 @@ fun DetailPaneContent(
                     isCompact = isCompact
                 )
             }
+        }
+        (currentKey?.startsWith("chat_") == true || detailChatId != null) && detailChatId != null -> {
+            ChatScreen(
+                viewModel = viewModel,
+                chatId = detailChatId,
+                onBack = { scope.launch { navigator.navigateBack() } },
+                onHeaderClick = { 
+                    viewModel.setActiveContact(detailChatId)
+                },
+                showBackButton = showBackButton,
+                isCompact = isCompact
+            )
         }
         else -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -385,7 +384,8 @@ fun ExtraPaneContent(
     navigator: androidx.compose.material3.adaptive.navigation.ThreePaneScaffoldNavigator<String>,
     viewModel: RatatoskViewModel,
     isCompact: Boolean,
-    activeContactId: ByteArray?
+    activeContactId: ByteArray?,
+    onCropAvatar: () -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val currentDestination = navigator.currentDestination
@@ -402,9 +402,10 @@ fun ExtraPaneContent(
                 onBack = {
                     scope.launch { navigator.navigateBack() }
                 },
-                onChatClick = { chatId ->
+                onChatClick = { chatId: ByteArray ->
                     viewModel.setActiveChat(chatId)
                 },
+                onCropAvatar = onCropAvatar,
                 showBackButton = true,
                 isCompact = isCompact
             )

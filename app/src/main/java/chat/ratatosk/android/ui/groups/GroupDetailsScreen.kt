@@ -1,12 +1,12 @@
 package chat.ratatosk.android.ui.groups
 
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -34,24 +34,25 @@ fun GroupDetailsScreen(
     chatId: ByteArray,
     onBack: () -> Unit,
     onChatClick: (ByteArray) -> Unit,
+    onCropAvatar: () -> Unit = {},
     showBackButton: Boolean = true,
     isCompact: Boolean = true
 ) {
     val groups by viewModel.groups.collectAsState()
     val contacts by viewModel.contacts.collectAsState()
     val contactAvatars by viewModel.contactAvatars.collectAsState()
-    val myIk by viewModel.myIk.collectAsState()
+    val myAvatar by viewModel.myAvatar.collectAsState()
     
     val group = remember(groups, chatId) {
         groups.find { it.chatId.contentEquals(chatId) }
     }
 
-    if (showBackButton) {
-        BackHandler(enabled = true) {
-            onBack()
-        }
+    LaunchedEffect(chatId) {
+        viewModel.loadCompanionMembers(chatId)
     }
 
+    var showEditTitleDialog by remember { mutableStateOf(false) }
+    var editTitleText by remember { mutableStateOf("") }
     var showInviteDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
@@ -59,6 +60,7 @@ fun GroupDetailsScreen(
     var memberToEvict by remember { mutableStateOf<ByteArray?>(null) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.group_details)) },
@@ -85,26 +87,59 @@ fun GroupDetailsScreen(
                 contentPadding = PaddingValues(bottom = 32.dp)
             ) {
                 item {
-                    Avatar(
-                        avatarBytes = null,
-                        name = group.title,
-                        modifier = if (isCompact) {
-                            Modifier.fillMaxWidth().aspectRatio(1f)
-                        } else {
-                            Modifier.size(200.dp)
-                        },
-                        shape = androidx.compose.ui.graphics.RectangleShape,
-                        icon = Icons.Default.Groups
-                    )
+                    val groupAvatarBytes = remember(contactAvatars, group.chatId) {
+                        group.chatId.toHexString().let { contactAvatars[it] } ?: viewModel.getGroupAvatar(group.chatId)
+                    }
+                    val avatarLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.GetContent()
+                    ) { uri ->
+                        uri?.let {
+                            viewModel.setPendingAvatarUri(it, group.chatId)
+                            onCropAvatar()
+                        }
+                    }
+
+                    Box(
+                        contentAlignment = Alignment.BottomEnd,
+                        modifier = if (isCompact) Modifier.fillMaxWidth().aspectRatio(1f) else Modifier.size(200.dp)
+                    ) {
+                        Avatar(
+                            avatarBytes = groupAvatarBytes,
+                            name = group.title,
+                            modifier = Modifier.fillMaxSize(),
+                            shape = androidx.compose.ui.graphics.RectangleShape,
+                            icon = Icons.Default.Groups
+                        )
+                        if (group.mine && group.joined) {
+                            SmallFloatingActionButton(
+                                onClick = { avatarLauncher.launch("image/*") },
+                                modifier = Modifier.padding(16.dp).size(40.dp),
+                                shape = CircleShape,
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Icon(Icons.Default.AddAPhoto, contentDescription = "Change Avatar", modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
                 }
 
                 item {
                     Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = group.title,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = group.title,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            if (group.mine && group.joined) {
+                                IconButton(onClick = { 
+                                    editTitleText = group.title
+                                    showEditTitleDialog = true 
+                                }) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Edit Title", modifier = Modifier.size(20.dp))
+                                }
+                            }
+                        }
                         Text(
                             text = stringResource(R.string.group_created_at, group.createdMs.toLong().formatDateTime()),
                             style = MaterialTheme.typography.bodySmall,
@@ -133,20 +168,53 @@ fun GroupDetailsScreen(
                     )
                 }
                 
-                items(group.members) { memberIk ->
-                    val memberContact = contacts.find { it.peerIk.contentEquals(memberIk) }
-                    val name = memberContact?.let { it.localName ?: it.displayName } ?: memberIk.toHexString().take(8)
-                    val avatarBytes = memberIk.toHexString().let { contactAvatars[it] } ?: viewModel.getAvatarOf(memberIk)
+                items(group.members) { member ->
+                    val memberContact = contacts.find { it.peerIk.contentEquals(member.ik) }
+                    val name = memberContact?.let { it.localName ?: it.displayName } ?: member.name
+                    val avatarBytes = if (member.mine) {
+                        myAvatar ?: member.ik.toHexString().let { contactAvatars[it] } ?: viewModel.getAvatarOf(member.ik)
+                    } else {
+                        member.ik.toHexString().let { contactAvatars[it] } ?: viewModel.getAvatarOf(member.ik)
+                    }
                     
                     ListItem(
-                        headlineContent = { Text(name) },
-                        supportingContent = { Text(memberIk.toHexString()) },
+                        modifier = Modifier.clickable {
+                            if (!member.mine) {
+                                if (viewModel.isCompanionMode.value) {
+                                    viewModel.setActiveChat(member.ik)
+                                    onChatClick(member.ik)
+                                } else {
+                                    val targetId = memberContact?.chatId ?: member.ik
+                                    viewModel.setActiveContact(targetId)
+                                }
+                            }
+                        },
+                        headlineContent = { 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(name)
+                                if (member.mine) {
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.this_is_you),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        supportingContent = { Text(member.ik.toHexString()) },
                         leadingContent = {
                             Avatar(avatarBytes = avatarBytes, name = name)
                         },
                         trailingContent = {
-                            if (group.mine && group.joined && myIk != null && !memberIk.contentEquals(myIk)) {
-                                IconButton(onClick = { memberToEvict = memberIk }) {
+                            if (group.mine && group.joined && !member.mine) {
+                                IconButton(onClick = { memberToEvict = member.ik }) {
                                     Icon(Icons.Default.PersonRemove, contentDescription = "Evict", tint = MaterialTheme.colorScheme.error)
                                 }
                             }
@@ -210,7 +278,7 @@ fun GroupDetailsScreen(
             title = { Text(stringResource(R.string.invite_contact)) },
             text = {
                 val availableToInvite = contacts.filter { contact ->
-                    !group.members.any { it.contentEquals(contact.peerIk) }
+                    !group.members.any { it.ik.contentEquals(contact.peerIk) }
                 }
                 if (availableToInvite.isEmpty()) {
                     Text(stringResource(R.string.no_contacts_to_invite))
@@ -330,6 +398,47 @@ fun GroupDetailsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { memberToEvict = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    if (showEditTitleDialog && group != null) {
+        val maxChars = viewModel.getMaxGroupTitleChars()
+        AlertDialog(
+            onDismissRequest = { showEditTitleDialog = false },
+            title = { Text(stringResource(R.string.rename_group)) },
+            text = {
+                OutlinedTextField(
+                    value = editTitleText,
+                    onValueChange = { 
+                        if (it.length <= maxChars.toInt()) {
+                            editTitleText = it
+                        }
+                    },
+                    label = { Text(stringResource(R.string.group_title)) },
+                    singleLine = true,
+                    supportingText = {
+                        Text("${editTitleText.length}/$maxChars")
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (editTitleText.isNotBlank()) {
+                            viewModel.renameGroup(chatId, editTitleText.trim())
+                            showEditTitleDialog = false
+                        }
+                    },
+                    enabled = editTitleText.isNotBlank()
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditTitleDialog = false }) {
                     Text(stringResource(R.string.cancel))
                 }
             }

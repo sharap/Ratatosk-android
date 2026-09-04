@@ -851,6 +851,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_forward_messages(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_group_avatar(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_groups(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_invite_to_group(
@@ -889,6 +891,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_preview_of(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_rename_group(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_reply(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_retract_messages(
@@ -906,6 +910,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_auto_accept_bytes(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_avatar(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_group_avatar(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_local_name(
     ): Int
@@ -941,6 +947,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_clear_chat(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_create_group(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_decline_file(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_delete_messages(
@@ -951,11 +959,19 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_edit_message(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_evict_from_group(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_forward_messages(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_history(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_invite_to_group(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_leave_group(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_mark_read(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_members(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_pause_file(
     ): Int
@@ -964,6 +980,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_port(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_preview(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_rename_group(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_retract_messages(
     ): Int
@@ -978,6 +996,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_avatar(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_cache_path(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_group_avatar(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_observer(
     ): Int
@@ -1103,6 +1123,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_forward_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_group_avatar(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_groups(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_invite_to_group(`ptr`: Long,`chatId`: RustBuffer.ByValue,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1141,6 +1163,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_preview_of(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_rename_group(`ptr`: Long,`chatId`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_reply(`ptr`: Long,`chatId`: RustBuffer.ByValue,`replyTo`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_retract_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1158,6 +1182,8 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_auto_accept_bytes(`ptr`: Long,`limit`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_avatar(`ptr`: Long,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_group_avatar(`ptr`: Long,`chatId`: RustBuffer.ByValue,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_local_name(`ptr`: Long,`peerIk`: RustBuffer.ByValue,`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1205,6 +1231,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_clear_chat(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_create_group(`ptr`: Long,`title`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_decline_file(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_delete_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1215,11 +1243,19 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_edit_message(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgId`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_evict_from_group(`ptr`: Long,`chatId`: RustBuffer.ByValue,`memberChatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_forward_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_history(`ptr`: Long,`chatId`: RustBuffer.ByValue,`limit`: Int,`before`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_invite_to_group(`ptr`: Long,`chatId`: RustBuffer.ByValue,`memberChatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_leave_group(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_mark_read(`ptr`: Long,`chatId`: RustBuffer.ByValue,`upTo`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_members(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_pause_file(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1228,6 +1264,8 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_port(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_preview(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_rename_group(`ptr`: Long,`chatId`: RustBuffer.ByValue,`title`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_retract_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1242,6 +1280,8 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_set_avatar(`ptr`: Long,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_set_cache_path(`ptr`: Long,`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_set_group_avatar(`ptr`: Long,`chatId`: RustBuffer.ByValue,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_set_observer(`ptr`: Long,`observer`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1259,7 +1299,7 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_file_source_gone_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_ratatosk_ffi_fn_func_file_waiting_text(uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_ratatosk_ffi_fn_func_file_waiting_text(`reason`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_forward_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1446,7 +1486,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_file_source_gone_notice() != 44972) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_func_file_waiting_text() != 50839) {
+    if (lib.uniffi_ratatosk_ffi_checksum_func_file_waiting_text() != 8080) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_forward_notice() != 40090) {
@@ -1629,6 +1669,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_forward_messages() != 50510) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_group_avatar() != 18575) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_groups() != 30498) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1686,6 +1729,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_preview_of() != 30601) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_rename_group() != 1303) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_reply() != 33762) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1711,6 +1757,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_avatar() != 63479) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_group_avatar() != 3502) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_local_name() != 62950) {
@@ -1764,6 +1813,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_clear_chat() != 47063) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_create_group() != 5741) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_decline_file() != 5804) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1779,13 +1831,25 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_edit_message() != 52750) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_evict_from_group() != 21403) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_forward_messages() != 8568) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_history() != 38106) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_invite_to_group() != 56256) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_leave_group() != 49476) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_mark_read() != 38202) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_members() != 38620) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_pause_file() != 14081) {
@@ -1798,6 +1862,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_preview() != 15013) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_rename_group() != 19316) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_retract_messages() != 50304) {
@@ -1819,6 +1886,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_cache_path() != 19860) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_group_avatar() != 19592) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_observer() != 13302) {
@@ -4285,6 +4355,20 @@ public interface RatatoskClientInterface {
     fun `forwardMessages`(`chatId`: kotlin.ByteArray, `msgIds`: List<kotlin.ByteArray>)
     
     /**
+     * Аватарка группы.
+     *
+     * `None` означает «показывать нечего»: её не ставили или сняли.
+     * Различать эти два случая клиенту незачем — рисовать по ним одно
+     * и то же.
+     *
+     * Отдельным вызовом, а не полем [`FfiGroup`]: до тридцати двух
+     * килобайт на группу, а список чатов читается на каждый показ экрана.
+     * Когда перечитывать — говорит [`FfiGroup::avatar_ms`] и событие
+     * [`FfiEvent::GroupAvatarChanged`].
+     */
+    fun `groupAvatar`(`chatId`: kotlin.ByteArray): kotlin.ByteArray?
+    
+    /**
      * Группы, в которых мы состоим (§11).
      *
      * Отдельным списком, а не вперемешку с контактами: у группы нет ни
@@ -4532,6 +4616,24 @@ public interface RatatoskClientInterface {
     fun `previewOf`(`fileId`: kotlin.ByteArray): kotlin.ByteArray?
     
     /**
+     * Переименовывает группу.
+     *
+     * **Дополнение к спецификации:** §11 рассылки названия не описывает.
+     * Вправе **только создатель** — то же правило, что у исключения
+     * (§11.2), расширенное по смыслу: он распоряжается тем, что
+     * относится ко всей группе.
+     *
+     * Пределы те же, что при заведении: непустое после обрезки краёв
+     * и не длиннее [`max_group_title_chars`]. Отказ приходит словами
+     * и сразу — здесь, а не молчанием в чате.
+     *
+     * Новое название приедет событием `GroupRenamed` — и на своё
+     * переименование тоже, чтобы у клиента был один путь к перерисовке,
+     * а не два.
+     */
+    fun `renameGroup`(`chatId`: kotlin.ByteArray, `title`: kotlin.String)
+    
+    /**
      * Отвечает на сообщение — с цитатой, которую нельзя подделать.
      *
      * По проводу едет **ссылка** (`msg_id`), а не отрывок текста: цитату
@@ -4666,6 +4768,32 @@ public interface RatatoskClientInterface {
      * про эту возможность.
      */
     fun `setAvatar`(`bytes`: kotlin.ByteArray?)
+    
+    /**
+     * Меняет аватарку группы.
+     *
+     * **Дополнение к спецификации:** §11 аватарок не описывает.
+     * Вправе **только создатель** — то же правило, что у переименования
+     * и у исключения (§11.2). Кнопку стоит показывать при
+     * `mine && joined`.
+     *
+     * `None` (или пустые байты) снимает картинку: это законное действие,
+     * и участники о нём узнают, иначе у них навсегда осталась бы прежняя.
+     *
+     * Пределы те же, что у своего лица: не больше [`max_avatar_bytes`],
+     * PNG, JPEG или WebP. Масштабирует и перекодирует **клиент** —
+     * декодер изображений в процессе, который держит ключи, не нужен.
+     *
+     * **Правила §4.2 здесь нет.** Картинка уходит всем участникам
+     * и показывается всем, сверенным и нет: она отвечает не на вопрос
+     * «кто этот человек», а на вопрос «какой это разговор», а участников
+     * группы ядро заводит несверенными (§11.5). Цена названа вслух:
+     * создатель вправе поставить группе чужую фотографию, и её увидят.
+     *
+     * Новая картинка приедет событием [`FfiEvent::GroupAvatarChanged`] —
+     * и на своё изменение тоже.
+     */
+    fun `setGroupAvatar`(`chatId`: kotlin.ByteArray, `bytes`: kotlin.ByteArray?)
     
     /**
      * Подписывает контакт своим именем — или снимает подпись (`None`).
@@ -5439,6 +5567,33 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Аватарка группы.
+     *
+     * `None` означает «показывать нечего»: её не ставили или сняли.
+     * Различать эти два случая клиенту незачем — рисовать по ним одно
+     * и то же.
+     *
+     * Отдельным вызовом, а не полем [`FfiGroup`]: до тридцати двух
+     * килобайт на группу, а список чатов читается на каждый показ экрана.
+     * Когда перечитывать — говорит [`FfiGroup::avatar_ms`] и событие
+     * [`FfiEvent::GroupAvatarChanged`].
+     */
+    @Throws(RatatoskException::class)override fun `groupAvatar`(`chatId`: kotlin.ByteArray): kotlin.ByteArray? {
+            return FfiConverterOptionalByteArray.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_group_avatar(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Группы, в которых мы состоим (§11).
      *
      * Отдельным списком, а не вперемешку с контактами: у группы нет ни
@@ -5925,6 +6080,37 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Переименовывает группу.
+     *
+     * **Дополнение к спецификации:** §11 рассылки названия не описывает.
+     * Вправе **только создатель** — то же правило, что у исключения
+     * (§11.2), расширенное по смыслу: он распоряжается тем, что
+     * относится ко всей группе.
+     *
+     * Пределы те же, что при заведении: непустое после обрезки краёв
+     * и не длиннее [`max_group_title_chars`]. Отказ приходит словами
+     * и сразу — здесь, а не молчанием в чате.
+     *
+     * Новое название приедет событием `GroupRenamed` — и на своё
+     * переименование тоже, чтобы у клиента был один путь к перерисовке,
+     * а не два.
+     */
+    @Throws(RatatoskException::class)override fun `renameGroup`(`chatId`: kotlin.ByteArray, `title`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_rename_group(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterString.lower(`title`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Отвечает на сообщение — с цитатой, которую нельзя подделать.
      *
      * По проводу едет **ссылка** (`msg_id`), а не отрывок текста: цитату
@@ -6170,6 +6356,45 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
     UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_avatar(
         it,
         
+        FfiConverterOptionalByteArray.lower(`bytes`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Меняет аватарку группы.
+     *
+     * **Дополнение к спецификации:** §11 аватарок не описывает.
+     * Вправе **только создатель** — то же правило, что у переименования
+     * и у исключения (§11.2). Кнопку стоит показывать при
+     * `mine && joined`.
+     *
+     * `None` (или пустые байты) снимает картинку: это законное действие,
+     * и участники о нём узнают, иначе у них навсегда осталась бы прежняя.
+     *
+     * Пределы те же, что у своего лица: не больше [`max_avatar_bytes`],
+     * PNG, JPEG или WebP. Масштабирует и перекодирует **клиент** —
+     * декодер изображений в процессе, который держит ключи, не нужен.
+     *
+     * **Правила §4.2 здесь нет.** Картинка уходит всем участникам
+     * и показывается всем, сверенным и нет: она отвечает не на вопрос
+     * «кто этот человек», а на вопрос «какой это разговор», а участников
+     * группы ядро заводит несверенными (§11.5). Цена названа вслух:
+     * создатель вправе поставить группе чужую фотографию, и её увидят.
+     *
+     * Новая картинка приедет событием [`FfiEvent::GroupAvatarChanged`] —
+     * и на своё изменение тоже.
+     */
+    @Throws(RatatoskException::class)override fun `setGroupAvatar`(`chatId`: kotlin.ByteArray, `bytes`: kotlin.ByteArray?)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_group_avatar(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
         FfiConverterOptionalByteArray.lower(`bytes`),_status)
 }
     }
@@ -6711,6 +6936,29 @@ public interface RatatoskCompanionInterface {
     fun `clearChat`(`chatId`: kotlin.ByteArray)
     
     /**
+     * Заводит группу (§11).
+     *
+     * **Перед вызовом обязателен `group_join_notice()`.** §11.5 требует
+     * сказать при создании, что участники увидят onion- и chatmail-адреса
+     * друг друга; сказанное после — уже не предупреждение, а отменить это
+     * нельзя ничем. Текст — свободная функция тех же биндингов: проводом
+     * он не едет, потому что это константа, а не сведение о телефоне,
+     * и телефон не может проверить, показали ли его.
+     *
+     * Идентификатор новой группы придёт событием
+     * [`FfiCompanionEvent::GroupCreated`] — им и открывают чат.
+     *
+     * Пределы названия те же, что на телефоне: непустое после обрезки
+     * краёв и не длиннее `max_group_title_chars()`. Поле ввода обязано
+     * останавливать **до** нажатия, а не показывать отказ после.
+     *
+     * # Errors
+     *
+     * Остановленный компаньон.
+     */
+    fun `createGroup`(`title`: kotlin.String)
+    
+    /**
      * Отказывается от вложения совсем: приехавшее на телефоне стирается.
      *
      * Вложение исчезнет событием [`FfiCompanionEvent::FileGone`], а само
@@ -6767,6 +7015,20 @@ public interface RatatoskCompanionInterface {
     fun `editMessage`(`chatId`: kotlin.ByteArray, `msgId`: kotlin.ByteArray, `text`: kotlin.String)
     
     /**
+     * Исключает участника из группы (§11.2).
+     *
+     * **Только создатель** — кнопку стоит показывать, лишь когда в составе
+     * есть строка с `mine && owner`. **Перед вызовом обязателен
+     * `eviction_notice()`** (§11.4): исключённый сохранит доступ к прошлой
+     * переписке, и отменить это нельзя ничем.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    fun `evictFromGroup`(`chatId`: kotlin.ByteArray, `memberChatId`: kotlin.ByteArray)
+    
+    /**
      * Пересылает сообщения в другой чат.
      *
      * Автор при пересылке **не сохраняется** — ни в проводе, ни на экране:
@@ -6791,6 +7053,38 @@ public interface RatatoskCompanionInterface {
     fun `history`(`chatId`: kotlin.ByteArray, `limit`: kotlin.UInt, `before`: kotlin.ByteArray?)
     
     /**
+     * Зовёт человека в группу (§11.2).
+     *
+     * Приглашать вправе **любой** участник, а не только создатель.
+     * Приглашаемый адресуется идентификатором своего личного чата —
+     * тем же, каким окно ему пишет: он есть и в строке списка чатов,
+     * и в [`FfiCompanionMember::chat_id`].
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    fun `inviteToGroup`(`chatId`: kotlin.ByteArray, `memberChatId`: kotlin.ByteArray)
+    
+    /**
+     * Выходит из группы.
+     *
+     * **Перед вызовом обязателен `leave_notice()`**, а если выходит
+     * создатель (в составе есть строка `mine && owner`) — ещё и
+     * `owner_leave_notice()`: после его ухода группу нельзя ни
+     * переименовать, ни исключить из неё, ни сменить ей картинку.
+     *
+     * Переписка остаётся, и группа остаётся в списке чатов: уход
+     * из разговора не стирает сказанное. Вернуть вышедшего вправе любой
+     * участник.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    fun `leaveGroup`(`chatId`: kotlin.ByteArray)
+    
+    /**
      * Отмечает прочитанным до этого сообщения включительно (§9.4).
      *
      * # Errors
@@ -6798,6 +7092,23 @@ public interface RatatoskCompanionInterface {
      * Негодный идентификатор или остановленный компаньон.
      */
     fun `markRead`(`chatId`: kotlin.ByteArray, `upTo`: kotlin.ByteArray)
+    
+    /**
+     * Спрашивает состав группы (§11.2).
+     *
+     * Ответ придёт событием [`FfiCompanionEvent::Members`]. Отдельным
+     * вызовом, а не полем списка чатов: до тридцати двух участников
+     * на группу, а список читается на каждый показ экрана — состав же
+     * нужен одному окну, тому, где открыты сведения о группе.
+     *
+     * У личного чата ответ пуст, и спрашивать его незачем: состав
+     * переписки двоих — её заголовок.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    fun `members`(`chatId`: kotlin.ByteArray)
     
     /**
      * Останавливает приём, **не отказываясь**: приехавшее остаётся.
@@ -6846,6 +7157,18 @@ public interface RatatoskCompanionInterface {
      * Негодный идентификатор или остановленный компаньон.
      */
     fun `preview`(`fileId`: kotlin.ByteArray)
+    
+    /**
+     * Переименовывает группу. Только создатель.
+     *
+     * Новое название приедет новостью `ChatsChanged` — список чатов
+     * перечитывается целиком.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    fun `renameGroup`(`chatId`: kotlin.ByteArray, `title`: kotlin.String)
     
     /**
      * Удаляет у себя и **просит** собеседника сделать то же.
@@ -6976,6 +7299,22 @@ public interface RatatoskCompanionInterface {
      * Компаньон остановлен.
      */
     fun `setCachePath`(`path`: kotlin.String?)
+    
+    /**
+     * Ставит или снимает аватарку группы. Только создатель.
+     *
+     * `None` — снять. Пределы те же, что у своей: `max_avatar_bytes()`,
+     * PNG, JPEG или WebP; масштабирует и перекодирует окно.
+     *
+     * **Правила §4.2 у группы нет**: картинку видят все участники,
+     * сверенные и нет. Ответ приедет новостью
+     * [`FfiCompanionEvent::AvatarChanged`] с `chat_id` этой группы.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    fun `setGroupAvatar`(`chatId`: kotlin.ByteArray, `bytes`: kotlin.ByteArray?)
     
     /**
      * Подписывает окно на события.
@@ -7259,6 +7598,41 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
 
     
     /**
+     * Заводит группу (§11).
+     *
+     * **Перед вызовом обязателен `group_join_notice()`.** §11.5 требует
+     * сказать при создании, что участники увидят onion- и chatmail-адреса
+     * друг друга; сказанное после — уже не предупреждение, а отменить это
+     * нельзя ничем. Текст — свободная функция тех же биндингов: проводом
+     * он не едет, потому что это константа, а не сведение о телефоне,
+     * и телефон не может проверить, показали ли его.
+     *
+     * Идентификатор новой группы придёт событием
+     * [`FfiCompanionEvent::GroupCreated`] — им и открывают чат.
+     *
+     * Пределы названия те же, что на телефоне: непустое после обрезки
+     * краёв и не длиннее `max_group_title_chars()`. Поле ввода обязано
+     * останавливать **до** нажатия, а не показывать отказ после.
+     *
+     * # Errors
+     *
+     * Остановленный компаньон.
+     */
+    @Throws(RatatoskException::class)override fun `createGroup`(`title`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_create_group(
+        it,
+        
+        FfiConverterString.lower(`title`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Отказывается от вложения совсем: приехавшее на телефоне стирается.
      *
      * Вложение исчезнет событием [`FfiCompanionEvent::FileGone`], а само
@@ -7376,6 +7750,33 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
 
     
     /**
+     * Исключает участника из группы (§11.2).
+     *
+     * **Только создатель** — кнопку стоит показывать, лишь когда в составе
+     * есть строка с `mine && owner`. **Перед вызовом обязателен
+     * `eviction_notice()`** (§11.4): исключённый сохранит доступ к прошлой
+     * переписке, и отменить это нельзя ничем.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    @Throws(RatatoskException::class)override fun `evictFromGroup`(`chatId`: kotlin.ByteArray, `memberChatId`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_evict_from_group(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterByteArray.lower(`memberChatId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Пересылает сообщения в другой чат.
      *
      * Автор при пересылке **не сохраняется** — ни в проводе, ни на экране:
@@ -7427,6 +7828,63 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
 
     
     /**
+     * Зовёт человека в группу (§11.2).
+     *
+     * Приглашать вправе **любой** участник, а не только создатель.
+     * Приглашаемый адресуется идентификатором своего личного чата —
+     * тем же, каким окно ему пишет: он есть и в строке списка чатов,
+     * и в [`FfiCompanionMember::chat_id`].
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    @Throws(RatatoskException::class)override fun `inviteToGroup`(`chatId`: kotlin.ByteArray, `memberChatId`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_invite_to_group(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterByteArray.lower(`memberChatId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Выходит из группы.
+     *
+     * **Перед вызовом обязателен `leave_notice()`**, а если выходит
+     * создатель (в составе есть строка `mine && owner`) — ещё и
+     * `owner_leave_notice()`: после его ухода группу нельзя ни
+     * переименовать, ни исключить из неё, ни сменить ей картинку.
+     *
+     * Переписка остаётся, и группа остаётся в списке чатов: уход
+     * из разговора не стирает сказанное. Вернуть вышедшего вправе любой
+     * участник.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    @Throws(RatatoskException::class)override fun `leaveGroup`(`chatId`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_leave_group(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Отмечает прочитанным до этого сообщения включительно (§9.4).
      *
      * # Errors
@@ -7442,6 +7900,35 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
         
         FfiConverterByteArray.lower(`chatId`),
         FfiConverterByteArray.lower(`upTo`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Спрашивает состав группы (§11.2).
+     *
+     * Ответ придёт событием [`FfiCompanionEvent::Members`]. Отдельным
+     * вызовом, а не полем списка чатов: до тридцати двух участников
+     * на группу, а список читается на каждый показ экрана — состав же
+     * нужен одному окну, тому, где открыты сведения о группе.
+     *
+     * У личного чата ответ пуст, и спрашивать его незачем: состав
+     * переписки двоих — её заголовок.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    @Throws(RatatoskException::class)override fun `members`(`chatId`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_members(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
 }
     }
     
@@ -7536,6 +8023,31 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
         it,
         
         FfiConverterByteArray.lower(`fileId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Переименовывает группу. Только создатель.
+     *
+     * Новое название приедет новостью `ChatsChanged` — список чатов
+     * перечитывается целиком.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    @Throws(RatatoskException::class)override fun `renameGroup`(`chatId`: kotlin.ByteArray, `title`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_rename_group(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterString.lower(`title`),_status)
 }
     }
     
@@ -7758,6 +8270,35 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
         it,
         
         FfiConverterOptionalString.lower(`path`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Ставит или снимает аватарку группы. Только создатель.
+     *
+     * `None` — снять. Пределы те же, что у своей: `max_avatar_bytes()`,
+     * PNG, JPEG или WebP; масштабирует и перекодирует окно.
+     *
+     * **Правила §4.2 у группы нет**: картинку видят все участники,
+     * сверенные и нет. Ответ приедет новостью
+     * [`FfiCompanionEvent::AvatarChanged`] с `chat_id` этой группы.
+     *
+     * # Errors
+     *
+     * Негодный идентификатор или остановленный компаньон.
+     */
+    @Throws(RatatoskException::class)override fun `setGroupAvatar`(`chatId`: kotlin.ByteArray, `bytes`: kotlin.ByteArray?)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_set_group_avatar(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterOptionalByteArray.lower(`bytes`),_status)
 }
     }
     
@@ -8326,6 +8867,88 @@ public object FfiConverterTypeFfiCompanionChat: FfiConverterRustBuffer<FfiCompan
 
 
 /**
+ * Участник группы в том виде, в каком его показывает окно десктопа (§11.2).
+ *
+ * **Ключа здесь нет.** §13.4 не пускает `IK` через границу устройства,
+ * и участник назван идентификатором своего личного чата — тем самым,
+ * каким окно уже адресует переписку двоих. По нему же ему можно написать
+ * лично: `send_text` в этот чат, без единой новой просьбы к телефону.
+ */
+data class FfiCompanionMember (
+    /**
+     * Идентификатор личного чата с ним — им же ему и пишут.
+     */
+    val `chatId`: kotlin.ByteArray
+    , 
+    /**
+     * Как его назвать. Пустым не бывает: у безымянного — начало отпечатка.
+     */
+    val `name`: kotlin.String
+    , 
+    /**
+     * Это хозяин телефона.
+     *
+     * Считает телефон, а не окно поиском себя в списке: своей карточки
+     * в контактах нет, и окно показало бы хозяина «неизвестным
+     * участником» — ровно так, как это уже случилось у клиента телефона.
+     */
+    val `mine`: kotlin.Boolean
+    , 
+    /**
+     * Это создатель группы (§11.2).
+     *
+     * **Единственное, чем окно узнаёт свои права.** Исключать,
+     * переименовывать и менять картинку вправе только создатель:
+     * «я ли создатель» — это строка, у которой `mine && owner`.
+     * Без этого признака окно рисовало бы кнопки, на которые телефон
+     * отвечает отказом, то есть предлагало бы действие, которого нет.
+     *
+     * Ушедшего создателя в составе нет вовсе — состав держит тех, кто
+     * состоит сейчас. Исход верный: распоряжаться он и вправду больше
+     * не может, а вернувшись — снова сможет.
+     */
+    val `owner`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiCompanionMember: FfiConverterRustBuffer<FfiCompanionMember> {
+    override fun read(buf: ByteBuffer): FfiCompanionMember {
+        return FfiCompanionMember(
+            FfiConverterByteArray.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiCompanionMember) = (
+            FfiConverterByteArray.allocationSize(value.`chatId`) +
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterBoolean.allocationSize(value.`mine`) +
+            FfiConverterBoolean.allocationSize(value.`owner`)
+    )
+
+    override fun write(value: FfiCompanionMember, buf: ByteBuffer) {
+            FfiConverterByteArray.write(value.`chatId`, buf)
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterBoolean.write(value.`mine`, buf)
+            FfiConverterBoolean.write(value.`owner`, buf)
+    }
+}
+
+
+
+/**
  * Сообщение в том виде, в каком его видит десктоп.
  */
 data class FfiCompanionMessage (
@@ -8344,6 +8967,22 @@ data class FfiCompanionMessage (
      * знание, и §13.3 не пускает его выше границы.
      */
     val `mine`: kotlin.Boolean
+    , 
+    /**
+     * Как подписать автора — или `None`, если подпись выводится из `mine`.
+     *
+     * **`None` означает «выводится», а не «неизвестно».** В переписке
+     * двоих автор исчерпывается признаком «своё ли»: не своё — значит
+     * собеседника, а его имя уже стоит заголовком чата. В группе так
+     * нельзя, и `Some` приходит ровно у групповых сообщений.
+     *
+     * Имя считает телефон: местное имя (§4.1) вытесняет карточное,
+     * а участник без карточки подписывается началом отпечатка. Своё
+     * сообщение подписано своим именем — себя в контактах нет, и окно,
+     * искавшее бы подпись само, не нашло бы её именно у хозяина телефона.
+     * Показать вместо имени «вы» — дело окна, для этого у него `mine`.
+     */
+    val `author`: kotlin.String?
     , 
     /**
      * Текст.
@@ -8415,6 +9054,7 @@ public object FfiConverterTypeFfiCompanionMessage: FfiConverterRustBuffer<FfiCom
             FfiConverterByteArray.read(buf),
             FfiConverterByteArray.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
             FfiConverterString.read(buf),
             FfiConverterULong.read(buf),
             FfiConverterOptionalTypeFfiDeliveryStatus.read(buf),
@@ -8430,6 +9070,7 @@ public object FfiConverterTypeFfiCompanionMessage: FfiConverterRustBuffer<FfiCom
             FfiConverterByteArray.allocationSize(value.`msgId`) +
             FfiConverterByteArray.allocationSize(value.`chatId`) +
             FfiConverterBoolean.allocationSize(value.`mine`) +
+            FfiConverterOptionalString.allocationSize(value.`author`) +
             FfiConverterString.allocationSize(value.`body`) +
             FfiConverterULong.allocationSize(value.`wallMs`) +
             FfiConverterOptionalTypeFfiDeliveryStatus.allocationSize(value.`status`) +
@@ -8444,6 +9085,7 @@ public object FfiConverterTypeFfiCompanionMessage: FfiConverterRustBuffer<FfiCom
             FfiConverterByteArray.write(value.`msgId`, buf)
             FfiConverterByteArray.write(value.`chatId`, buf)
             FfiConverterBoolean.write(value.`mine`, buf)
+            FfiConverterOptionalString.write(value.`author`, buf)
             FfiConverterString.write(value.`body`, buf)
             FfiConverterULong.write(value.`wallMs`, buf)
             FfiConverterOptionalTypeFfiDeliveryStatus.write(value.`status`, buf)
@@ -8962,9 +9604,9 @@ data class FfiGroup (
     /**
      * Название.
      *
-     * **Своё**, а не общее: рассылки переименований v1 не описывает,
-     * и у другого участника оно может быть иным. Обещать в UI
-     * «переименовать группу» до того, как это станет правдой, нельзя.
+     * **Общее**: его задаёт создатель, оно приезжает новичку при
+     * вступлении и расходится переименованием. Менять вправе только
+     * создатель — кнопку стоит показывать при `mine && joined`.
      */
     val `title`: kotlin.String
     , 
@@ -8974,13 +9616,18 @@ data class FfiGroup (
     val `createdMs`: kotlin.ULong
     , 
     /**
-     * Состав — публичные `IK` участников, включая себя.
+     * Состав — записями, а не голыми ключами.
      *
-     * Карточки к ним ищутся в списке контактов: участники, узнанные
-     * при вступлении, заводятся **несверенными** (§4.2), и UI обязан
-     * показывать их так же, как всякий несверенный контакт.
+     * **Ключей было мало.** Клиент искал имя по ключу перебором контактов
+     * — и не находил там **себя**: своей карточки в списке контактов нет,
+     * и хозяин телефона показывался «неизвестным участником». Поэтому имя
+     * и признак «это я» считает ядро, а не клиент (§13.3).
+     *
+     * Карточки к чужим по-прежнему ищутся в списке контактов: участники,
+     * узнанные при вступлении, заводятся **несверенными** (§4.2), и UI
+     * обязан показывать их так же, как всякий несверенный контакт.
      */
-    val `members`: List<kotlin.ByteArray>
+    val `members`: List<FfiGroupMember>
     , 
     /**
      * Создатель ли мы.
@@ -9012,6 +9659,24 @@ data class FfiGroup (
      * уход из разговора не стирает сказанное.
      */
     val `joined`: kotlin.Boolean
+    , 
+    /**
+     * Метка аватарки группы; `0` — показывать нечего.
+     *
+     * **Метка, а не признак «есть картинка»**: булево на смену картинки
+     * не реагирует, и клиент показывал бы прежнее лицо до перезапуска.
+     * Изменилась метка — перечитать [`RatatoskClient::group_avatar`].
+     *
+     * Ноль покрывает два случая — картинку не ставили и картинку сняли,
+     * — и различать их клиенту незачем: рисовать по ним одно и то же.
+     *
+     * **Правила §4.2 у группы нет.** В отличие от лица контакта, картинка
+     * группы показывается всем участникам, сверенным и нет: она отвечает
+     * не на вопрос «кто этот человек», а на вопрос «какой это разговор».
+     * Участников же ядро заводит несверенными (§11.5), и правило §4.2
+     * означало бы «картинки почти никогда нет».
+     */
+    val `avatarMs`: kotlin.ULong
     
 ){
     
@@ -9031,9 +9696,10 @@ public object FfiConverterTypeFfiGroup: FfiConverterRustBuffer<FfiGroup> {
             FfiConverterByteArray.read(buf),
             FfiConverterString.read(buf),
             FfiConverterULong.read(buf),
-            FfiConverterSequenceByteArray.read(buf),
+            FfiConverterSequenceTypeFfiGroupMember.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterULong.read(buf),
         )
     }
 
@@ -9041,18 +9707,83 @@ public object FfiConverterTypeFfiGroup: FfiConverterRustBuffer<FfiGroup> {
             FfiConverterByteArray.allocationSize(value.`chatId`) +
             FfiConverterString.allocationSize(value.`title`) +
             FfiConverterULong.allocationSize(value.`createdMs`) +
-            FfiConverterSequenceByteArray.allocationSize(value.`members`) +
+            FfiConverterSequenceTypeFfiGroupMember.allocationSize(value.`members`) +
             FfiConverterBoolean.allocationSize(value.`mine`) +
-            FfiConverterBoolean.allocationSize(value.`joined`)
+            FfiConverterBoolean.allocationSize(value.`joined`) +
+            FfiConverterULong.allocationSize(value.`avatarMs`)
     )
 
     override fun write(value: FfiGroup, buf: ByteBuffer) {
             FfiConverterByteArray.write(value.`chatId`, buf)
             FfiConverterString.write(value.`title`, buf)
             FfiConverterULong.write(value.`createdMs`, buf)
-            FfiConverterSequenceByteArray.write(value.`members`, buf)
+            FfiConverterSequenceTypeFfiGroupMember.write(value.`members`, buf)
             FfiConverterBoolean.write(value.`mine`, buf)
             FfiConverterBoolean.write(value.`joined`, buf)
+            FfiConverterULong.write(value.`avatarMs`, buf)
+    }
+}
+
+
+
+/**
+ * Участник группы в том виде, в каком его рисуют (§11).
+ *
+ * Три поля, и по отдельности ни одного не хватает: по ключу берётся лицо
+ * ([`RatatoskClient::avatar`]) и открывается карточка, имя считает ядро
+ * по §4.1, а «это я» из ключа выводится сравнением с собственным — то
+ * самое протокольное знание, которое §13.3 держит ниже границы.
+ */
+data class FfiGroupMember (
+    /**
+     * Публичный `IK`.
+     */
+    val `ik`: kotlin.ByteArray
+    , 
+    /**
+     * Как его назвать. Пустым не бывает: у безымянного — начало отпечатка.
+     */
+    val `name`: kotlin.String
+    , 
+    /**
+     * Это мы сами.
+     *
+     * Показать вместо имени «вы» — дело клиента; ядро отвечает только
+     * на вопрос, кто это.
+     */
+    val `mine`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiGroupMember: FfiConverterRustBuffer<FfiGroupMember> {
+    override fun read(buf: ByteBuffer): FfiGroupMember {
+        return FfiGroupMember(
+            FfiConverterByteArray.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiGroupMember) = (
+            FfiConverterByteArray.allocationSize(value.`ik`) +
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterBoolean.allocationSize(value.`mine`)
+    )
+
+    override fun write(value: FfiGroupMember, buf: ByteBuffer) {
+            FfiConverterByteArray.write(value.`ik`, buf)
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterBoolean.write(value.`mine`, buf)
     }
 }
 
@@ -9445,6 +10176,37 @@ data class FfiMessage (
     val `mine`: kotlin.Boolean
     , 
     /**
+     * Как подписать автора — или `None`, если подпись выводится из `mine`.
+     *
+     * **`None` означает «выводится», а не «неизвестно».** В переписке
+     * двоих автор исчерпывается признаком «своё ли»: не своё — значит
+     * собеседника, а его имя уже стоит заголовком чата. В группе так
+     * нельзя — «не своё» там означает одного из тридцати двух, — и потому
+     * `Some` приходит ровно у групповых сообщений.
+     *
+     * Имя считает ядро: местное имя (§4.1) вытесняет имя из карточки,
+     * а участник, чья карточка ещё не доехала (§11.5), подписывается
+     * началом отпечатка. Пустой строки здесь не бывает никогда.
+     *
+     * Своё сообщение в группе тоже подписано — своим именем из карточки.
+     * Показать вместо него «вы» клиент вправе: для этого у него `mine`.
+     */
+    val `author`: kotlin.String?
+    , 
+    /**
+     * Ключ автора — рядом с именем и по тому же правилу.
+     *
+     * Нужен не для подписи, а для всего, что к автору привязано:
+     * лицо ([`RatatoskClient::avatar`] спрашивает по ключу), переход
+     * к карточке, склейка подряд идущих сообщений одного человека.
+     * Без него клиент умел бы только напечатать имя.
+     *
+     * `None` там же, где и [`FfiMessage::author`]: в переписке двоих
+     * автор и так известен.
+     */
+    val `authorIk`: kotlin.ByteArray?
+    , 
+    /**
      * Физическая компонента метки порядка (§9.1), миллисекунды.
      *
      * Показывать её как время получения можно, а сортировать по ней —
@@ -9525,6 +10287,8 @@ public object FfiConverterTypeFfiMessage: FfiConverterRustBuffer<FfiMessage> {
             FfiConverterByteArray.read(buf),
             FfiConverterString.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalByteArray.read(buf),
             FfiConverterULong.read(buf),
             FfiConverterOptionalTypeFfiDeliveryStatus.read(buf),
             FfiConverterOptionalULong.read(buf),
@@ -9540,6 +10304,8 @@ public object FfiConverterTypeFfiMessage: FfiConverterRustBuffer<FfiMessage> {
             FfiConverterByteArray.allocationSize(value.`msgId`) +
             FfiConverterString.allocationSize(value.`body`) +
             FfiConverterBoolean.allocationSize(value.`mine`) +
+            FfiConverterOptionalString.allocationSize(value.`author`) +
+            FfiConverterOptionalByteArray.allocationSize(value.`authorIk`) +
             FfiConverterULong.allocationSize(value.`wallMs`) +
             FfiConverterOptionalTypeFfiDeliveryStatus.allocationSize(value.`status`) +
             FfiConverterOptionalULong.allocationSize(value.`editedAtMs`) +
@@ -9554,6 +10320,8 @@ public object FfiConverterTypeFfiMessage: FfiConverterRustBuffer<FfiMessage> {
             FfiConverterByteArray.write(value.`msgId`, buf)
             FfiConverterString.write(value.`body`, buf)
             FfiConverterBoolean.write(value.`mine`, buf)
+            FfiConverterOptionalString.write(value.`author`, buf)
+            FfiConverterOptionalByteArray.write(value.`authorIk`, buf)
             FfiConverterULong.write(value.`wallMs`, buf)
             FfiConverterOptionalTypeFfiDeliveryStatus.write(value.`status`, buf)
             FfiConverterOptionalULong.write(value.`editedAtMs`, buf)
@@ -10613,6 +11381,48 @@ sealed class FfiCompanionEvent {
     }
     
     /**
+     * Состав группы (§11.2) — в ответ на [`RatatoskCompanion::members`].
+     *
+     * Признака `fresh` здесь нет, и это не пропуск: состав не кэшируется,
+     * а значит приходит только от телефона и только сейчас. Пустой список
+     * — законный ответ: так отвечает личный чат.
+     */
+    data class Members(
+        /**
+         * Какой группы.
+         */
+        val `chatId`: kotlin.ByteArray, 
+        /**
+         * Участники.
+         */
+        val `members`: List<org.ratatosk.core.FfiCompanionMember>) : FfiCompanionEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Группа заведена — вот чем её открыть (§11).
+     *
+     * Идентификатор приезжает ответом на `create_group`, а не выуживается
+     * из перечитанного списка чатов: у группы он случаен, а названия
+     * повторяются — окно однажды открыло бы не ту.
+     */
+    data class GroupCreated(
+        /**
+         * Идентификатор заведённой группы.
+         */
+        val `chatId`: kotlin.ByteArray) : FfiCompanionEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
      * Сопряжение отозвано — этот компьютер больше не второй экран (§13.4).
      *
      * Кэш к этому моменту стёрт и в памяти, и на диске. Окну остаётся
@@ -10843,33 +11653,40 @@ public object FfiConverterTypeFfiCompanionEvent : FfiConverterRustBuffer<FfiComp
                 FfiConverterOptionalByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            16 -> FfiCompanionEvent.Revoked
-            17 -> FfiCompanionEvent.AvatarChanged(
+            16 -> FfiCompanionEvent.Members(
+                FfiConverterByteArray.read(buf),
+                FfiConverterSequenceTypeFfiCompanionMember.read(buf),
+                )
+            17 -> FfiCompanionEvent.GroupCreated(
+                FfiConverterByteArray.read(buf),
+                )
+            18 -> FfiCompanionEvent.Revoked
+            19 -> FfiCompanionEvent.AvatarChanged(
                 FfiConverterOptionalByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            18 -> FfiCompanionEvent.FileSaved(
+            20 -> FfiCompanionEvent.FileSaved(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            19 -> FfiCompanionEvent.FilesSent(
+            21 -> FfiCompanionEvent.FilesSent(
                 FfiConverterSequenceByteArray.read(buf),
                 )
-            20 -> FfiCompanionEvent.FetchPaused
-            21 -> FfiCompanionEvent.FetchResumed(
+            22 -> FfiCompanionEvent.FetchPaused
+            23 -> FfiCompanionEvent.FetchResumed(
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            22 -> FfiCompanionEvent.SendPaused
-            23 -> FfiCompanionEvent.SendResumed(
+            24 -> FfiCompanionEvent.SendPaused
+            25 -> FfiCompanionEvent.SendResumed(
                 FfiConverterUInt.read(buf),
                 FfiConverterUInt.read(buf),
                 )
-            24 -> FfiCompanionEvent.Done
-            25 -> FfiCompanionEvent.Refused(
+            26 -> FfiCompanionEvent.Done
+            27 -> FfiCompanionEvent.Refused(
                 FfiConverterString.read(buf),
                 )
-            26 -> FfiCompanionEvent.NotLinked
+            28 -> FfiCompanionEvent.NotLinked
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
         }
     }
@@ -10989,6 +11806,21 @@ public object FfiConverterTypeFfiCompanionEvent : FfiConverterRustBuffer<FfiComp
                 + FfiConverterOptionalByteArray.allocationSize(value.`chatId`)
                 + FfiConverterOptionalByteArray.allocationSize(value.`bytes`)
                 + FfiConverterBoolean.allocationSize(value.`fresh`)
+            )
+        }
+        is FfiCompanionEvent.Members -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
+                + FfiConverterSequenceTypeFfiCompanionMember.allocationSize(value.`members`)
+            )
+        }
+        is FfiCompanionEvent.GroupCreated -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
             )
         }
         is FfiCompanionEvent.Revoked -> {
@@ -11157,58 +11989,69 @@ public object FfiConverterTypeFfiCompanionEvent : FfiConverterRustBuffer<FfiComp
                 FfiConverterBoolean.write(value.`fresh`, buf)
                 Unit
             }
-            is FfiCompanionEvent.Revoked -> {
+            is FfiCompanionEvent.Members -> {
                 buf.putInt(16)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                FfiConverterSequenceTypeFfiCompanionMember.write(value.`members`, buf)
+                Unit
+            }
+            is FfiCompanionEvent.GroupCreated -> {
+                buf.putInt(17)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                Unit
+            }
+            is FfiCompanionEvent.Revoked -> {
+                buf.putInt(18)
                 Unit
             }
             is FfiCompanionEvent.AvatarChanged -> {
-                buf.putInt(17)
+                buf.putInt(19)
                 FfiConverterOptionalByteArray.write(value.`chatId`, buf)
                 FfiConverterULong.write(value.`avatarMs`, buf)
                 Unit
             }
             is FfiCompanionEvent.FileSaved -> {
-                buf.putInt(18)
+                buf.putInt(20)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterString.write(value.`path`, buf)
                 Unit
             }
             is FfiCompanionEvent.FilesSent -> {
-                buf.putInt(19)
+                buf.putInt(21)
                 FfiConverterSequenceByteArray.write(value.`fileIds`, buf)
                 Unit
             }
             is FfiCompanionEvent.FetchPaused -> {
-                buf.putInt(20)
+                buf.putInt(22)
                 Unit
             }
             is FfiCompanionEvent.FetchResumed -> {
-                buf.putInt(21)
+                buf.putInt(23)
                 FfiConverterULong.write(value.`done`, buf)
                 FfiConverterULong.write(value.`total`, buf)
                 Unit
             }
             is FfiCompanionEvent.SendPaused -> {
-                buf.putInt(22)
+                buf.putInt(24)
                 Unit
             }
             is FfiCompanionEvent.SendResumed -> {
-                buf.putInt(23)
+                buf.putInt(25)
                 FfiConverterUInt.write(value.`done`, buf)
                 FfiConverterUInt.write(value.`total`, buf)
                 Unit
             }
             is FfiCompanionEvent.Done -> {
-                buf.putInt(24)
+                buf.putInt(26)
                 Unit
             }
             is FfiCompanionEvent.Refused -> {
-                buf.putInt(25)
+                buf.putInt(27)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiCompanionEvent.NotLinked -> {
-                buf.putInt(26)
+                buf.putInt(28)
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
@@ -11556,6 +12399,37 @@ sealed class FfiEvent {
     }
     
     /**
+     * Группу переименовали.
+     *
+     * Отдельно от [`FfiEvent::GroupMembershipChanged`] по той же причине,
+     * по какой заведение отделено от состава: клиент делает по ним разное
+     * — там перерисовать список участников, здесь заголовок и строку
+     * в списке чатов.
+     *
+     * Название приезжает **в событии**, а не спрашивается следом: между
+     * событием и запросом успело бы приехать следующее переименование,
+     * и клиент показал бы не то, о чём его известили.
+     *
+     * Приходит и на своё переименование тоже — у клиента один путь
+     * к перерисовке, а не два.
+     */
+    data class GroupRenamed(
+        /**
+         * Чат.
+         */
+        val `chatId`: kotlin.ByteArray, 
+        /**
+         * Новое название — уже подрезанное по краям.
+         */
+        val `title`: kotlin.String) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
      * Изменился состав группы.
      */
     data class GroupMembershipChanged(
@@ -11571,22 +12445,50 @@ sealed class FfiEvent {
     }
     
     /**
-     * Файлу не на чем ехать (§10.3).
+     * У группы сменилась аватарка.
+     *
+     * Байты **не** едут в событии — в отличие от названия, и разница
+     * не в аккуратности, а в весе: до тридцати двух килобайт на каждое
+     * событие, а нужны они только тому окну, где эту группу видно.
+     * Читать их надо [`RatatoskClient::group_avatar`].
+     *
+     * Гонки, из-за которой название едет внутри события, здесь нет:
+     * клиент получит ту картинку, что лежит **сейчас**. Показать более
+     * свежую, чем обещали, не ошибка; более старую — была бы ею.
+     *
+     * Приходит и на своё изменение тоже — у клиента один путь
+     * к перерисовке, а не два.
+     */
+    data class GroupAvatarChanged(
+        /**
+         * Чат.
+         */
+        val `chatId`: kotlin.ByteArray) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Передача файла стоит, и вот почему (§10.3).
      *
      * **Состояние, а не происшествие.** Показывать надо на самом файле —
      * строкой из [`file_waiting_text`], — а не всплывающей подсказкой:
      * подсказка исчезнет, а ждать файл будет столько, сколько собеседник
      * вне сети.
      *
-     * Случаев два. Либо канала нет никакого — собеседник не в сети, почты
-     * у него нет. Либо канал остался только почтовый, а файл для почты
-     * слишком велик: почтой файлы ходят (по чанку в письме), но круг у неё
-     * минутный, и сотня мегабайт — предел, за которым честнее сказать
-     * «нужен прямой канал», чем показывать полоску, которая не сдвинется
-     * до завтра.
+     * **Причина приезжает вместе с событием, и её надо показывать.**
+     * Раньше текст был один на все случаи, и это врало: «ждёт канала»
+     * вместо «ваш почтовый ящик переполнен» — правда хуже той, которая
+     * есть, потому что во втором случае человек может что-то сделать.
+     * Из пяти причин действия требует ровно одна
+     * ([`FfiFileWaitReason::MailboxFull`]), и отличить её от остальных
+     * без этого поля нельзя.
      *
      * Снимает это состояние следующий [`FfiEvent::FileProgress`]: он
-     * и означает, что канал появился и передача пошла.
+     * и означает, что передача пошла.
      *
      * Прежнее имя — `FileWaitsForDirectChannel`; переименовано, когда
      * чанки поехали почтой.
@@ -11595,7 +12497,11 @@ sealed class FfiEvent {
         /**
          * Какой файл.
          */
-        val `fileId`: kotlin.ByteArray) : FfiEvent()
+        val `fileId`: kotlin.ByteArray, 
+        /**
+         * Почему стоит — текст берётся [`file_waiting_text`].
+         */
+        val `reason`: org.ratatosk.core.FfiFileWaitReason) : FfiEvent()
         
     {
         
@@ -11910,50 +12816,58 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            13 -> FfiEvent.GroupMembershipChanged(
+            13 -> FfiEvent.GroupRenamed(
+                FfiConverterByteArray.read(buf),
+                FfiConverterString.read(buf),
+                )
+            14 -> FfiEvent.GroupMembershipChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            14 -> FfiEvent.FileWaitsForChannel(
+            15 -> FfiEvent.GroupAvatarChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            15 -> FfiEvent.FileProgress(
+            16 -> FfiEvent.FileWaitsForChannel(
+                FfiConverterByteArray.read(buf),
+                FfiConverterTypeFfiFileWaitReason.read(buf),
+                )
+            17 -> FfiEvent.FileProgress(
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            16 -> FfiEvent.FileGone(
+            18 -> FfiEvent.FileGone(
                 FfiConverterByteArray.read(buf),
                 )
-            17 -> FfiEvent.HonestNotice(
+            19 -> FfiEvent.HonestNotice(
                 FfiConverterString.read(buf),
                 )
-            18 -> FfiEvent.CommandRefused(
+            20 -> FfiEvent.CommandRefused(
                 FfiConverterString.read(buf),
                 )
-            19 -> FfiEvent.MailAccountReady(
+            21 -> FfiEvent.MailAccountReady(
                 FfiConverterString.read(buf),
                 )
-            20 -> FfiEvent.MailAccountFailed(
+            22 -> FfiEvent.MailAccountFailed(
                 FfiConverterString.read(buf),
                 )
-            21 -> FfiEvent.MailLoginFailed(
+            23 -> FfiEvent.MailLoginFailed(
                 FfiConverterString.read(buf),
                 )
-            22 -> FfiEvent.MailLimits(
+            24 -> FfiEvent.MailLimits(
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterBoolean.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            23 -> FfiEvent.PairingReady(
+            25 -> FfiEvent.PairingReady(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            24 -> FfiEvent.PairingRevoked(
+            26 -> FfiEvent.PairingRevoked(
                 FfiConverterByteArray.read(buf),
                 )
-            25 -> FfiEvent.DeviceLink(
+            27 -> FfiEvent.DeviceLink(
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
@@ -12056,7 +12970,22 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 + FfiConverterString.allocationSize(value.`title`)
             )
         }
+        is FfiEvent.GroupRenamed -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
+                + FfiConverterString.allocationSize(value.`title`)
+            )
+        }
         is FfiEvent.GroupMembershipChanged -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
+            )
+        }
+        is FfiEvent.GroupAvatarChanged -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
                 4UL
@@ -12068,6 +12997,7 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
             (
                 4UL
                 + FfiConverterByteArray.allocationSize(value.`fileId`)
+                + FfiConverterTypeFfiFileWaitReason.allocationSize(value.`reason`)
             )
         }
         is FfiEvent.FileProgress -> {
@@ -12229,55 +13159,67 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterString.write(value.`title`, buf)
                 Unit
             }
-            is FfiEvent.GroupMembershipChanged -> {
+            is FfiEvent.GroupRenamed -> {
                 buf.putInt(13)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                FfiConverterString.write(value.`title`, buf)
+                Unit
+            }
+            is FfiEvent.GroupMembershipChanged -> {
+                buf.putInt(14)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                Unit
+            }
+            is FfiEvent.GroupAvatarChanged -> {
+                buf.putInt(15)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
             is FfiEvent.FileWaitsForChannel -> {
-                buf.putInt(14)
+                buf.putInt(16)
                 FfiConverterByteArray.write(value.`fileId`, buf)
+                FfiConverterTypeFfiFileWaitReason.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.FileProgress -> {
-                buf.putInt(15)
+                buf.putInt(17)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterULong.write(value.`received`, buf)
                 FfiConverterULong.write(value.`total`, buf)
                 Unit
             }
             is FfiEvent.FileGone -> {
-                buf.putInt(16)
+                buf.putInt(18)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 Unit
             }
             is FfiEvent.HonestNotice -> {
-                buf.putInt(17)
+                buf.putInt(19)
                 FfiConverterString.write(value.`text`, buf)
                 Unit
             }
             is FfiEvent.CommandRefused -> {
-                buf.putInt(18)
-                FfiConverterString.write(value.`reason`, buf)
-                Unit
-            }
-            is FfiEvent.MailAccountReady -> {
-                buf.putInt(19)
-                FfiConverterString.write(value.`address`, buf)
-                Unit
-            }
-            is FfiEvent.MailAccountFailed -> {
                 buf.putInt(20)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
-            is FfiEvent.MailLoginFailed -> {
+            is FfiEvent.MailAccountReady -> {
                 buf.putInt(21)
+                FfiConverterString.write(value.`address`, buf)
+                Unit
+            }
+            is FfiEvent.MailAccountFailed -> {
+                buf.putInt(22)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is FfiEvent.MailLoginFailed -> {
+                buf.putInt(23)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.MailLimits -> {
-                buf.putInt(22)
+                buf.putInt(24)
                 FfiConverterOptionalULong.write(value.`letterBytes`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxUsed`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxLimit`, buf)
@@ -12286,18 +13228,18 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.PairingReady -> {
-                buf.putInt(23)
+                buf.putInt(25)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterString.write(value.`uri`, buf)
                 Unit
             }
             is FfiEvent.PairingRevoked -> {
-                buf.putInt(24)
+                buf.putInt(26)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 Unit
             }
             is FfiEvent.DeviceLink -> {
-                buf.putInt(25)
+                buf.putInt(27)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterBoolean.write(value.`connected`, buf)
                 Unit
@@ -12356,6 +13298,70 @@ public object FfiConverterTypeFfiExportScope: FfiConverterRustBuffer<FfiExportSc
     override fun allocationSize(value: FfiExportScope) = 4UL
 
     override fun write(value: FfiExportScope, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
+ * Почему передача файла стоит (§10.3).
+ *
+ * **Из пяти причин действия требует ровно одна.** Остальные четыре
+ * означают «файл не потерян, поедет сам»; [`FfiFileWaitReason::
+ * MailboxFull`] означает «освободите место, иначе не поедет». Показать
+ * их одинаково — соврать человеку в единственном случае, когда он может
+ * что-то сделать (§14).
+ *
+ * Текст к каждой — [`file_waiting_text`]; писать свой не надо.
+ */
+
+enum class FfiFileWaitReason {
+    
+    /**
+     * Канала нет ни одного: собеседника не достать ничем.
+     */
+    NOWHERE,
+    /**
+     * Остался только почтовый канал, а файл ему не по размеру.
+     */
+    TOO_BIG,
+    /**
+     * Дорога есть, связь устанавливается.
+     */
+    HANDSHAKING,
+    /**
+     * Свой почтовый ящик переполнен — единственная причина, требующая
+     * действия человека.
+     */
+    MAILBOX_FULL,
+    /**
+     * Спросили — собеседник молчит.
+     */
+    SILENT;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiFileWaitReason: FfiConverterRustBuffer<FfiFileWaitReason> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiFileWaitReason.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiFileWaitReason) = 4UL
+
+    override fun write(value: FfiFileWaitReason, buf: ByteBuffer) {
         buf.putInt(value.ordinal + 1)
     }
 }
@@ -13066,6 +14072,34 @@ public object FfiConverterSequenceTypeFfiCompanionChat: FfiConverterRustBuffer<L
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeFfiCompanionMember: FfiConverterRustBuffer<List<FfiCompanionMember>> {
+    override fun read(buf: ByteBuffer): List<FfiCompanionMember> {
+        val len = buf.getInt()
+        return List<FfiCompanionMember>(len) {
+            FfiConverterTypeFfiCompanionMember.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiCompanionMember>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiCompanionMember.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiCompanionMember>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiCompanionMember.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeFfiCompanionMessage: FfiConverterRustBuffer<List<FfiCompanionMessage>> {
     override fun read(buf: ByteBuffer): List<FfiCompanionMessage> {
         val len = buf.getInt()
@@ -13224,6 +14258,34 @@ public object FfiConverterSequenceTypeFfiGroup: FfiConverterRustBuffer<List<FfiG
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeFfiGroup.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFfiGroupMember: FfiConverterRustBuffer<List<FfiGroupMember>> {
+    override fun read(buf: ByteBuffer): List<FfiGroupMember> {
+        val len = buf.getInt()
+        return List<FfiGroupMember>(len) {
+            FfiConverterTypeFfiGroupMember.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiGroupMember>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiGroupMember.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiGroupMember>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiGroupMember.write(it, buf)
         }
     }
 }
@@ -13446,17 +14508,23 @@ public object FfiConverterSequenceTypeFfiRung: FfiConverterRustBuffer<List<FfiRu
     
 
         /**
-         * Что показать на файле, которому не на чем ехать (§10.3).
+         * Что показать на файле, передача которого стоит (§10.3).
          *
-         * Текст задан спецификацией и переписыванию не подлежит: он обещает ровно
-         * то, что протокол делает, — файл уедет, когда собеседник появится в сети.
-         * «Ошибка отправки» и «загрузка…» здесь одинаково неправда.
-         */ fun `fileWaitingText`(): kotlin.String {
+         * Текст задан ядром и переписыванию не подлежит: он обещает ровно то,
+         * что протокол делает. «Ошибка отправки» и «загрузка…» здесь одинаково
+         * неправда — файл не потерян и поедет сам, кроме одного случая, когда
+         * от человека что-то нужно.
+         *
+         * Причину берут из [`FfiEvent::FileWaitsForChannel`]: одного текста
+         * на все пять не бывает, и попытка обойтись одним стоила двух
+         * потраченных гипотез на живой поломке.
+         */ fun `fileWaitingText`(`reason`: FfiFileWaitReason): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_func_file_waiting_text(
     
-        _status)
+        
+        FfiConverterTypeFfiFileWaitReason.lower(`reason`),_status)
 }
     )
     }

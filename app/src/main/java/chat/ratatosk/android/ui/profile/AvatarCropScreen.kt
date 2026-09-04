@@ -83,7 +83,13 @@ fun AvatarCropScreen(
                                 val cropped = ImageUtils.cropAndResize(bitmap, relX, relY, relSizeX)
                                 
                                 val bytes = ImageUtils.compressToWebp(cropped, maxBytes)
-                                viewModel.setAvatar(bytes)
+                                val pendingChatId = viewModel.pendingAvatarChatId.value
+                                if (pendingChatId != null) {
+                                    viewModel.setGroupAvatar(pendingChatId, bytes)
+                                } else {
+                                    viewModel.setAvatar(bytes)
+                                }
+                                viewModel.setPendingAvatarUri(null, null)
                                 onDone()
                             }
                         },

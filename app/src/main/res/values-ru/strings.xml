@@ -22,6 +22,7 @@
     <string name="read">Прочитано</string>
     <string name="add_contact">Добавить контакт</string>
     <string name="create_group">Создать группу</string>
+    <string name="rename_group">Переименовать группу</string>
     <string name="group_title">Название группы</string>
     <string name="create">Создать</string>
     <string name="group_chat">Групповой чат</string>

@@ -1,7 +1,6 @@
 package chat.ratatosk.android.ui.chat
 
 import android.content.Intent
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
@@ -109,6 +108,8 @@ fun ChatScreen(
         groups.find { it.chatId.toHexString() == chatIdHex }
     }
 
+    val isGroupChat = remember(group, chatId) { group != null || chatId.size == 16 }
+
     val isMember = remember(group, contact) {
         contact != null || (group?.joined ?: false)
     }
@@ -118,6 +119,8 @@ fun ChatScreen(
     var showChatMenu by remember { mutableStateOf(false) }
     var showClearChatDialog by remember { mutableStateOf(false) }
     var showInviteDialog by remember { mutableStateOf(false) }
+    var showRenameGroupDialog by remember { mutableStateOf(false) }
+    var editGroupTitleText by remember { mutableStateOf("") }
     
     var isSearchMode by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -128,12 +131,6 @@ fun ChatScreen(
 
     val performBack = {
         onBack()
-    }
-
-    if (showBackButton) {
-        BackHandler(enabled = true) {
-            performBack()
-        }
     }
 
     val fileLauncher = rememberLauncherForActivityResult(
@@ -295,8 +292,9 @@ fun ChatScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     if (group != null) {
+                                        val groupAvatarBytes = contactAvatars[chatIdHex] ?: viewModel.getGroupAvatar(group.chatId)
                                         Avatar(
-                                            avatarBytes = null,
+                                            avatarBytes = groupAvatarBytes,
                                             name = group.title,
                                             size = 32.dp,
                                             icon = Icons.Default.Groups
@@ -378,6 +376,17 @@ fun ChatScreen(
                                         },
                                         leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }
                                     )
+                                    if (group.mine && isMember) {
+                                        DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.rename_group)) },
+                                            onClick = {
+                                                showChatMenu = false
+                                                editGroupTitleText = group.title
+                                                showRenameGroupDialog = true
+                                            },
+                                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                                        )
+                                    }
                                 }
                                 if (group != null && group.mine) {
                                     DropdownMenuItem(
@@ -624,7 +633,7 @@ fun ChatScreen(
                                         isCompact = isCompact,
                                         onRetry = {}, onDelete = {}, onRetract = {}, onEdit = {}, onReply = {}, onForward = {}, onReaction = { _ -> },
                                         retractionNotice = { "" }, getRepliedMessage = { null },
-                                        showAuthor = group != null,
+                                        showAuthor = isGroupChat,
                                         isMember = isMember
                                     )
                                 }
@@ -667,7 +676,7 @@ fun ChatScreen(
                                     getRepliedMessage = { id -> viewModel.getMessage(id) },
                                     isHighlighted = highlightedMsgId == msg.msgId.toHexString(),
                                     isCompact = isCompact,
-                                    showAuthor = group != null,
+                                    showAuthor = isGroupChat,
                                     isMember = isMember
                                 )
                             }
@@ -778,7 +787,7 @@ fun ChatScreen(
             title = { Text(stringResource(R.string.invite_contact)) },
             text = {
                 val availableToInvite = allContacts.filter { contact ->
-                    !group.members.any { it.contentEquals(contact.peerIk) }
+                    !group.members.any { it.ik.contentEquals(contact.peerIk) }
                 }
                 if (availableToInvite.isEmpty()) {
                     Text(stringResource(R.string.no_contacts_to_invite))
@@ -806,6 +815,47 @@ fun ChatScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { showInviteDialog = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+
+    if (showRenameGroupDialog && group != null) {
+        val maxChars = viewModel.getMaxGroupTitleChars()
+        AlertDialog(
+            onDismissRequest = { showRenameGroupDialog = false },
+            title = { Text(stringResource(R.string.rename_group)) },
+            text = {
+                OutlinedTextField(
+                    value = editGroupTitleText,
+                    onValueChange = {
+                        if (it.length <= maxChars.toInt()) {
+                            editGroupTitleText = it
+                        }
+                    },
+                    label = { Text(stringResource(R.string.group_title)) },
+                    singleLine = true,
+                    supportingText = {
+                        Text("${editGroupTitleText.length}/$maxChars")
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (editGroupTitleText.isNotBlank()) {
+                            viewModel.renameGroup(chatId, editGroupTitleText.trim())
+                            showRenameGroupDialog = false
+                        }
+                    },
+                    enabled = editGroupTitleText.isNotBlank()
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameGroupDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
         )
     }
@@ -838,18 +888,40 @@ fun MessageBubble(
     val alignment = if (message.mine) Alignment.CenterEnd else Alignment.CenterStart
     val bubbleColor = if (message.mine) outgoingColor else MaterialTheme.colorScheme.surfaceVariant
     
-    val authorIk = remember(message) {
-        if (message.mine || !showAuthor) null
-        else if (message.msgId.size >= 32) message.msgId.take(32).toByteArray()
-        else null
+    val groups by viewModel.groups.collectAsState()
+    val group = remember(groups, chatId) {
+        groups.find { it.chatId.contentEquals(chatId) }
     }
 
     val contacts by viewModel.contacts.collectAsState()
     val contactAvatars by viewModel.contactAvatars.collectAsState()
+
+    val authorIk = remember(message, showAuthor, group, contacts) {
+        if (message.mine || !showAuthor) null
+        else message.authorIk ?: group?.members?.find { m ->
+            m.name == message.author || contacts.find { c -> c.peerIk.contentEquals(m.ik) }?.let { (it.localName ?: it.displayName) == message.author } == true
+        }?.ik ?: if (message.msgId.size >= 32) {
+            message.msgId.take(32).toByteArray()
+        } else null
+    }
+
     val authorContact = remember(contacts, authorIk) {
         authorIk?.let { ik -> contacts.find { it.peerIk.contentEquals(ik) } }
     }
-    val authorName = authorContact?.let { it.localName ?: it.displayName } ?: authorIk?.toHexString()?.take(8)
+    val authorName = remember(message.author, authorContact, authorIk) {
+        if (!message.author.isNullOrBlank()) {
+            message.author
+        } else {
+            authorContact?.let { (it.localName ?: it.displayName).ifBlank { null } }
+                ?: authorIk?.toHexString()?.take(8)
+        }
+    }
+    val avatarBytes = remember(contactAvatars, authorIk) {
+        if (authorIk == null) null
+        else authorIk.toHexString().let { contactAvatars[it] } ?: viewModel.getAvatarOf(authorIk)
+    }
+
+    val showAvatar = !message.mine && showAuthor && avatarBytes != null
 
     val contentColor = if (message.mine) {
         if (bubbleColor.luminance() > 0.5f) Color.Black else Color.White
@@ -919,10 +991,30 @@ fun MessageBubble(
         contentAlignment = alignment
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Bottom,
             horizontalArrangement = if (message.mine) Arrangement.End else Arrangement.Start,
             modifier = Modifier.fillMaxWidth()
         ) {
+            if (showAvatar) {
+                Avatar(
+                    avatarBytes = avatarBytes,
+                    name = authorName ?: "",
+                    size = 32.dp,
+                    modifier = Modifier
+                        .padding(end = 8.dp, bottom = 2.dp)
+                        .clickable {
+                            val targetChatId = authorContact?.chatId ?: authorIk
+                            if (targetChatId != null) {
+                                if (viewModel.isCompanionMode.value) {
+                                    viewModel.setActiveChat(targetChatId)
+                                } else {
+                                    viewModel.setActiveContact(targetChatId)
+                                }
+                            }
+                        }
+                )
+            }
+
             if (message.mine && status == FfiDeliveryStatus.UNDELIVERABLE) {
                 IconButton(onClick = onRetry) {
                     Icon(
@@ -978,25 +1070,27 @@ fun MessageBubble(
                             )
                         }
                 ) {
-                    if (authorIk != null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        ) {
-                            val avatarBytes = authorIk.toHexString().let { contactAvatars[it] } ?: viewModel.getAvatarOf(authorIk)
-                            Avatar(
-                                avatarBytes = avatarBytes,
-                                name = authorName ?: "",
-                                size = 24.dp
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = authorName ?: "",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = linkColor
-                            )
-                        }
+                    if (!message.mine && authorName != null && showAuthor) {
+                        val targetChatId = authorContact?.chatId ?: authorIk
+                        Text(
+                            text = authorName,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = linkColor,
+                            modifier = Modifier
+                                .padding(bottom = 4.dp)
+                                .then(
+                                    if (targetChatId != null) {
+                                        Modifier.clickable {
+                                            if (viewModel.isCompanionMode.value) {
+                                                viewModel.setActiveChat(targetChatId)
+                                            } else {
+                                                viewModel.setActiveContact(targetChatId)
+                                            }
+                                        }
+                                    } else Modifier
+                                )
+                        )
                     }
 
                     message.replyTo?.let { replyId ->
@@ -1090,7 +1184,7 @@ fun MessageBubble(
             Row(
                 modifier = Modifier
                     .align(if (message.mine) Alignment.BottomEnd else Alignment.BottomStart)
-                    .offset(y = 12.dp)
+                    .offset(x = if (showAvatar) 40.dp else 0.dp, y = 12.dp)
                     .padding(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {

@@ -176,6 +176,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _pendingAvatarUri = MutableStateFlow<android.net.Uri?>(null)
     val pendingAvatarUri = _pendingAvatarUri.asStateFlow()
 
+    private val _pendingAvatarChatId = MutableStateFlow<ByteArray?>(null)
+    val pendingAvatarChatId = _pendingAvatarChatId.asStateFlow()
+
     private val _autoAcceptLimit = MutableStateFlow<ULong?>(null)
     val autoAcceptLimit = _autoAcceptLimit.asStateFlow()
 
@@ -313,9 +316,116 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         when (event) {
             is FfiCompanionEvent.Chats -> {
                 android.util.Log.d("RatatoskVM", "Companion received ${event.chats.size} chats, fresh=${event.fresh}")
-                val mappedContacts = event.chats.map { mapCompanionChat(it) }
+                val (groupChats, contactChats) = event.chats.partition { it.isGroup }
+
+                val mappedContacts = contactChats.map { mapCompanionChat(it) }
                 _contacts.value = mappedContacts
-                mappedContacts.forEach { loadMessages(it.chatId) }
+
+                val existingGroupsMap = _groups.value.associateBy { it.chatId.toHexString() }
+                val mappedGroups = groupChats.map { chat ->
+                    mapCompanionGroup(chat, existingGroupsMap[chat.chatId.toHexString()])
+                }
+                _groups.value = mappedGroups
+
+                event.chats.forEach { chat ->
+                    if (chat.isGroup) {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            try {
+                                RatatoskCore.getCompanion().members(chat.chatId)
+                            } catch (e: Exception) { /* ignore */ }
+                        }
+                    }
+                    loadMessages(chat.chatId)
+                }
+            }
+            is FfiCompanionEvent.Members -> {
+                val hex = event.chatId.toHexString()
+                val groupMembers = event.members.map { member ->
+                    FfiGroupMember(
+                        ik = member.chatId,
+                        name = member.name,
+                        mine = member.mine
+                    )
+                }
+                val isOwnerMine = event.members.any { it.mine && it.owner }
+                _groups.update { currentGroups ->
+                    currentGroups.map { grp ->
+                        if (grp.chatId.toHexString() == hex) {
+                            grp.copy(
+                                members = groupMembers,
+                                mine = isOwnerMine
+                            )
+                        } else grp
+                    }
+                }
+
+                val memberContacts = event.members.filter { member ->
+                    !member.mine && _contacts.value.none { it.chatId.contentEquals(member.chatId) }
+                }.map { member ->
+                    FfiContact(
+                        peerIk = member.chatId,
+                        chatId = member.chatId,
+                        fingerprint = "",
+                        displayName = member.name,
+                        localName = null,
+                        verified = false,
+                        seenOnLan = false,
+                        hasAvatar = false,
+                        onion = null,
+                        chatmail = null,
+                        cardVersion = 0UL,
+                        addedMs = 0UL,
+                        reachability = FfiReachability(emptyList(), null, null),
+                        directChannel = null,
+                        anomalies = FfiAnomalies(0UL, 0UL, 0UL, 0UL, 0UL)
+                    )
+                }
+                if (memberContacts.isNotEmpty()) {
+                    _contacts.update { currentContacts ->
+                        val existingHexes = currentContacts.map { it.chatId.toHexString() }.toSet()
+                        currentContacts + memberContacts.filter { !existingHexes.contains(it.chatId.toHexString()) }
+                    }
+                }
+                event.members.forEach { member ->
+                    if (!member.mine) {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            try {
+                                RatatoskCore.getCompanion().avatar(member.chatId)
+                            } catch (e: Exception) { /* ignore */ }
+                        }
+                    }
+                }
+            }
+            is FfiCompanionEvent.GroupCreated -> {
+                android.util.Log.i("RatatoskVM", "Companion group created: ${event.chatId.toHexString()}")
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        RatatoskCore.getCompanion().chats()
+                        RatatoskCore.getCompanion().members(event.chatId)
+                    } catch (e: Exception) { /* ignore */ }
+                }
+            }
+            is FfiCompanionEvent.ChatsChanged -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        RatatoskCore.getCompanion().chats()
+                    } catch (e: Exception) { /* ignore */ }
+                }
+            }
+            is FfiCompanionEvent.AvatarChanged -> {
+                val hex = event.chatId?.toHexString() ?: "mine"
+                if (event.avatarMs != 0UL) {
+                    companionAvatarMs[hex] = event.avatarMs
+                    viewModelScope.launch(Dispatchers.IO) {
+                        try {
+                            RatatoskCore.getCompanion().avatar(event.chatId)
+                        } catch (e: Exception) { /* ignore */ }
+                    }
+                } else {
+                    companionAvatarMs.remove(hex)
+                    if (hex == "mine") _myAvatar.value = null
+                    else _contactAvatars.update { it - hex }
+                }
             }
             is FfiCompanionEvent.History -> {
                 android.util.Log.d("RatatoskVM", "Companion received ${event.page.size} messages for chat ${event.chatId.toHexString()}, fresh=${event.fresh}")
@@ -381,6 +491,29 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun mapCompanionGroup(chat: FfiCompanionChat, existingGroup: FfiGroup?): FfiGroup {
+        val chatIdHex = chat.chatId.toHexString()
+        val oldMs = companionAvatarMs[chatIdHex] ?: 0UL
+        if (chat.avatarMs != 0UL && chat.avatarMs != oldMs) {
+            companionAvatarMs[chatIdHex] = chat.avatarMs
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    RatatoskCore.getCompanion().avatar(chat.chatId)
+                } catch (e: Exception) { /* ignore */ }
+            }
+        }
+
+        return FfiGroup(
+            chatId = chat.chatId,
+            title = chat.title,
+            createdMs = existingGroup?.createdMs ?: chat.lastMs,
+            members = existingGroup?.members ?: emptyList(),
+            mine = existingGroup?.mine ?: false,
+            joined = chat.joined,
+            avatarMs = chat.avatarMs
+        )
+    }
+
     private fun mapCompanionChat(chat: FfiCompanionChat): FfiContact {
         val chatIdHex = chat.chatId.toHexString()
         val oldMs = companionAvatarMs[chatIdHex] ?: 0UL
@@ -413,10 +546,30 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun mapCompanionMessage(msg: FfiCompanionMessage): FfiMessage {
+        val grp = _groups.value.find { it.chatId.contentEquals(msg.chatId) }
+        val member = if (grp != null && !msg.author.isNullOrBlank()) {
+            grp.members.find { m ->
+                m.name == msg.author ||
+                _contacts.value.find { c -> c.peerIk.contentEquals(m.ik) }?.let { (it.localName ?: it.displayName) == msg.author } == true
+            }
+        } else null
+
+        val authorIk = member?.ik
+
+        if (authorIk != null && _contactAvatars.value[authorIk.toHexString()] == null && RatatoskCore.isCompanionMode()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    RatatoskCore.getCompanion().avatar(authorIk)
+                } catch (e: Exception) { /* ignore */ }
+            }
+        }
+
         return FfiMessage(
             msgId = msg.msgId,
             body = msg.body,
             mine = msg.mine,
+            author = msg.author,
+            authorIk = authorIk,
             wallMs = msg.wallMs,
             status = msg.status,
             editedAtMs = msg.editedAtMs,
@@ -558,12 +711,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         val chatIdHex = chatId.toHexString()
         val currentSize = _messages.value[chatIdHex]?.size ?: 0
         
-        // If a new message arrived, we must ask for at least currentSize + 1
-        // to avoid losing the oldest message in the current window.
-        // We use a small buffer (5) to handle rapid bursts.
         val targetLimit = when {
             limit != null -> limit
-            currentSize > 0 -> currentSize + 5
+            currentSize > 0 -> maxOf(currentSize, 100)
             else -> 100
         }
         
@@ -579,18 +729,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 android.util.Log.d("RatatoskVM", "Fetched ${msgs.size} messages for $chatIdHex")
                 
                 _messages.update { currentMap ->
-                    val existing = currentMap[chatIdHex] ?: emptyList()
-                    // If we fetched fewer messages than we already have (and we didn't specify a smaller limit),
-                    // it might be a race or a problem with the core state.
-                    if (limit == null && msgs.size < existing.size) {
-                        android.util.Log.w("RatatoskVM", "Fetched fewer messages (${msgs.size}) than current (${existing.size}) for $chatIdHex. Merging instead of replacing.")
-                        // This shouldn't happen often with the +5 logic, but if it does, 
-                        // we prefer the larger set or we could try to merge.
-                        // For simplicity and safety, we keep the one with most messages.
-                        currentMap
-                    } else {
-                        currentMap + (chatIdHex to msgs)
-                    }
+                    currentMap + (chatIdHex to msgs)
                 }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to load messages for $chatIdHex", e)
@@ -1321,10 +1460,13 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun createGroup(title: String) {
-        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().createGroup(title)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().createGroup(title)
+                } else {
+                    RatatoskCore.getClient().createGroup(title)
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     _error.value = "Failed to create group: ${e.message}"
@@ -1333,11 +1475,32 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun inviteToGroup(chatId: ByteArray, peerIk: ByteArray) {
-        if (RatatoskCore.isCompanionMode()) return
+    fun renameGroup(chatId: ByteArray, title: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().inviteToGroup(chatId, peerIk)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().renameGroup(chatId, title)
+                } else {
+                    RatatoskCore.getClient().renameGroup(chatId, title)
+                    refreshContacts()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to rename group: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun inviteToGroup(chatId: ByteArray, peerIk: ByteArray) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().inviteToGroup(chatId, peerIk)
+                    RatatoskCore.getCompanion().members(chatId)
+                } else {
+                    RatatoskCore.getClient().inviteToGroup(chatId, peerIk)
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     _error.value = "Failed to invite: ${e.message}"
@@ -1347,10 +1510,14 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun evictFromGroup(chatId: ByteArray, peerIk: ByteArray) {
-        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().evictFromGroup(chatId, peerIk)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().evictFromGroup(chatId, peerIk)
+                    RatatoskCore.getCompanion().members(chatId)
+                } else {
+                    RatatoskCore.getClient().evictFromGroup(chatId, peerIk)
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     _error.value = "Failed to evict: ${e.message}"
@@ -1360,13 +1527,28 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun leaveGroup(chatId: ByteArray) {
-        if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().leaveGroup(chatId)
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().leaveGroup(chatId)
+                } else {
+                    RatatoskCore.getClient().leaveGroup(chatId)
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     _error.value = "Failed to leave group: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun loadCompanionMembers(chatId: ByteArray) {
+        if (RatatoskCore.isCompanionMode()) {
+            viewModelScope.launch(Dispatchers.IO) {
+                try {
+                    RatatoskCore.getCompanion().members(chatId)
+                } catch (e: Exception) {
+                    android.util.Log.e("RatatoskVM", "Failed to load companion members", e)
                 }
             }
         }
@@ -1668,14 +1850,16 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         val hex = peerIk.toHexString()
         _contactAvatars.value[hex]?.let { return it }
 
-        if (RatatoskCore.isCompanionMode()) return null
-        
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val bytes = RatatoskCore.getClient().avatarOf(peerIk)
-                withContext(Dispatchers.Main) {
-                    if (bytes != null) {
-                        _contactAvatars.update { it + (hex to bytes) }
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().avatar(peerIk)
+                } else {
+                    val bytes = RatatoskCore.getClient().avatarOf(peerIk)
+                    withContext(Dispatchers.Main) {
+                        if (bytes != null) {
+                            _contactAvatars.update { it + (hex to bytes) }
+                        }
                     }
                 }
             } catch (t: Throwable) {
@@ -1704,8 +1888,57 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         setMyAvatar(bytes)
     }
 
-    fun setPendingAvatarUri(uri: android.net.Uri?) {
+    fun getGroupAvatar(chatId: ByteArray): ByteArray? {
+        val hex = chatId.toHexString()
+        _contactAvatars.value[hex]?.let { return it }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().avatar(chatId)
+                } else {
+                    val bytes = RatatoskCore.getClient().groupAvatar(chatId)
+                    withContext(Dispatchers.Main) {
+                        if (bytes != null) {
+                            _contactAvatars.update { it + (hex to bytes) }
+                        }
+                    }
+                }
+            } catch (t: Throwable) {
+                android.util.Log.w("RatatoskVM", "Failed to get group avatar for ${chatId.toHexString()}: ${t.message}")
+            }
+        }
+        return null
+    }
+
+    fun setGroupAvatar(chatId: ByteArray, bytes: ByteArray?) {
+        val hex = chatId.toHexString()
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().setGroupAvatar(chatId, bytes)
+                } else {
+                    RatatoskCore.getClient().setGroupAvatar(chatId, bytes)
+                }
+                withContext(Dispatchers.Main) {
+                    if (bytes != null) {
+                        _contactAvatars.update { it + (hex to bytes) }
+                    } else {
+                        _contactAvatars.update { it - hex }
+                    }
+                    if (!RatatoskCore.isCompanionMode()) {
+                        refreshContacts()
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to set group avatar", e)
+            }
+        }
+    }
+
+    fun setPendingAvatarUri(uri: android.net.Uri?, chatId: ByteArray? = null) {
         _pendingAvatarUri.value = uri
+        _pendingAvatarChatId.value = chatId
     }
 
     fun getMessage(msgId: ByteArray): FfiMessage? {
@@ -1791,6 +2024,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         activeChatId = chatId?.toHexString()
         if (chatId != null) {
             _unreadCounts.update { it + (chatId.toHexString() to 0) }
+            loadMessages(chatId)
         }
     }
 
@@ -1991,10 +2225,32 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 refreshContacts()
                 loadMessages(event.chatId)
             }
+            is FfiEvent.GroupRenamed -> {
+                android.util.Log.i("RatatoskVM", "Group renamed: chat=${event.chatId.toHexString()} title=${event.title}")
+                refreshContacts()
+                loadMessages(event.chatId)
+            }
             is FfiEvent.GroupMembershipChanged -> {
                 android.util.Log.i("RatatoskVM", "Group membership changed: chat=${event.chatId.toHexString()}")
                 refreshContacts()
                 loadMessages(event.chatId)
+            }
+            is FfiEvent.GroupAvatarChanged -> {
+                val hex = event.chatId.toHexString()
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        val bytes = RatatoskCore.getClient().groupAvatar(event.chatId)
+                        withContext(Dispatchers.Main) {
+                            if (bytes != null) {
+                                _contactAvatars.update { it + (hex to bytes) }
+                            } else {
+                                _contactAvatars.update { it - hex }
+                            }
+                        }
+                    } catch (t: Throwable) {
+                        android.util.Log.w("RatatoskVM", "Failed to refresh group avatar for ${event.chatId.toHexString()}: ${t.message}")
+                    }
+                }
             }
             else -> {}
         }

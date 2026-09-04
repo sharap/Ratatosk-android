@@ -41,6 +41,8 @@ fun ChatListScreen(
     val unreadCounts by viewModel.unreadCounts.collectAsState()
     val allMessages by viewModel.messages.collectAsState()
     val contactAvatars by viewModel.contactAvatars.collectAsState()
+    val isCompanionMode by viewModel.isCompanionMode.collectAsState()
+    val isCompanionLinked by viewModel.isCompanionLinked.collectAsState()
 
     val chats = remember(contacts, groups, allMessages) {
         (contacts.map { ChatItem.Contact(it) } + groups.map { ChatItem.Group(it) })
@@ -67,8 +69,6 @@ fun ChatListScreen(
                 
                 val torStatus by viewModel.torStatus.collectAsState()
                 val torEnabled by viewModel.torEnabled.collectAsState()
-                val isCompanionMode by viewModel.isCompanionMode.collectAsState()
-                val isCompanionLinked by viewModel.isCompanionLinked.collectAsState()
                 
                 if (torEnabled && torStatus != null && torStatus!!.fraction < 1.0f) {
                     LinearProgressIndicator(
@@ -117,29 +117,35 @@ fun ChatListScreen(
         },
         floatingActionButton = {
             if (showFab) {
-                Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
-                    if (showFabMenu) {
-                        SmallFloatingActionButton(
-                            onClick = { 
-                                showCreateGroupDialog = true
-                                showFabMenu = false
-                            },
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        ) {
-                            Icon(Icons.Default.Groups, contentDescription = stringResource(R.string.create_group))
-                        }
-                        SmallFloatingActionButton(
-                            onClick = { 
-                                showAddDialog = true
-                                showFabMenu = false
-                            },
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        ) {
-                            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_contact))
-                        }
+                if (isCompanionMode) {
+                    FloatingActionButton(onClick = { showCreateGroupDialog = true }) {
+                        Icon(Icons.Default.Groups, contentDescription = stringResource(R.string.create_group))
                     }
-                    FloatingActionButton(onClick = { showFabMenu = !showFabMenu }) {
-                        Icon(if (showFabMenu) Icons.Default.Close else Icons.Default.Add, contentDescription = null)
+                } else {
+                    Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
+                        if (showFabMenu) {
+                            SmallFloatingActionButton(
+                                onClick = { 
+                                    showCreateGroupDialog = true
+                                    showFabMenu = false
+                                },
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                Icon(Icons.Default.Groups, contentDescription = stringResource(R.string.create_group))
+                            }
+                            SmallFloatingActionButton(
+                                onClick = { 
+                                    showAddDialog = true
+                                    showFabMenu = false
+                                },
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_contact))
+                            }
+                        }
+                        FloatingActionButton(onClick = { showFabMenu = !showFabMenu }) {
+                            Icon(if (showFabMenu) Icons.Default.Close else Icons.Default.Add, contentDescription = null)
+                        }
                     }
                 }
             }
@@ -210,8 +216,9 @@ fun ChatListScreen(
                                         )
                                     }
                                     is ChatItem.Group -> {
+                                        val avatarBytes = contactAvatars[hexId] ?: viewModel.getGroupAvatar(chatItem.chatId)
                                         Avatar(
-                                            avatarBytes = null,
+                                            avatarBytes = avatarBytes,
                                             name = chatItem.title,
                                             icon = Icons.Default.Groups
                                         )

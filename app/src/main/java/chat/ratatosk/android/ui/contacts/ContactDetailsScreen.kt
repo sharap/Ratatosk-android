@@ -1,6 +1,5 @@
 package chat.ratatosk.android.ui.contacts
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -58,12 +57,6 @@ fun ContactDetailsScreen(
         onBack()
     }
 
-    if (showBackButton) {
-        BackHandler(enabled = true) {
-            performBack()
-        }
-    }
-
     var showEditNameDialog by remember { mutableStateOf(false) }
     var showRevokeDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -73,7 +66,7 @@ fun ContactDetailsScreen(
     var purgeHistoryOnDelete by remember { mutableStateOf(true) }
 
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.contact_details)) },
