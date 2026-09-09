@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -13,6 +14,8 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import chat.ratatosk.android.R
@@ -43,9 +46,20 @@ fun ChatListScreen(
     val contactAvatars by viewModel.contactAvatars.collectAsState()
     val isCompanionMode by viewModel.isCompanionMode.collectAsState()
     val isCompanionLinked by viewModel.isCompanionLinked.collectAsState()
+    val activeChatId by viewModel.activeChatIdFlow.collectAsState()
 
-    val chats = remember(contacts, groups, allMessages) {
+    val chats = remember(contacts, groups, allMessages, activeChatId) {
         (contacts.map { ChatItem.Contact(it) } + groups.map { ChatItem.Group(it) })
+            .filter { chatItem ->
+                when (chatItem) {
+                    is ChatItem.Group -> true
+                    is ChatItem.Contact -> {
+                        val hexId = chatItem.chatId.toHexString()
+                        val msgs = allMessages[hexId]
+                        !msgs.isNullOrEmpty() || activeChatId?.contentEquals(chatItem.chatId) == true
+                    }
+                }
+            }
             .sortedByDescending { chatItem ->
                 allMessages[chatItem.chatId.toHexString()]?.lastOrNull()?.wallMs ?: 0UL
             }
@@ -64,7 +78,7 @@ fun ChatListScreen(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                     ),
-                    windowInsets = WindowInsets(0, 0, 0, 0)
+                    windowInsets = TopAppBarDefaults.windowInsets
                 )
                 
                 val torStatus by viewModel.torStatus.collectAsState()
@@ -173,6 +187,8 @@ fun ChatListScreen(
                         val unreadCount = unreadCounts[hexId] ?: 0
                         val lastMessage = allMessages[hexId]?.lastOrNull()
                         
+                        val isSelected = activeChatId?.contentEquals(chatItem.chatId) == true
+
                         ListItem(
                             headlineContent = { 
                                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -232,7 +248,12 @@ fun ChatListScreen(
                                     }
                                 }
                             },
-                            modifier = Modifier.clickable { onChatClick(chatItem.chatId) }
+                            colors = ListItemDefaults.colors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+                            ),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onChatClick(chatItem.chatId) }
                         )
                     }
                 }

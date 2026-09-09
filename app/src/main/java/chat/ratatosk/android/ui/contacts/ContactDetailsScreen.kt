@@ -270,7 +270,7 @@ fun ContactDetailsScreen(
                                     }
                                 }
 
-                                if (contact.onion != null || contact.chatmail != null) {
+                                if (contact.onion != null || contact.chatmail != null || contact.ygg?.isNotEmpty() == true) {
                                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                                 }
 
@@ -297,6 +297,21 @@ fun ContactDetailsScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(chatmail, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
                                         IconButton(onClick = { clipboardManager.setText(AnnotatedString(chatmail)) }) {
+                                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(20.dp))
+                                        }
+                                    }
+                                }
+
+                                contact.ygg?.takeIf { it.isNotEmpty() }?.let { yggBytes ->
+                                    val yggHex = yggBytes.toHexString()
+                                    Text(
+                                        text = stringResource(R.string.ygg_address),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(yggHex, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                                        IconButton(onClick = { clipboardManager.setText(AnnotatedString(yggHex)) }) {
                                             Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(20.dp))
                                         }
                                     }
@@ -497,25 +512,62 @@ fun ContactDetailsScreen(
 
     if (showShareToChatDialog && contact != null) {
         val allContacts by viewModel.contacts.collectAsState()
+        val allGroups by viewModel.groups.collectAsState()
         AlertDialog(
             onDismissRequest = { showShareToChatDialog = false },
             title = { Text(stringResource(R.string.share_to)) },
             text = {
                 LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                    items(allContacts.filter { it.chatId.toHexString() != contact.chatId.toHexString() }) { target ->
-                        ListItem(
-                            headlineContent = { Text(target.localName ?: target.displayName) },
-                            leadingContent = {
-                                Avatar(
-                                    avatarBytes = contactAvatars[target.peerIk.toHexString()] ?: viewModel.getAvatarOf(target.peerIk),
-                                    name = target.localName ?: target.displayName
-                                )
-                            },
-                            modifier = Modifier.clickable {
-                                viewModel.shareContact(target.chatId, contact.peerIk)
-                                showShareToChatDialog = false
-                            }
-                        )
+                    if (allGroups.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.groups),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        items(allGroups) { group ->
+                            ListItem(
+                                headlineContent = { Text(group.title) },
+                                leadingContent = {
+                                    Avatar(
+                                        avatarBytes = contactAvatars[group.chatId.toHexString()] ?: viewModel.getGroupAvatar(group.chatId),
+                                        name = group.title
+                                    )
+                                },
+                                modifier = Modifier.clickable {
+                                    viewModel.shareContact(group.chatId, contact.peerIk)
+                                    showShareToChatDialog = false
+                                }
+                            )
+                        }
+                    }
+
+                    if (allContacts.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.contacts),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        items(allContacts.filter { it.chatId.toHexString() != contact.chatId.toHexString() }) { target ->
+                            ListItem(
+                                headlineContent = { Text(target.localName ?: target.displayName) },
+                                leadingContent = {
+                                    Avatar(
+                                        avatarBytes = contactAvatars[target.peerIk.toHexString()] ?: viewModel.getAvatarOf(target.peerIk),
+                                        name = target.localName ?: target.displayName
+                                    )
+                                },
+                                modifier = Modifier.clickable {
+                                    viewModel.shareContact(target.chatId, contact.peerIk)
+                                    showShareToChatDialog = false
+                                }
+                            )
+                        }
                     }
                 }
             },

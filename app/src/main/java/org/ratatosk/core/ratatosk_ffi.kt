@@ -779,6 +779,14 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_waiting_notice(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_ygg_address(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_ygg_node_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_ygg_node_stop_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_ygg_warning(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_accountregistry_adopt(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_accountregistry_create(
@@ -911,6 +919,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_avatar(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_group_avatar(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_local_name(
@@ -923,6 +933,12 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_transport_enabled(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_key(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_mode(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_peers(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_share_contact(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_sweep_orphan_files(
@@ -933,9 +949,17 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_transport_ready(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_key(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_mode(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_companionobserver_on_event(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_accept_file(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_add_shared_contact(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_avatar(
     ): Int
@@ -1002,6 +1026,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_observer(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_reaction(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_share_contact(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_constructor_accountregistry_open(
     ): Int
@@ -1183,6 +1209,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_avatar(`ptr`: Long,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_foreground(`ptr`: Long,`front`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_group_avatar(`ptr`: Long,`chatId`: RustBuffer.ByValue,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_local_name(`ptr`: Long,`peerIk`: RustBuffer.ByValue,`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1195,6 +1223,12 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_transport_enabled(`ptr`: Long,`transport`: RustBuffer.ByValue,`enabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_key(`ptr`: Long,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_mode(`ptr`: Long,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_peers(`ptr`: Long,`peers`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_share_contact(`ptr`: Long,`chatId`: RustBuffer.ByValue,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_sweep_orphan_files(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1205,6 +1239,12 @@ internal object UniffiLib {
     ): Byte
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_transport_ready(`ptr`: Long,`transport`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_key(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_mode(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peers(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_clone_companionobserver(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_ratatosk_ffi_fn_free_companionobserver(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1220,6 +1260,8 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_constructor_ratatoskcompanion_open(`inviteUri`: RustBuffer.ByValue,`port`: Short,`peerAddr`: RustBuffer.ByValue,`cachePath`: RustBuffer.ByValue,`torDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_accept_file(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_add_shared_contact(`ptr`: Long,`msgId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_avatar(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1287,6 +1329,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_set_reaction(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgId`: RustBuffer.ByValue,`emoji`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_share_contact(`ptr`: Long,`chatId`: RustBuffer.ByValue,`whoChatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_func_chunk_bytes(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     external fun uniffi_ratatosk_ffi_fn_func_default_auto_accept_bytes(uniffi_out_err: UniffiRustCallStatus, 
@@ -1348,6 +1392,14 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_func_revocation_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_waiting_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_ygg_address(`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_ygg_node_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_ygg_node_stop_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_ygg_warning(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun ffi_ratatosk_ffi_rustbuffer_alloc(`size`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1561,6 +1613,18 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_waiting_notice() != 48657) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_ygg_address() != 26421) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_ygg_node_notice() != 3656) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_ygg_node_stop_notice() != 22057) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_ygg_warning() != 32785) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_accountregistry_adopt() != 21716) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1759,6 +1823,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_avatar() != 63479) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground() != 48471) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_group_avatar() != 3502) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1777,6 +1844,15 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_transport_enabled() != 64975) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_key() != 3914) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_mode() != 22614) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_peers() != 49761) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_share_contact() != 14077) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1792,10 +1868,22 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_transport_ready() != 48477) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_key() != 40206) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_mode() != 61540) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers() != 23128) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_companionobserver_on_event() != 21474) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_accept_file() != 59625) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_add_shared_contact() != 5336) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_avatar() != 3824) {
@@ -1895,6 +1983,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_set_reaction() != 64518) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_share_contact() != 62834) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_constructor_accountregistry_open() != 25485) {
@@ -4770,6 +4861,23 @@ public interface RatatoskClientInterface {
     fun `setAvatar`(`bytes`: kotlin.ByteArray?)
     
     /**
+     * Этот аккаунт вышел на экран или ушёл с него (§5.1).
+     *
+     * **Не переключатель локальной сети.** Гасит и зажигает маяк §5.1,
+     * не трогая выбор человека и ничего не записывая: одно устройство
+     * с тремя аккаунтами не должно объявлять в эфир три присутствия
+     * сразу — но и включать локальную сеть тому, кто её не включал,
+     * оно не вправе.
+     *
+     * Приложению с одним аккаунтом звать это не нужно вовсе: умолчание —
+     * «на экране».
+     *
+     * Onion и почты не касается: они не объявляют присутствия, а ждут
+     * входящих по адресу из карточки.
+     */
+    fun `setForeground`(`front`: kotlin.Boolean)
+    
+    /**
      * Меняет аватарку группы.
      *
      * **Дополнение к спецификации:** §11 аватарок не описывает.
@@ -4865,6 +4973,69 @@ public interface RatatoskClientInterface {
     fun `setTransportEnabled`(`transport`: FfiTransport, `enabled`: kotlin.Boolean)
     
     /**
+     * Называет открытый ключ **своего** узла в меше Yggdrasil (0.2).
+     *
+     * Тридцать два байта ставят ключ, пустой массив снимает меш; любая
+     * другая длина — отказ. Отказ, а не молчаливое стирание: ключ человек
+     * переносит руками из чужого приложения, и опечатку надо назвать —
+     * иначе он останется с выключенным мешем и без объяснения.
+     *
+     * **Где его взять.** На десктопе — у демона: `yggdrasilctl getSelf`,
+     * поле `key`. На телефоне с официальным приложением Yggdrasil —
+     * из его окна, руками: узел живёт в чужой песочнице, и спросить его
+     * программно неоткуда. Вывести ключ из адреса `200::/7` **нельзя**:
+     * адрес сжимает ключ до четырнадцати байт.
+     *
+     * **Настройка, а не адрес.** Переживает перезапуск, ставится один раз.
+     * Смена растит версию карточки и рассылает её контактам (§4.3): имя
+     * в меше — часть карточки, и собеседники обязаны узнать новое.
+     *
+     * **Ступень от этого не становится работающей.** Работает она с того
+     * момента, как раннер привязался к нашему адресу в меше, — то есть
+     * когда демон поднят и адрес назначен. До тех пор §5.4 её не выбирает,
+     * а `transport_ready(Ygg)` честно отвечает «нет».
+     *
+     * Перед включением ступени клиент обязан показать [`ygg_warning`].
+     *
+     * Относится к режиму внешнего демона. В режиме своего узла имя
+     * выводится из нашего зерна, и вызов отвечает отказом, а не тишиной.
+     */
+    fun `setYggKey`(`key`: kotlin.ByteArray)
+    
+    /**
+     * Выбирает, откуда берётся меш: никак, внешним демоном, своим узлом.
+     *
+     * Три состояния, и человек выбирает сам. Экрану настроек это один
+     * переключатель на три положения, а не два независимых флажка:
+     * режимы взаимоисключающи, и «узел встроенный, но выключен»
+     * пришлось бы объяснять.
+     *
+     * **Свой узел называет себя сам.** При первом включении заводится
+     * зерно, из него выводится имя в меше, оно уезжает в карточке.
+     * Возврат в этот режим даёт **то же** имя, а не новое.
+     *
+     * **Без пиров свой узел ни с кем не соединён** — назовите их
+     * через [`RatatoskClient::set_ygg_peers`], иначе ступень честно
+     * останется неработающей.
+     *
+     * Перед включением любого режима клиент обязан показать
+     * [`ygg_warning`].
+     */
+    fun `setYggMode`(`mode`: FfiYggMode)
+    
+    /**
+     * Называет пиров встроенного узла: `tcp://host:port` и подобные.
+     *
+     * Список заменяется целиком. Зашитого списка нет сознательно: пир
+     * видит источник и адресата пакетов в меше, и выбирать за человека,
+     * кто это будет, приложение не вправе.
+     *
+     * В карточке список не отражается: собеседнику важно наше имя в меше,
+     * а не то, через кого мы в него вошли.
+     */
+    fun `setYggPeers`(`peers`: List<kotlin.String>)
+    
+    /**
      * Отправляет в чат карточку контакта (§4.1, дополнение).
      *
      * Один контакт на сообщение. Своей карточкой поделиться можно — передайте
@@ -4924,6 +5095,27 @@ public interface RatatoskClientInterface {
      * «Поднимается» — правда, «не работает» — нет.
      */
     fun `transportReady`(`transport`: FfiTransport): kotlin.Boolean
+    
+    /**
+     * Ключ нашего узла в меше, если он назван (0.2). Пусто — меша нет.
+     *
+     * Читается из своей карточки: там он и живёт. Нужен экрану настроек,
+     * чтобы показать человеку **действующее** имя — не то, что он ввёл,
+     * а то, что уехало собеседникам, — и рядом выведенный адрес для сверки
+     * с `yggdrasilctl getSelf`. В режиме своего узла это имя мы назвали
+     * себе сами, и вводить его человеку было негде.
+     */
+    fun `yggKey`(): kotlin.ByteArray
+    
+    /**
+     * Текущий режим меша.
+     */
+    fun `yggMode`(): FfiYggMode
+    
+    /**
+     * Пиры встроенного узла, как их назвал человек.
+     */
+    fun `yggPeers`(): List<kotlin.String>
     
     companion object
 }
@@ -6364,6 +6556,35 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Этот аккаунт вышел на экран или ушёл с него (§5.1).
+     *
+     * **Не переключатель локальной сети.** Гасит и зажигает маяк §5.1,
+     * не трогая выбор человека и ничего не записывая: одно устройство
+     * с тремя аккаунтами не должно объявлять в эфир три присутствия
+     * сразу — но и включать локальную сеть тому, кто её не включал,
+     * оно не вправе.
+     *
+     * Приложению с одним аккаунтом звать это не нужно вовсе: умолчание —
+     * «на экране».
+     *
+     * Onion и почты не касается: они не объявляют присутствия, а ждут
+     * входящих по адресу из карточки.
+     */
+    @Throws(RatatoskException::class)override fun `setForeground`(`front`: kotlin.Boolean)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_foreground(
+        it,
+        
+        FfiConverterBoolean.lower(`front`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Меняет аватарку группы.
      *
      * **Дополнение к спецификации:** §11 аватарок не описывает.
@@ -6541,6 +6762,105 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Называет открытый ключ **своего** узла в меше Yggdrasil (0.2).
+     *
+     * Тридцать два байта ставят ключ, пустой массив снимает меш; любая
+     * другая длина — отказ. Отказ, а не молчаливое стирание: ключ человек
+     * переносит руками из чужого приложения, и опечатку надо назвать —
+     * иначе он останется с выключенным мешем и без объяснения.
+     *
+     * **Где его взять.** На десктопе — у демона: `yggdrasilctl getSelf`,
+     * поле `key`. На телефоне с официальным приложением Yggdrasil —
+     * из его окна, руками: узел живёт в чужой песочнице, и спросить его
+     * программно неоткуда. Вывести ключ из адреса `200::/7` **нельзя**:
+     * адрес сжимает ключ до четырнадцати байт.
+     *
+     * **Настройка, а не адрес.** Переживает перезапуск, ставится один раз.
+     * Смена растит версию карточки и рассылает её контактам (§4.3): имя
+     * в меше — часть карточки, и собеседники обязаны узнать новое.
+     *
+     * **Ступень от этого не становится работающей.** Работает она с того
+     * момента, как раннер привязался к нашему адресу в меше, — то есть
+     * когда демон поднят и адрес назначен. До тех пор §5.4 её не выбирает,
+     * а `transport_ready(Ygg)` честно отвечает «нет».
+     *
+     * Перед включением ступени клиент обязан показать [`ygg_warning`].
+     *
+     * Относится к режиму внешнего демона. В режиме своего узла имя
+     * выводится из нашего зерна, и вызов отвечает отказом, а не тишиной.
+     */
+    @Throws(RatatoskException::class)override fun `setYggKey`(`key`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_key(
+        it,
+        
+        FfiConverterByteArray.lower(`key`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Выбирает, откуда берётся меш: никак, внешним демоном, своим узлом.
+     *
+     * Три состояния, и человек выбирает сам. Экрану настроек это один
+     * переключатель на три положения, а не два независимых флажка:
+     * режимы взаимоисключающи, и «узел встроенный, но выключен»
+     * пришлось бы объяснять.
+     *
+     * **Свой узел называет себя сам.** При первом включении заводится
+     * зерно, из него выводится имя в меше, оно уезжает в карточке.
+     * Возврат в этот режим даёт **то же** имя, а не новое.
+     *
+     * **Без пиров свой узел ни с кем не соединён** — назовите их
+     * через [`RatatoskClient::set_ygg_peers`], иначе ступень честно
+     * останется неработающей.
+     *
+     * Перед включением любого режима клиент обязан показать
+     * [`ygg_warning`].
+     */
+    @Throws(RatatoskException::class)override fun `setYggMode`(`mode`: FfiYggMode)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_mode(
+        it,
+        
+        FfiConverterTypeFfiYggMode.lower(`mode`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Называет пиров встроенного узла: `tcp://host:port` и подобные.
+     *
+     * Список заменяется целиком. Зашитого списка нет сознательно: пир
+     * видит источник и адресата пакетов в меше, и выбирать за человека,
+     * кто это будет, приложение не вправе.
+     *
+     * В карточке список не отражается: собеседнику важно наше имя в меше,
+     * а не то, через кого мы в него вошли.
+     */
+    @Throws(RatatoskException::class)override fun `setYggPeers`(`peers`: List<kotlin.String>)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_peers(
+        it,
+        
+        FfiConverterSequenceString.lower(`peers`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Отправляет в чат карточку контакта (§4.1, дополнение).
      *
      * Один контакт на сообщение. Своей карточкой поделиться можно — передайте
@@ -6657,6 +6977,63 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         it,
         
         FfiConverterTypeFfiTransport.lower(`transport`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Ключ нашего узла в меше, если он назван (0.2). Пусто — меша нет.
+     *
+     * Читается из своей карточки: там он и живёт. Нужен экрану настроек,
+     * чтобы показать человеку **действующее** имя — не то, что он ввёл,
+     * а то, что уехало собеседникам, — и рядом выведенный адрес для сверки
+     * с `yggdrasilctl getSelf`. В режиме своего узла это имя мы назвали
+     * себе сами, и вводить его человеку было негде.
+     */
+    @Throws(RatatoskException::class)override fun `yggKey`(): kotlin.ByteArray {
+            return FfiConverterByteArray.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_key(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Текущий режим меша.
+     */
+    @Throws(RatatoskException::class)override fun `yggMode`(): FfiYggMode {
+            return FfiConverterTypeFfiYggMode.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_mode(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Пиры встроенного узла, как их назвал человек.
+     */
+    @Throws(RatatoskException::class)override fun `yggPeers`(): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peers(
+        it,
+        _status)
 }
     }
     )
@@ -6872,6 +7249,23 @@ public interface RatatoskCompanionInterface {
      * Негодный идентификатор или остановленный компаньон.
      */
     fun `acceptFile`(`fileId`: kotlin.ByteArray)
+    
+    /**
+     * Добавляет к себе того, чья карточка приехала этим сообщением.
+     *
+     * **Называется сообщение, а не карточка.** Байты лежат на телефоне
+     * и границу не пересекают ни туда, ни обратно: присланная с десктопа
+     * «карточка» была бы ключом, назначенным десктопом.
+     *
+     * Сверки (§4.2) это не даёт и дать не может: она делается голосом
+     * при встрече, а не нажатием в окне.
+     *
+     * # Errors
+     *
+     * Идентификатор не той длины; карточки в этом сообщении нет —
+     * телефон скажет словами.
+     */
+    fun `addSharedContact`(`msgId`: kotlin.ByteArray)
     
     /**
      * Спрашивает аватарку — контакта или свою.
@@ -7330,6 +7724,23 @@ public interface RatatoskCompanionInterface {
      */
     fun `setReaction`(`chatId`: kotlin.ByteArray, `msgId`: kotlin.ByteArray, `emoji`: kotlin.String)
     
+    /**
+     * Делится в чате карточкой человека (§4.1).
+     *
+     * Человек назван идентификатором **личного чата** с ним — тем же,
+     * каким его называет состав группы (`FfiCompanionMember::chat_id`).
+     * `None` означает «своей карточкой»: личного чата с самим собой
+     * не бывает, а поделиться собой — обычное дело.
+     *
+     * Работает и в группу: телефон зовёт тот же обработчик, что и у своей
+     * команды, а тот с прошлой поставки умеет обе стороны.
+     *
+     * # Errors
+     *
+     * Идентификатор не той длины; телефон отказал словами.
+     */
+    fun `shareContact`(`chatId`: kotlin.ByteArray, `whoChatId`: kotlin.ByteArray?)
+    
     companion object
 }
 
@@ -7472,6 +7883,35 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
         it,
         
         FfiConverterByteArray.lower(`fileId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Добавляет к себе того, чья карточка приехала этим сообщением.
+     *
+     * **Называется сообщение, а не карточка.** Байты лежат на телефоне
+     * и границу не пересекают ни туда, ни обратно: присланная с десктопа
+     * «карточка» была бы ключом, назначенным десктопом.
+     *
+     * Сверки (§4.2) это не даёт и дать не может: она делается голосом
+     * при встрече, а не нажатием в окне.
+     *
+     * # Errors
+     *
+     * Идентификатор не той длины; карточки в этом сообщении нет —
+     * телефон скажет словами.
+     */
+    @Throws(RatatoskException::class)override fun `addSharedContact`(`msgId`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_add_shared_contact(
+        it,
+        
+        FfiConverterByteArray.lower(`msgId`),_status)
 }
     }
     
@@ -8344,6 +8784,36 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
     
 
     
+    /**
+     * Делится в чате карточкой человека (§4.1).
+     *
+     * Человек назван идентификатором **личного чата** с ним — тем же,
+     * каким его называет состав группы (`FfiCompanionMember::chat_id`).
+     * `None` означает «своей карточкой»: личного чата с самим собой
+     * не бывает, а поделиться собой — обычное дело.
+     *
+     * Работает и в группу: телефон зовёт тот же обработчик, что и у своей
+     * команды, а тот с прошлой поставки умеет обе стороны.
+     *
+     * # Errors
+     *
+     * Идентификатор не той длины; телефон отказал словами.
+     */
+    @Throws(RatatoskException::class)override fun `shareContact`(`chatId`: kotlin.ByteArray, `whoChatId`: kotlin.ByteArray?)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_share_contact(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterOptionalByteArray.lower(`whoChatId`),_status)
+}
+    }
+    
+    
+
+    
 
     
 
@@ -9035,6 +9505,14 @@ data class FfiCompanionMessage (
      * Вложения (§10). Пусто у обычного сообщения.
      */
     val `files`: List<FfiCompanionAttachment>
+    , 
+    /**
+     * Присланная карточка человека (§4.1). `None` — обычное сообщение.
+     *
+     * Без неё такое сообщение выглядело бы пустым: тело у него нарочно
+     * пустое, карточка лежит записью рядом.
+     */
+    val `shared`: FfiCompanionSharedContact?
     
 ){
     
@@ -9063,6 +9541,7 @@ public object FfiConverterTypeFfiCompanionMessage: FfiConverterRustBuffer<FfiCom
             FfiConverterBoolean.read(buf),
             FfiConverterOptionalByteArray.read(buf),
             FfiConverterSequenceTypeFfiCompanionAttachment.read(buf),
+            FfiConverterOptionalTypeFfiCompanionSharedContact.read(buf),
         )
     }
 
@@ -9078,7 +9557,8 @@ public object FfiConverterTypeFfiCompanionMessage: FfiConverterRustBuffer<FfiCom
             FfiConverterOptionalULong.allocationSize(value.`editedAtMs`) +
             FfiConverterBoolean.allocationSize(value.`forwarded`) +
             FfiConverterOptionalByteArray.allocationSize(value.`replyTo`) +
-            FfiConverterSequenceTypeFfiCompanionAttachment.allocationSize(value.`files`)
+            FfiConverterSequenceTypeFfiCompanionAttachment.allocationSize(value.`files`) +
+            FfiConverterOptionalTypeFfiCompanionSharedContact.allocationSize(value.`shared`)
     )
 
     override fun write(value: FfiCompanionMessage, buf: ByteBuffer) {
@@ -9094,6 +9574,7 @@ public object FfiConverterTypeFfiCompanionMessage: FfiConverterRustBuffer<FfiCom
             FfiConverterBoolean.write(value.`forwarded`, buf)
             FfiConverterOptionalByteArray.write(value.`replyTo`, buf)
             FfiConverterSequenceTypeFfiCompanionAttachment.write(value.`files`, buf)
+            FfiConverterOptionalTypeFfiCompanionSharedContact.write(value.`shared`, buf)
     }
 }
 
@@ -9205,6 +9686,61 @@ public object FfiConverterTypeFfiCompanionReaction: FfiConverterRustBuffer<FfiCo
 
 
 /**
+ * Присланная кем-то карточка человека — в сообщении на десктопе (§4.1).
+ *
+ * Ключа здесь нет: §13.4 не пускает `IK` через границу устройства.
+ * Показать карточку это не мешает, а «добавить» делается просьбой
+ * про **сообщение** — [`RatatoskCompanion::add_shared_contact`].
+ */
+data class FfiCompanionSharedContact (
+    /**
+     * Как человек назвал себя сам — из карточки, а не локальная заметка.
+     */
+    val `name`: kotlin.String
+    , 
+    /**
+     * Личный чат с ним, если он уже в контактах.
+     *
+     * Оно же отвечает на «предлагать ли добавить»: есть чат — предлагать
+     * нечего, можно открыть переписку. Два поля вместо одного означали бы
+     * два источника у одного факта.
+     */
+    val `chatId`: kotlin.ByteArray?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiCompanionSharedContact: FfiConverterRustBuffer<FfiCompanionSharedContact> {
+    override fun read(buf: ByteBuffer): FfiCompanionSharedContact {
+        return FfiCompanionSharedContact(
+            FfiConverterString.read(buf),
+            FfiConverterOptionalByteArray.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiCompanionSharedContact) = (
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterOptionalByteArray.allocationSize(value.`chatId`)
+    )
+
+    override fun write(value: FfiCompanionSharedContact, buf: ByteBuffer) {
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterOptionalByteArray.write(value.`chatId`, buf)
+    }
+}
+
+
+
+/**
  * Контакт в том виде, в каком его показывает UI.
  */
 data class FfiContact (
@@ -9285,6 +9821,16 @@ data class FfiContact (
     val `chatmail`: kotlin.String?
     , 
     /**
+     * Открытый ключ узла Yggdrasil из карточки (0.2). `None` — меша нет.
+     *
+     * Тридцать два байта, а не строка: адрес `200::/7` выводится из них
+     * однозначно, и хранить обе записи одного и того же значило бы
+     * однажды показать человеку одну, а соединиться по другой. Показывать
+     * его стоит так же, как onion, — на карточке человека, а не в списке.
+     */
+    val `ygg`: kotlin.ByteArray?
+    , 
+    /**
      * Версия карточки, монотонная (§4.3).
      *
      * Диагностика: по ней видно, доехало ли до нас обновление адресов.
@@ -9344,6 +9890,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterBoolean.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalByteArray.read(buf),
             FfiConverterULong.read(buf),
             FfiConverterULong.read(buf),
             FfiConverterTypeFfiReachability.read(buf),
@@ -9363,6 +9910,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterBoolean.allocationSize(value.`hasAvatar`) +
             FfiConverterOptionalString.allocationSize(value.`onion`) +
             FfiConverterOptionalString.allocationSize(value.`chatmail`) +
+            FfiConverterOptionalByteArray.allocationSize(value.`ygg`) +
             FfiConverterULong.allocationSize(value.`cardVersion`) +
             FfiConverterULong.allocationSize(value.`addedMs`) +
             FfiConverterTypeFfiReachability.allocationSize(value.`reachability`) +
@@ -9381,6 +9929,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterBoolean.write(value.`hasAvatar`, buf)
             FfiConverterOptionalString.write(value.`onion`, buf)
             FfiConverterOptionalString.write(value.`chatmail`, buf)
+            FfiConverterOptionalByteArray.write(value.`ygg`, buf)
             FfiConverterULong.write(value.`cardVersion`, buf)
             FfiConverterULong.write(value.`addedMs`, buf)
             FfiConverterTypeFfiReachability.write(value.`reachability`, buf)
@@ -13447,6 +13996,12 @@ enum class FfiTransport {
      */
     LAN,
     /**
+     * Меш Yggdrasil (0.2). По умолчанию **выключен**: узел меша переносит
+     * чужой трафик, то есть тратит батарею и трафик человека на чужие
+     * пакеты. UI обязан сказать об этом рядом с переключателем.
+     */
+    YGG,
+    /**
      * Tor onion-to-onion (§5.2). По умолчанию включён.
      */
     ONION,
@@ -13475,6 +14030,56 @@ public object FfiConverterTypeFfiTransport: FfiConverterRustBuffer<FfiTransport>
     override fun allocationSize(value: FfiTransport) = 4UL
 
     override fun write(value: FfiTransport, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
+ * Откуда берётся меш, на границе §13.3 (0.2).
+ *
+ * Своё перечисление по той же причине, что и у транспорта: типы протокола
+ * наружу не отдаются.
+ */
+
+enum class FfiYggMode {
+    
+    /**
+     * Меша нет. Умолчание, и остаётся им после обновления приложения.
+     */
+    OFF,
+    /**
+     * Внешний демон `yggdrasil` на устройстве; ключ называет человек.
+     */
+    EXTERNAL,
+    /**
+     * Свой узел в нашем процессе; имя выводится из своего зерна.
+     */
+    EMBEDDED;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiYggMode: FfiConverterRustBuffer<FfiYggMode> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiYggMode.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiYggMode) = 4UL
+
+    override fun write(value: FfiYggMode, buf: ByteBuffer) {
         buf.putInt(value.ordinal + 1)
     }
 }
@@ -13730,6 +14335,38 @@ public object FfiConverterOptionalTypeFfiFileReader: FfiConverterRustBuffer<FfiF
         } else {
             buf.put(1)
             FfiConverterTypeFfiFileReader.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeFfiCompanionSharedContact: FfiConverterRustBuffer<FfiCompanionSharedContact?> {
+    override fun read(buf: ByteBuffer): FfiCompanionSharedContact? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeFfiCompanionSharedContact.read(buf)
+    }
+
+    override fun allocationSize(value: FfiCompanionSharedContact?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeFfiCompanionSharedContact.allocationSize(value)
+        }
+    }
+
+    override fun write(value: FfiCompanionSharedContact?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeFfiCompanionSharedContact.write(value, buf)
         }
     }
 }
@@ -14927,6 +15564,80 @@ public object FfiConverterSequenceTypeFfiRung: FfiConverterRustBuffer<List<FfiRu
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_func_waiting_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Адрес `200::/7`, выведенный из ключа узла в меше (0.2).
+         *
+         * Считает **ядро**, а не клиент, и это §13.3: вывод адреса — правило чужой
+         * сети, а не рисование. Две реализации одного правила разошлись бы молча,
+         * и человек сверял бы с `yggdrasilctl getSelf` не тот адрес, по которому
+         * мы на самом деле слушаем.
+         *
+         * `None` — ключ не тридцати двух байт, в том числе пустой.
+         */ fun `yggAddress`(`key`: kotlin.ByteArray): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_ygg_address(
+    
+        
+        FfiConverterByteArray.lower(`key`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Что ещё сказать перед выбором встроенного узла меша (0.2).
+         *
+         * Показывается **вдобавок** к [`ygg_warning`], а не вместо: цена та же,
+         * а нового здесь две вещи. Пиров человек называет сам, и без них узел
+         * молчит — это самая частая причина «меш не работает». И имя в меше
+         * приложение выдаёт себе само, вместе с базой.
+         */ fun `yggNodeNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_ygg_node_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Что показать при **выключении** встроенного узла меша (0.2).
+         *
+         * Обязательно, а не по желанию. Человек выключает меш затем, чтобы
+         * перестать переносить чужой трафик, — а библиотека узла остановки
+         * не умеет, и трафик пойдёт до перезапуска приложения. Промолчать здесь
+         * значило бы пообещать больше, чем делается.
+         */ fun `yggNodeStopNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_ygg_node_stop_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Предупреждение при включении меша Yggdrasil (0.2).
+         *
+         * Показывается **до** `set_transport_enabled(Ygg, true)`, как и у LAN.
+         * Разница в цене: LAN раскрывает присутствие, меш вдобавок тратит
+         * батарею и трафик человека на чужие пакеты.
+         */ fun `yggWarning`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_ygg_warning(
     
         _status)
 }

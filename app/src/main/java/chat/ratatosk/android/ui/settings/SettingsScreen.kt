@@ -50,13 +50,22 @@ fun SettingsScreen(
     val torStatus by viewModel.torStatus.collectAsState()
     val mailStatus by viewModel.mailStatus.collectAsState()
     val mailAccount by viewModel.mailAccount.collectAsState()
+    val yggMode by viewModel.yggMode.collectAsState()
+    val yggKey by viewModel.yggKey.collectAsState()
+    val yggAddress by viewModel.yggAddress.collectAsState()
+    val yggPeers by viewModel.yggPeers.collectAsState()
     
     val showName by viewModel.notificationsShowName.collectAsState()
     val showText by viewModel.notificationsShowText.collectAsState()
     var showLanWarning by remember { mutableStateOf(false) }
+    var showYggWarning by remember { mutableStateOf(false) }
+    var showYggNodeNotice by remember { mutableStateOf(false) }
+    var pendingYggMode by remember { mutableStateOf<FfiYggMode?>(null) }
     var showPermissionRationale by remember { mutableStateOf(false) }
     var showMailSetup by remember { mutableStateOf(false) }
     var showMailCreate by remember { mutableStateOf(false) }
+    var showYggSetup by remember { mutableStateOf(false) }
+    var showYggPeersSetup by remember { mutableStateOf(false) }
     
     val chatTheme by viewModel.chatTheme.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -112,14 +121,13 @@ fun SettingsScreen(
                 modifier = Modifier
                     .padding(innerPadding)
                     .fillMaxSize()
+                    .verticalScroll(scrollState)
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(32.dp)
             ) {
                 // Column 1: Transports & Companion
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
+                    modifier = Modifier.weight(1f)
                 ) {
                     if (!isCompanionMode) {
                         SettingsTransportsSection(
@@ -127,12 +135,27 @@ fun SettingsScreen(
                             transportsReady = transportsReady,
                             torStatus = torStatus,
                             mailStatus = mailStatus,
+                            yggMode = yggMode,
+                            yggKey = yggKey,
+                            yggAddress = yggAddress,
+                            yggPeers = yggPeers,
                             onToggleLan = { if (it) showLanWarning = true else viewModel.setTransportEnabled(FfiTransport.LAN, false) },
+                            onSelectYggMode = { mode ->
+                                if (mode == yggMode) return@SettingsTransportsSection
+                                if (mode == FfiYggMode.OFF) {
+                                    viewModel.setYggMode(FfiYggMode.OFF)
+                                } else {
+                                    pendingYggMode = mode
+                                    showYggWarning = true
+                                }
+                            },
                             onToggleTor = { viewModel.setTransportEnabled(FfiTransport.ONION, it) },
                             onToggleMail = { viewModel.setTransportEnabled(FfiTransport.MAIL, it) },
                             onShowMailSetup = { showMailSetup = true },
                             onShowMailCreate = { showMailCreate = true },
-                            onClearMailAccount = { viewModel.clearMailAccount() }
+                            onClearMailAccount = { viewModel.clearMailAccount() },
+                            onShowYggSetup = { showYggSetup = true },
+                            onShowYggPeersSetup = { showYggPeersSetup = true }
                         )
 
                         Spacer(modifier = Modifier.height(24.dp))
@@ -156,9 +179,7 @@ fun SettingsScreen(
 
                 // Column 2: Storage, Theme
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
+                    modifier = Modifier.weight(1f)
                 ) {
                     if (!isCompanionMode) {
                         SettingsStorageSection(
@@ -203,12 +224,27 @@ fun SettingsScreen(
                         transportsReady = transportsReady,
                         torStatus = torStatus,
                         mailStatus = mailStatus,
+                        yggMode = yggMode,
+                        yggKey = yggKey,
+                        yggAddress = yggAddress,
+                        yggPeers = yggPeers,
                         onToggleLan = { if (it) showLanWarning = true else viewModel.setTransportEnabled(FfiTransport.LAN, false) },
+                        onSelectYggMode = { mode ->
+                            if (mode == yggMode) return@SettingsTransportsSection
+                            if (mode == FfiYggMode.OFF) {
+                                viewModel.setYggMode(FfiYggMode.OFF)
+                            } else {
+                                pendingYggMode = mode
+                                showYggWarning = true
+                            }
+                        },
                         onToggleTor = { viewModel.setTransportEnabled(FfiTransport.ONION, it) },
                         onToggleMail = { viewModel.setTransportEnabled(FfiTransport.MAIL, it) },
                         onShowMailSetup = { showMailSetup = true },
                         onShowMailCreate = { showMailCreate = true },
-                        onClearMailAccount = { viewModel.clearMailAccount() }
+                        onClearMailAccount = { viewModel.clearMailAccount() },
+                        onShowYggSetup = { showYggSetup = true },
+                        onShowYggPeersSetup = { showYggPeersSetup = true }
                     )
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
@@ -263,6 +299,53 @@ fun SettingsScreen(
             text = { Text(lanWarning()) },
             confirmButton = { TextButton(onClick = { showLanWarning = false; checkAndEnableLan() }) { Text(stringResource(R.string.enable)) } },
             dismissButton = { TextButton(onClick = { showLanWarning = false }) { Text(stringResource(R.string.cancel)) } }
+        )
+    }
+
+    if (showYggWarning) {
+        AlertDialog(
+            onDismissRequest = { showYggWarning = false; pendingYggMode = null },
+            title = { Text(stringResource(R.string.ygg_warning_title)) },
+            text = { Text(yggWarning()) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showYggWarning = false
+                    val mode = pendingYggMode
+                    if (mode == FfiYggMode.EMBEDDED) {
+                        showYggNodeNotice = true
+                    } else if (mode == FfiYggMode.EXTERNAL) {
+                        viewModel.setYggMode(FfiYggMode.EXTERNAL)
+                        pendingYggMode = null
+                    }
+                }) { Text(stringResource(R.string.enable)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showYggWarning = false
+                    pendingYggMode = null
+                }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
+
+    if (showYggNodeNotice) {
+        AlertDialog(
+            onDismissRequest = { showYggNodeNotice = false; pendingYggMode = null },
+            title = { Text(stringResource(R.string.ygg_node_notice_title)) },
+            text = { Text(yggNodeNotice()) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showYggNodeNotice = false
+                    viewModel.setYggMode(FfiYggMode.EMBEDDED)
+                    pendingYggMode = null
+                }) { Text(stringResource(R.string.enable)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showYggNodeNotice = false
+                    pendingYggMode = null
+                }) { Text(stringResource(R.string.cancel)) }
+            }
         )
     }
 
@@ -333,6 +416,77 @@ fun SettingsScreen(
             dismissButton = { TextButton(onClick = { showMailCreate = false }) { Text(stringResource(R.string.cancel)) } }
         )
     }
+
+    if (showYggSetup) {
+        var keyInput by remember { mutableStateOf(yggKey ?: "") }
+
+        AlertDialog(
+            onDismissRequest = { showYggSetup = false },
+            title = { Text(stringResource(R.string.setup_ygg)) },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    OutlinedTextField(
+                        value = keyInput,
+                        onValueChange = { keyInput = it },
+                        label = { Text(stringResource(R.string.ygg_key_label)) },
+                        placeholder = { Text(stringResource(R.string.ygg_key_hint)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2
+                    )
+                    if (!yggAddress.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(R.string.ygg_address_label),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        Text(
+                            text = yggAddress!!,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.setYggKey(keyInput)
+                    showYggSetup = false
+                }) { Text(stringResource(R.string.save)) }
+            },
+            dismissButton = { TextButton(onClick = { showYggSetup = false }) { Text(stringResource(R.string.cancel)) } }
+        )
+    }
+
+    if (showYggPeersSetup) {
+        var peersInput by remember { mutableStateOf(yggPeers.joinToString("\n")) }
+
+        AlertDialog(
+            onDismissRequest = { showYggPeersSetup = false },
+            title = { Text(stringResource(R.string.setup_ygg_peers)) },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    OutlinedTextField(
+                        value = peersInput,
+                        onValueChange = { peersInput = it },
+                        label = { Text(stringResource(R.string.ygg_peers_label)) },
+                        placeholder = { Text("tcp://peer1.example.com:65535\ntls://peer2.example.com:65535") },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 4
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val list = peersInput.split("\n", ",").map { it.trim() }.filter { it.isNotEmpty() }
+                    viewModel.setYggPeers(list)
+                    showYggPeersSetup = false
+                }) { Text(stringResource(R.string.save)) }
+            },
+            dismissButton = { TextButton(onClick = { showYggPeersSetup = false }) { Text(stringResource(R.string.cancel)) } }
+        )
+    }
 }
 
 @Composable
@@ -341,12 +495,19 @@ fun SettingsTransportsSection(
     transportsReady: Map<FfiTransport, Boolean>,
     torStatus: FfiTorStatus?,
     mailStatus: FfiMailStatus?,
+    yggMode: FfiYggMode,
+    yggKey: String?,
+    yggAddress: String?,
+    yggPeers: List<String>,
     onToggleLan: (Boolean) -> Unit,
+    onSelectYggMode: (FfiYggMode) -> Unit,
     onToggleTor: (Boolean) -> Unit,
     onToggleMail: (Boolean) -> Unit,
     onShowMailSetup: () -> Unit,
     onShowMailCreate: () -> Unit,
-    onClearMailAccount: () -> Unit
+    onClearMailAccount: () -> Unit,
+    onShowYggSetup: () -> Unit,
+    onShowYggPeersSetup: () -> Unit
 ) {
     Text(text = stringResource(R.string.transports), style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(16.dp))
@@ -358,6 +519,97 @@ fun SettingsTransportsSection(
         enabled = transportsEnabled[FfiTransport.LAN] ?: false,
         ready = transportsReady[FfiTransport.LAN] ?: false,
         onToggle = onToggleLan
+    )
+
+    // Yggdrasil
+    TransportItem(
+        title = stringResource(R.string.ygg_transport),
+        description = stringResource(R.string.ygg_desc),
+        enabled = yggMode != FfiYggMode.OFF,
+        ready = transportsReady[FfiTransport.YGG] ?: false,
+        onToggle = { enabled -> if (!enabled) onSelectYggMode(FfiYggMode.OFF) else onSelectYggMode(FfiYggMode.EMBEDDED) },
+        statusContent = {
+            Column(modifier = Modifier.padding(top = 4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = yggMode == FfiYggMode.OFF,
+                        onClick = { onSelectYggMode(FfiYggMode.OFF) },
+                        label = { Text(stringResource(R.string.ygg_mode_off)) }
+                    )
+                    FilterChip(
+                        selected = yggMode == FfiYggMode.EMBEDDED,
+                        onClick = { onSelectYggMode(FfiYggMode.EMBEDDED) },
+                        label = { Text(stringResource(R.string.ygg_mode_embedded)) }
+                    )
+                    FilterChip(
+                        selected = yggMode == FfiYggMode.EXTERNAL,
+                        onClick = { onSelectYggMode(FfiYggMode.EXTERNAL) },
+                        label = { Text(stringResource(R.string.ygg_mode_external)) }
+                    )
+                }
+
+                if (yggMode == FfiYggMode.EMBEDDED) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val keyText = if (!yggKey.isNullOrBlank()) yggKey else stringResource(R.string.ygg_key_not_configured)
+                    Text(
+                        text = stringResource(R.string.ygg_key_status, keyText),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF4CAF50)
+                    )
+                    if (!yggAddress.isNullOrBlank()) {
+                        Text(
+                            text = stringResource(R.string.ygg_address_status, yggAddress),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.ygg_peers_status, yggPeers.size),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (yggPeers.isEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                    if (yggPeers.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.ygg_no_peers_warning),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                    Row(modifier = Modifier.padding(top = 8.dp)) {
+                        OutlinedButton(onClick = onShowYggPeersSetup, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.setup_ygg_peers))
+                        }
+                    }
+                } else if (yggMode == FfiYggMode.EXTERNAL) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val keyText = if (!yggKey.isNullOrBlank()) yggKey else stringResource(R.string.ygg_key_not_configured)
+                    Text(
+                        text = stringResource(R.string.ygg_key_status, keyText),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (yggKey.isNullOrBlank()) MaterialTheme.colorScheme.outline else Color(0xFF4CAF50)
+                    )
+                    if (!yggAddress.isNullOrBlank()) {
+                        Text(
+                            text = stringResource(R.string.ygg_address_status, yggAddress),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                    Row(modifier = Modifier.padding(top = 8.dp)) {
+                        OutlinedButton(onClick = onShowYggSetup, modifier = Modifier.fillMaxWidth()) {
+                            Text(stringResource(R.string.setup_ygg))
+                        }
+                    }
+                }
+            }
+        }
     )
 
     // Tor / Onion

@@ -230,14 +230,7 @@ fun ChatScreen(
     }
 
     LaunchedEffect(chatIdHex) {
-        viewModel.setActiveChat(chatId)
         viewModel.loadMessages(chatId)
-    }
-
-    DisposableEffect(chatIdHex) {
-        onDispose {
-            viewModel.setActiveChat(null)
-        }
     }
 
     // Auto-scroll and mark as read when new messages arrive
@@ -413,7 +406,7 @@ fun ChatScreen(
                             titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
-                        windowInsets = WindowInsets(0, 0, 0, 0)
+                        windowInsets = TopAppBarDefaults.windowInsets
                     )
 
                     val torStatus by viewModel.torStatus.collectAsState()
@@ -750,26 +743,64 @@ fun ChatScreen(
 
     if (showForwardDialog != null) {
         val allContacts by viewModel.contacts.collectAsState()
+        val allGroups by viewModel.groups.collectAsState()
+        val contactAvatars by viewModel.contactAvatars.collectAsState()
+
         AlertDialog(
             onDismissRequest = { showForwardDialog = null },
             title = { Text(stringResource(R.string.forward_to)) },
             text = {
                 LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                    items(allContacts) { contact ->
-                        ListItem(
-                            headlineContent = { Text(contact.localName ?: contact.displayName) },
-                            leadingContent = {
-                                val contactAvatars by viewModel.contactAvatars.collectAsState()
-                                Avatar(
-                                    avatarBytes = contactAvatars[contact.peerIk.toHexString()] ?: viewModel.getAvatarOf(contact.peerIk),
-                                    name = contact.localName ?: contact.displayName
-                                )
-                            },
-                            modifier = Modifier.clickable {
-                                viewModel.forwardMessages(contact.chatId, showForwardDialog!!)
-                                showForwardDialog = null
-                            }
-                        )
+                    if (allGroups.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.groups),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        items(allGroups) { group ->
+                            ListItem(
+                                headlineContent = { Text(group.title) },
+                                leadingContent = {
+                                    Avatar(
+                                        avatarBytes = contactAvatars[group.chatId.toHexString()] ?: viewModel.getGroupAvatar(group.chatId),
+                                        name = group.title
+                                    )
+                                },
+                                modifier = Modifier.clickable {
+                                    viewModel.forwardMessages(group.chatId, showForwardDialog!!)
+                                    showForwardDialog = null
+                                }
+                            )
+                        }
+                    }
+
+                    if (allContacts.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.contacts),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+                        items(allContacts) { contact ->
+                            ListItem(
+                                headlineContent = { Text(contact.localName ?: contact.displayName) },
+                                leadingContent = {
+                                    Avatar(
+                                        avatarBytes = contactAvatars[contact.peerIk.toHexString()] ?: viewModel.getAvatarOf(contact.peerIk),
+                                        name = contact.localName ?: contact.displayName
+                                    )
+                                },
+                                modifier = Modifier.clickable {
+                                    viewModel.forwardMessages(contact.chatId, showForwardDialog!!)
+                                    showForwardDialog = null
+                                }
+                            )
+                        }
                     }
                 }
             },
@@ -1126,6 +1157,7 @@ fun MessageBubble(
                         SharedContactCard(
                             sharedContact = sharedContact,
                             onAdd = { viewModel.addSharedContact(message.msgId) },
+                            onOpenChat = { chatId -> viewModel.setActiveChat(chatId) },
                             contentColor = contentColor,
                             linkColor = linkColor
                         )
@@ -1315,6 +1347,7 @@ fun MessageBubble(
 fun SharedContactCard(
     sharedContact: org.ratatosk.core.FfiSharedContact,
     onAdd: () -> Unit,
+    onOpenChat: (ByteArray) -> Unit,
     contentColor: Color,
     linkColor: Color
 ) {
@@ -1327,14 +1360,20 @@ fun SharedContactCard(
             Spacer(modifier = Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = sharedContact.displayName, style = MaterialTheme.typography.titleSmall, color = contentColor)
-                Text(text = sharedContact.fingerprint, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.6f))
+                if (sharedContact.fingerprint.isNotEmpty()) {
+                    Text(text = sharedContact.fingerprint, style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.6f))
+                }
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
         if (sharedContact.mine) {
             Text(text = stringResource(R.string.this_is_you), style = MaterialTheme.typography.labelMedium, color = contentColor.copy(alpha = 0.6f), modifier = Modifier.align(Alignment.End))
-        } else if (sharedContact.alreadyKnown) {
-            Text(text = stringResource(R.string.already_in_contacts), style = MaterialTheme.typography.labelMedium, color = contentColor.copy(alpha = 0.6f), modifier = Modifier.align(Alignment.End))
+        } else if (sharedContact.alreadyKnown && sharedContact.peerIk.isNotEmpty()) {
+            OutlinedButton(
+                onClick = { onOpenChat(sharedContact.peerIk) }, modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.already_in_contacts))
+            }
         } else {
             Button(
                 onClick = onAdd, modifier = Modifier.fillMaxWidth(),

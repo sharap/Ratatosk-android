@@ -1,3 +1,6 @@
+# Disable aggressive ProGuard/R8 optimizations that can affect code functionality
+-dontoptimize
+
 # UniFFI and JNA ProGuard rules
 -keep class com.sun.jna.** { *; }
 -keep class * implements com.sun.jna.** { *; }

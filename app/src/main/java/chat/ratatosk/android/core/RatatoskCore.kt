@@ -45,15 +45,15 @@ object RatatoskCore : EventObserver, CompanionObserver {
 
     // Use a buffer with replay to ensure UI doesn't miss events during transitions
     private val _events = MutableSharedFlow<FfiEvent>(
-        replay = 20, 
-        extraBufferCapacity = 100,
+        replay = 50, 
+        extraBufferCapacity = 500,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     val events = _events.asSharedFlow()
 
     private val _companionEvents = MutableSharedFlow<FfiCompanionEvent>(
-        replay = 20,
-        extraBufferCapacity = 100,
+        replay = 50,
+        extraBufferCapacity = 500,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
     val companionEvents = _companionEvents.asSharedFlow()

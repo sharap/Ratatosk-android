@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         intent.getStringExtra("chatId")?.let {
             pendingChatId = it
         }
@@ -100,8 +101,6 @@ class MainActivity : ComponentActivity() {
                             appViewModel.unlockCompanion(companionLink)
                         }
                     }
-                } else if (accounts.size == 1 && companionLinks.isEmpty() && selectedAccount == null && !isCreatingNewAccount && !isCoreReady) {
-                    appViewModel.selectAccount(accounts.first())
                 }
             }
 
@@ -118,7 +117,10 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(pendingChatId, isCoreReady) {
                 if (isCoreReady) {
                     pendingChatId?.let { chatId ->
-                        appViewModel.setActiveChat(chatId.hexToByteArray())
+                        val bytes = try { chatId.hexToByteArray() } catch (e: Exception) { null }
+                        if (bytes != null) {
+                            appViewModel.setActiveChat(bytes)
+                        }
                         pendingChatId = null
                     }
                 }
@@ -232,12 +234,21 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 composable("scanner") {
+                                    var hasHandledResult by remember { mutableStateOf(false) }
                                     chat.ratatosk.android.ui.qr.QRScannerScreen(
                                         onResult = { uri ->
-                                            navController.popBackStack()
-                                            appViewModel.addContact(uri, metInPerson = true)
+                                            if (!hasHandledResult) {
+                                                hasHandledResult = true
+                                                navController.popBackStack()
+                                                appViewModel.addContact(uri, metInPerson = true)
+                                            }
                                         },
-                                        onBack = { navController.popBackStack() }
+                                        onBack = {
+                                            if (!hasHandledResult) {
+                                                hasHandledResult = true
+                                                navController.popBackStack()
+                                            }
+                                        }
                                     )
                                 }
                             }

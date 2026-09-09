@@ -45,6 +45,8 @@ fun ProfileScreen(
     val myAvatar by viewModel.myAvatar.collectAsState()
     val torEnabled by viewModel.torEnabled.collectAsState()
     val onionAddress by viewModel.onionAddress.collectAsState()
+    val yggEnabled by viewModel.yggEnabled.collectAsState()
+    val yggKey by viewModel.yggKey.collectAsState()
     val cardVersion by viewModel.cardVersion.collectAsState()
     val myContactUri by viewModel.myContactUri.collectAsState()
     val isCompanionMode by viewModel.isCompanionMode.collectAsState()
@@ -79,14 +81,13 @@ fun ProfileScreen(
                 modifier = Modifier
                     .padding(innerPadding)
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(32.dp)
             ) {
                 // Column 1: Identity & Actions
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState()),
+                    modifier = Modifier.weight(1f),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     ProfileHeaderSection(
@@ -96,7 +97,8 @@ fun ProfileScreen(
                         onEditNameClick = {
                             newName = userName ?: ""
                             showEditName = true
-                        }
+                        },
+                        isCompact = false
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -114,9 +116,7 @@ fun ProfileScreen(
 
                 // Column 2: Details & Notices
                 Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
+                    modifier = Modifier.weight(1f)
                 ) {
                     if (!isCompanionMode) {
                         ProfileDetailsSection(
@@ -124,9 +124,12 @@ fun ProfileScreen(
                             cardVersion = cardVersion,
                             torEnabled = torEnabled,
                             onionAddress = onionAddress,
+                            yggEnabled = yggEnabled,
+                            yggKey = yggKey,
                             myContactUri = myContactUri,
                             onCopyFingerprint = { fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) } },
                             onCopyOnion = { onionAddress?.let { clipboardManager.setText(AnnotatedString(it)) } },
+                            onCopyYggKey = { yggKey?.let { clipboardManager.setText(AnnotatedString(it)) } },
                             onShowQr = { showMyQr = true },
                             onCopyLink = {
                                 viewModel.getMyContactUri()
@@ -164,7 +167,8 @@ fun ProfileScreen(
                     onEditNameClick = {
                         newName = userName ?: ""
                         showEditName = true
-                    }
+                    },
+                    isCompact = true
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -175,9 +179,12 @@ fun ProfileScreen(
                         cardVersion = cardVersion,
                         torEnabled = torEnabled,
                         onionAddress = onionAddress,
+                        yggEnabled = yggEnabled,
+                        yggKey = yggKey,
                         myContactUri = myContactUri,
                         onCopyFingerprint = { fingerprint?.let { clipboardManager.setText(AnnotatedString(it)) } },
                         onCopyOnion = { onionAddress?.let { clipboardManager.setText(AnnotatedString(it)) } },
+                        onCopyYggKey = { yggKey?.let { clipboardManager.setText(AnnotatedString(it)) } },
                         onShowQr = { showMyQr = true },
                         onCopyLink = {
                             viewModel.getMyContactUri()
@@ -296,22 +303,26 @@ fun ProfileHeaderSection(
     myAvatar: ByteArray?,
     userName: String?,
     onAvatarClick: () -> Unit,
-    onEditNameClick: () -> Unit
+    onEditNameClick: () -> Unit,
+    isCompact: Boolean = true
 ) {
-    Box(contentAlignment = Alignment.BottomEnd) {
+    Box(
+        contentAlignment = Alignment.BottomEnd,
+        modifier = if (isCompact) Modifier.fillMaxWidth().aspectRatio(1f) else Modifier.size(200.dp)
+    ) {
         Avatar(
             avatarBytes = myAvatar,
             name = userName ?: "U",
-            size = 100.dp,
-            modifier = Modifier.clickable { onAvatarClick() }
+            modifier = Modifier.fillMaxSize(),
+            shape = androidx.compose.ui.graphics.RectangleShape
         )
         SmallFloatingActionButton(
             onClick = onAvatarClick,
-            modifier = Modifier.size(32.dp),
+            modifier = Modifier.padding(16.dp).size(40.dp),
             shape = CircleShape,
             containerColor = MaterialTheme.colorScheme.primaryContainer
         ) {
-            Icon(Icons.Default.AddAPhoto, contentDescription = "Change Avatar", modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.AddAPhoto, contentDescription = "Change Avatar", modifier = Modifier.size(20.dp))
         }
     }
     
@@ -335,9 +346,12 @@ fun ProfileDetailsSection(
     cardVersion: ULong?,
     torEnabled: Boolean,
     onionAddress: String?,
+    yggEnabled: Boolean,
+    yggKey: String?,
     myContactUri: String?,
     onCopyFingerprint: () -> Unit,
     onCopyOnion: () -> Unit,
+    onCopyYggKey: () -> Unit,
     onShowQr: () -> Unit,
     onCopyLink: () -> Unit
 ) {
@@ -387,6 +401,32 @@ fun ProfileDetailsSection(
                     )
                     if (onionAddress != null) {
                         IconButton(onClick = onCopyOnion) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (yggEnabled) {
+        Spacer(modifier = Modifier.height(16.dp))
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(R.string.ygg_address),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.outline
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = yggKey ?: stringResource(R.string.ygg_key_not_configured),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (yggKey != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (yggKey != null) {
+                        IconButton(onClick = onCopyYggKey) {
                             Icon(Icons.Default.ContentCopy, contentDescription = "Copy")
                         }
                     }

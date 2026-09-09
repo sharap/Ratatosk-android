@@ -244,7 +244,7 @@ class RatatoskService : Service() {
             }
             
             val pendingIntent = PendingIntent.getActivity(
-                this@RatatoskService, 0, intent,
+                this@RatatoskService, chatIdHex.hashCode(), intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
@@ -317,7 +317,7 @@ class RatatoskService : Service() {
             }
             
             val pendingIntent = PendingIntent.getActivity(
-                this@RatatoskService, 0, intent,
+                this@RatatoskService, chatIdHex.hashCode(), intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 

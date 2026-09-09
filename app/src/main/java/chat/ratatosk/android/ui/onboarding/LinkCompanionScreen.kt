@@ -119,7 +119,7 @@ fun LinkCompanionScreen(
                         inviteUri = inviteUri,
                         port = port.toIntOrNull() ?: 29862,
                         peerAddr = peerAddr.takeIf { it.isNotBlank() },
-                        cachePath = if (useCache) "companion_cache_${inviteUri.hashCode()}" else null,
+                        cachePath = if (useCache) java.io.File(context.filesDir, "companion_cache_${inviteUri.hashCode()}").absolutePath else null,
                         label = label,
                         torDir = if (useTor) java.io.File(context.filesDir, "tor_companion").absolutePath else null
                     )

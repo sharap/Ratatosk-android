@@ -1,6 +1,7 @@
 package chat.ratatosk.android.ui.qr
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
 import android.view.ViewGroup
@@ -25,6 +26,7 @@ import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +34,14 @@ fun QRScannerScreen(onResult: (String) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+    val hasScanned = remember { AtomicBoolean(false) }
     
+    DisposableEffect(Unit) {
+        onDispose {
+            cameraExecutor.shutdown()
+        }
+    }
+
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -60,7 +69,11 @@ fun QRScannerScreen(onResult: (String) -> Unit, onBack: () -> Unit) {
             TopAppBar(
                 title = { Text("Scan QR Code") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        if (hasScanned.compareAndSet(false, true)) {
+                            onBack()
+                        }
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -92,7 +105,7 @@ fun QRScannerScreen(onResult: (String) -> Unit, onBack: () -> Unit) {
                                 .build()
 
                             imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                                processImageProxy(scanner, imageProxy, onResult)
+                                processImageProxy(ctx, scanner, imageProxy, hasScanned, onResult)
                             }
 
                             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -135,17 +148,30 @@ fun QRScannerScreen(onResult: (String) -> Unit, onBack: () -> Unit) {
 
 @androidx.annotation.OptIn(ExperimentalGetImage::class)
 private fun processImageProxy(
+    context: Context,
     barcodeScanner: com.google.mlkit.vision.barcode.BarcodeScanner,
     imageProxy: ImageProxy,
+    hasScanned: AtomicBoolean,
     onResult: (String) -> Unit
 ) {
+    if (hasScanned.get()) {
+        imageProxy.close()
+        return
+    }
+
     val mediaImage = imageProxy.image
     if (mediaImage != null) {
         val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
         barcodeScanner.process(image)
             .addOnSuccessListener { barcodes ->
                 for (barcode in barcodes) {
-                    barcode.rawValue?.let { onResult(it) }
+                    val raw = barcode.rawValue
+                    if (raw != null && hasScanned.compareAndSet(false, true)) {
+                        ContextCompat.getMainExecutor(context).execute {
+                            onResult(raw)
+                        }
+                        break
+                    }
                 }
             }
             .addOnFailureListener {

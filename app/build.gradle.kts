@@ -112,7 +112,7 @@ val buildRustCore = tasks.register<Exec>("buildRustCore") {
         "-t", "x86_64",
         "-t", "arm64-v8a",
         "-o", jniLibsDir.absolutePath,
-        "build", "--profile", "release-android", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail"
+        "build", "--profile", "release-android", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail ygg-node"
     )
     
     inputs.dir(rustProjectDir.resolve("crates"))
@@ -121,7 +121,7 @@ val buildRustCore = tasks.register<Exec>("buildRustCore") {
 
 val buildRustHost = tasks.register<Exec>("buildRustHost") {
     workingDir = rustProjectDir
-    commandLine("cargo", "build", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail")
+    commandLine("cargo", "build", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail ygg-node")
     
     inputs.dir(rustProjectDir.resolve("crates"))
     outputs.file(rustProjectDir.resolve("target/debug/libratatosk_ffi.so"))

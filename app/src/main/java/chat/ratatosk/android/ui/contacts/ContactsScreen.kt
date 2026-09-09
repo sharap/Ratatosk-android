@@ -7,12 +7,15 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import chat.ratatosk.android.R
@@ -33,6 +36,7 @@ fun ContactsScreen(
 ) {
     val contacts by viewModel.contacts.collectAsState()
     val contactAvatars by viewModel.contactAvatars.collectAsState()
+    val activeContactId by viewModel.activeContactIdFlow.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -58,7 +62,7 @@ fun ContactsScreen(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ),
-                windowInsets = WindowInsets(0, 0, 0, 0)
+                windowInsets = TopAppBarDefaults.windowInsets
             )
         },
         floatingActionButton = {
@@ -87,6 +91,8 @@ fun ContactsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(contacts) { contact ->
+                        val isSelected = activeContactId?.contentEquals(contact.chatId) == true
+
                         ListItem(
                             headlineContent = { 
                                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
@@ -122,7 +128,12 @@ fun ContactsScreen(
                                     Text("Verified", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                                 }
                             },
-                            modifier = Modifier.clickable { onContactClick(contact.chatId) }
+                            colors = ListItemDefaults.colors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+                            ),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable { onContactClick(contact.chatId) }
                         )
                     }
                 }
