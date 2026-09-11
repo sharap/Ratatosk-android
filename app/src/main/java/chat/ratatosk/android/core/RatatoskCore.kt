@@ -94,7 +94,6 @@ object RatatoskCore : EventObserver, CompanionObserver {
                 android.util.Log.d("RatatoskCore", "Native client opened successfully")
                 
                 newClient.setObserver(this)
-                newClient.networkChanged() // Kickstart discovery
                 
                 // §5.1: Announce this account in LAN
                 reg.setForeground(accountId)

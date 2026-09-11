@@ -54,6 +54,7 @@ fun SettingsScreen(
     val yggKey by viewModel.yggKey.collectAsState()
     val yggAddress by viewModel.yggAddress.collectAsState()
     val yggPeers by viewModel.yggPeers.collectAsState()
+    val yggPeersAlive by viewModel.yggPeersAlive.collectAsState()
     
     val showName by viewModel.notificationsShowName.collectAsState()
     val showText by viewModel.notificationsShowText.collectAsState()
@@ -460,32 +461,312 @@ fun SettingsScreen(
     }
 
     if (showYggPeersSetup) {
-        var peersInput by remember { mutableStateOf(yggPeers.joinToString("\n")) }
+        var showAddPeerDialog by remember { mutableStateOf(false) }
+        var peerToEdit by remember { mutableStateOf<String?>(null) }
+        var newPeerInput by remember { mutableStateOf("") }
+        var editPeerInput by remember { mutableStateOf("") }
+
+        // Refresh transport/peer status while dialog is open
+        LaunchedEffect(Unit) {
+            while (true) {
+                viewModel.refreshTransportStatus()
+                kotlinx.coroutines.delay(2000)
+            }
+        }
 
         AlertDialog(
             onDismissRequest = { showYggPeersSetup = false },
             title = { Text(stringResource(R.string.setup_ygg_peers)) },
             text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    OutlinedTextField(
-                        value = peersInput,
-                        onValueChange = { peersInput = it },
-                        label = { Text(stringResource(R.string.ygg_peers_label)) },
-                        placeholder = { Text("tcp://peer1.example.com:65535\ntls://peer2.example.com:65535") },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 4
-                    )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    if (yggPeers.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.ygg_no_peers_warning),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    } else {
+                        yggPeers.forEach { peerUri ->
+                            val aliveInfo = yggPeersAlive?.find { 
+                                it.uri == peerUri || it.uri.trim() == peerUri.trim() 
+                            }
+                            
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clickable {
+                                        peerToEdit = peerUri
+                                        editPeerInput = peerUri
+                                    },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = peerUri,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (yggPeersAlive == null) {
+                                                Surface(
+                                                    modifier = Modifier.size(8.dp),
+                                                    shape = CircleShape,
+                                                    color = Color.Gray
+                                                ) {}
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = stringResource(R.string.peer_node_stopped),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                            } else if (aliveInfo != null && aliveInfo.up) {
+                                                Surface(
+                                                    modifier = Modifier.size(8.dp),
+                                                    shape = CircleShape,
+                                                    color = Color(0xFF4CAF50)
+                                                ) {}
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = stringResource(R.string.peer_connected),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = Color(0xFF4CAF50),
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                if (aliveInfo.latencyMs > 0) {
+                                                    Spacer(modifier = Modifier.width(6.dp))
+                                                    Text(
+                                                        text = "• ${aliveInfo.latencyMs.toInt()} мс",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                            } else {
+                                                Surface(
+                                                    modifier = Modifier.size(8.dp),
+                                                    shape = CircleShape,
+                                                    color = MaterialTheme.colorScheme.error
+                                                ) {}
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = stringResource(R.string.peer_disconnected),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
+                                    }
+                                    
+                                    IconButton(
+                                        onClick = {
+                                            peerToEdit = peerUri
+                                            editPeerInput = peerUri
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit Peer",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            viewModel.setYggPeers(yggPeers - peerUri)
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Remove Peer",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Inbound Peers section if any
+                    val inboundPeers = remember(yggPeersAlive) {
+                        yggPeersAlive?.filter { it.inbound } ?: emptyList()
+                    }
+                    if (inboundPeers.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = stringResource(R.string.inbound_peers_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        inboundPeers.forEach { inboundPeer ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = inboundPeer.uri,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Surface(
+                                                modifier = Modifier.size(8.dp),
+                                                shape = CircleShape,
+                                                color = Color(0xFF4CAF50)
+                                            ) {}
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = stringResource(R.string.peer_connected) + " (входящий)",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color(0xFF4CAF50)
+                                            )
+                                            if (inboundPeer.latencyMs > 0) {
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = "• ${inboundPeer.latencyMs.toInt()} мс",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = { showAddPeerDialog = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.add_peer))
+                    }
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    val list = peersInput.split("\n", ",").map { it.trim() }.filter { it.isNotEmpty() }
-                    viewModel.setYggPeers(list)
-                    showYggPeersSetup = false
-                }) { Text(stringResource(R.string.save)) }
-            },
-            dismissButton = { TextButton(onClick = { showYggPeersSetup = false }) { Text(stringResource(R.string.cancel)) } }
+                TextButton(onClick = { showYggPeersSetup = false }) {
+                    Text(stringResource(R.string.close))
+                }
+            }
         )
+
+        if (showAddPeerDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    newPeerInput = ""
+                    showAddPeerDialog = false
+                },
+                title = { Text(stringResource(R.string.add_peer_title)) },
+                text = {
+                    OutlinedTextField(
+                        value = newPeerInput,
+                        onValueChange = { newPeerInput = it },
+                        label = { Text(stringResource(R.string.ygg_peers_label)) },
+                        placeholder = { Text(stringResource(R.string.add_peer_hint)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val trimmed = newPeerInput.trim()
+                            if (trimmed.isNotEmpty() && !yggPeers.contains(trimmed)) {
+                                viewModel.setYggPeers(yggPeers + trimmed)
+                            }
+                            newPeerInput = ""
+                            showAddPeerDialog = false
+                        },
+                        enabled = newPeerInput.isNotBlank()
+                    ) {
+                        Text(stringResource(R.string.add_peer))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        newPeerInput = ""
+                        showAddPeerDialog = false
+                    }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
+
+        if (peerToEdit != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    peerToEdit = null
+                    editPeerInput = ""
+                },
+                title = { Text(stringResource(R.string.edit_peer_title)) },
+                text = {
+                    OutlinedTextField(
+                        value = editPeerInput,
+                        onValueChange = { editPeerInput = it },
+                        label = { Text(stringResource(R.string.ygg_peers_label)) },
+                        placeholder = { Text(stringResource(R.string.add_peer_hint)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val trimmed = editPeerInput.trim()
+                            val oldPeer = peerToEdit!!
+                            if (trimmed.isNotEmpty()) {
+                                val updatedList = yggPeers.map { if (it == oldPeer) trimmed else it }
+                                viewModel.setYggPeers(updatedList)
+                            }
+                            peerToEdit = null
+                            editPeerInput = ""
+                        },
+                        enabled = editPeerInput.isNotBlank()
+                    ) {
+                        Text(stringResource(R.string.save))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        peerToEdit = null
+                        editPeerInput = ""
+                    }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -530,9 +811,11 @@ fun SettingsTransportsSection(
         onToggle = { enabled -> if (!enabled) onSelectYggMode(FfiYggMode.OFF) else onSelectYggMode(FfiYggMode.EMBEDDED) },
         statusContent = {
             Column(modifier = Modifier.padding(top = 4.dp)) {
-                Row(
+                @OptIn(ExperimentalLayoutApi::class)
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     FilterChip(
                         selected = yggMode == FfiYggMode.OFF,
@@ -1039,3 +1322,122 @@ fun TransportItem(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, widthDp = 360)
+@Composable
+fun YggdrasilTransportPreview() {
+    MaterialTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            TransportItem(
+                title = "Сеть Yggdrasil (Mesh)",
+                description = "Маршрутизирует трафик через меш-сеть Yggdrasil.",
+                enabled = true,
+                ready = true,
+                onToggle = {},
+                statusContent = {
+                    Column(modifier = Modifier.padding(top = 4.dp)) {
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            FilterChip(
+                                selected = false,
+                                onClick = {},
+                                label = { Text("Выключен") }
+                            )
+                            FilterChip(
+                                selected = true,
+                                onClick = {},
+                                label = { Text("Встроенный узел") }
+                            )
+                            FilterChip(
+                                selected = false,
+                                onClick = {},
+                                label = { Text("Внешний узел") }
+                            )
+                        }
+                    }
+                }
+            )
+        }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, widthDp = 360)
+@Composable
+fun YggPeersDialogPreview() {
+    MaterialTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text("Настроить пиры", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("tcp://peer1.yggdrasil.net:65535", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(modifier = Modifier.size(8.dp), shape = CircleShape, color = Color(0xFF4CAF50)) {}
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Подключен", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("• 42 мс", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        IconButton(onClick = {}) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(onClick = {}) {
+                            Icon(Icons.Default.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("tls://peer2.yggdrasil.net:65535", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(modifier = Modifier.size(8.dp), shape = CircleShape, color = MaterialTheme.colorScheme.error) {}
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Не подключен", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                        IconButton(onClick = {}) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+                        }
+                        IconButton(onClick = {}) {
+                            Icon(Icons.Default.Delete, contentDescription = "Remove", tint = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedButton(onClick = {}, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Добавить пир")
+                }
+            }
+        }
+    }
+}
+
+

@@ -170,6 +170,15 @@
     <string name="ygg_peers_status">Peers: %1$d configured</string>
     <string name="ygg_no_peers_warning">No peers configured. Add at least one peer to connect to the mesh.</string>
     <string name="setup_ygg_peers">Configure Peers</string>
+    <string name="add_peer">Add Peer</string>
+    <string name="add_peer_title">Add Yggdrasil Peer</string>
+    <string name="add_peer_hint">tcp://host:port or tls://host:port</string>
+    <string name="edit_peer_title">Edit Yggdrasil Peer</string>
+    <string name="edit_peer">Edit</string>
+    <string name="peer_connected">Connected</string>
+    <string name="peer_disconnected">Disconnected</string>
+    <string name="peer_node_stopped">Node Stopped</string>
+    <string name="inbound_peers_title">Inbound Connections</string>
     <string name="ygg_node_notice_title">Built-in Node Notice</string>
     <string name="mail_transport">Mail Transport (Chatmail)</string>
     <string name="mail_desc">Uses a chatmail server as a reliable delivery stage. Works over Tor.</string>

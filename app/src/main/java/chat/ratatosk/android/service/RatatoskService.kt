@@ -32,19 +32,51 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.ratatosk.core.FfiEvent
 import org.ratatosk.core.FfiCompanionEvent
+import android.content.BroadcastReceiver
+import android.content.IntentFilter
+import android.net.LinkProperties
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import org.ratatosk.core.FfiCompanionMessage
 
 class RatatoskService : Service() {
     private var multicastLock: WifiManager.MulticastLock? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var networkChangeJob: Job? = null
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
+            android.util.Log.d("RatatoskService", "NetworkCallback: onAvailable ($network)")
             notifyCore()
         }
 
         override fun onLost(network: Network) {
+            android.util.Log.d("RatatoskService", "NetworkCallback: onLost ($network)")
+            notifyCore()
+        }
+
+        override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+            android.util.Log.d("RatatoskService", "NetworkCallback: onCapabilitiesChanged ($network)")
+            notifyCore()
+        }
+
+        override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) {
+            android.util.Log.d("RatatoskService", "NetworkCallback: onLinkPropertiesChanged ($network)")
+            notifyCore()
+        }
+
+        override fun onUnavailable() {
+            android.util.Log.d("RatatoskService", "NetworkCallback: onUnavailable")
+            notifyCore()
+        }
+    }
+
+    private val networkReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            android.util.Log.d("RatatoskService", "BroadcastReceiver onReceive: action=${intent?.action}")
             notifyCore()
         }
     }
@@ -101,19 +133,60 @@ class RatatoskService : Service() {
         android.util.Log.i("RatatoskService", "Multicast lock acquired: ${multicastLock?.isHeld}")
 
         // Monitor network changes to notify the core
-        try {
-            val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            connectivityManager.registerDefaultNetworkCallback(networkCallback)
-            android.util.Log.i("RatatoskService", "Network callback registered")
-        } catch (e: Exception) {
-            android.util.Log.e("RatatoskService", "Failed to register network callback", e)
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                connectivityManager.registerDefaultNetworkCallback(networkCallback)
+                android.util.Log.i("RatatoskService", "Default network callback registered")
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskService", "Failed to register default network callback", e)
+            }
         }
+
+        try {
+            val request = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+                .build()
+            connectivityManager.registerNetworkCallback(request, networkCallback)
+            android.util.Log.i("RatatoskService", "Network request callback registered")
+        } catch (e: Exception) {
+            android.util.Log.e("RatatoskService", "Failed to register network request callback", e)
+        }
+
+        try {
+            val filter = IntentFilter().apply {
+                @Suppress("DEPRECATION")
+                addAction(ConnectivityManager.CONNECTIVITY_ACTION)
+                addAction(WifiManager.WIFI_STATE_CHANGED_ACTION)
+                addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION)
+                addAction(Intent.ACTION_AIRPLANE_MODE_CHANGED)
+            }
+            registerReceiver(networkReceiver, filter)
+            android.util.Log.i("RatatoskService", "Network broadcast receiver registered")
+        } catch (e: Exception) {
+            android.util.Log.e("RatatoskService", "Failed to register network broadcast receiver", e)
+        }
+
+        // Capture initial network state snapshot on service startup
+        lastNetworkSnapshot = getCurrentNetworkStateSnapshot()
+        android.util.Log.i("RatatoskNetwork", "Captured initial network state snapshot on service startup: $lastNetworkSnapshot")
     }
 
     override fun onDestroy() {
         android.util.Log.i("RatatoskService", "Service destroying...")
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        connectivityManager.unregisterNetworkCallback(networkCallback)
+        try {
+            val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            connectivityManager.unregisterNetworkCallback(networkCallback)
+        } catch (e: Exception) {
+            android.util.Log.e("RatatoskService", "Failed to unregister network callback", e)
+        }
+
+        try {
+            unregisterReceiver(networkReceiver)
+        } catch (e: Exception) {
+            android.util.Log.e("RatatoskService", "Failed to unregister network receiver", e)
+        }
 
         multicastLock?.let {
             if (it.isHeld) it.release()
@@ -124,15 +197,78 @@ class RatatoskService : Service() {
         super.onDestroy()
     }
 
+    private data class NetworkStateSnapshot(
+        val defaultNetworkHandle: Long?,
+        val isConnected: Boolean,
+        val transports: Set<Int>,
+        val ipAddresses: Set<String>
+    )
+
+    private var lastNetworkSnapshot: NetworkStateSnapshot? = null
+
+    private fun getCurrentNetworkStateSnapshot(): NetworkStateSnapshot {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+            ?: return NetworkStateSnapshot(null, false, emptySet(), emptySet())
+
+        val activeNetwork = cm.activeNetwork
+            ?: return NetworkStateSnapshot(null, false, emptySet(), emptySet())
+
+        val handle = activeNetwork.networkHandle
+
+        val caps = cm.getNetworkCapabilities(activeNetwork)
+        val transports = mutableSetOf<Int>()
+        if (caps != null) {
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) transports.add(NetworkCapabilities.TRANSPORT_WIFI)
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) transports.add(NetworkCapabilities.TRANSPORT_CELLULAR)
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) transports.add(NetworkCapabilities.TRANSPORT_ETHERNET)
+            if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) transports.add(NetworkCapabilities.TRANSPORT_VPN)
+        }
+
+        val linkProps = cm.getLinkProperties(activeNetwork)
+        val ips = linkProps?.linkAddresses?.map { it.address.hostAddress ?: "" }?.filter { it.isNotEmpty() }?.toSet() ?: emptySet()
+
+        return NetworkStateSnapshot(
+            defaultNetworkHandle = handle,
+            isConnected = true,
+            transports = transports,
+            ipAddresses = ips
+        )
+    }
+
     private fun notifyCore() {
-        serviceScope.launch {
-            try {
-                if (RatatoskCore.isInitialized() && !RatatoskCore.isCompanionMode()) {
-                    android.util.Log.d("RatatoskService", "Notifying core about network change")
-                    RatatoskCore.getClient().networkChanged()
+        networkChangeJob?.cancel()
+        networkChangeJob = serviceScope.launch {
+            delay(300) // Small debounce for Android network callbacks to settle
+            val newSnapshot = getCurrentNetworkStateSnapshot()
+            val oldSnapshot = lastNetworkSnapshot
+
+            if (oldSnapshot == null) {
+                lastNetworkSnapshot = newSnapshot
+                android.util.Log.i("RatatoskNetwork", "Initial network snapshot captured: $newSnapshot (networkChanged NOT called on startup)")
+                return@launch
+            }
+
+            if (newSnapshot != oldSnapshot) {
+                android.util.Log.i("RatatoskNetwork", "Network state CHANGED!")
+                android.util.Log.i("RatatoskNetwork", "  Old: $oldSnapshot")
+                android.util.Log.i("RatatoskNetwork", "  New: $newSnapshot")
+                lastNetworkSnapshot = newSnapshot
+
+                try {
+                    if (RatatoskCore.isInitialized() && !RatatoskCore.isCompanionMode()) {
+                        android.util.Log.i("RatatoskNetwork", "==================================================")
+                        android.util.Log.i("RatatoskNetwork", ">>> NETWORK CHANGED CALLED: networkChanged() <<<")
+                        android.util.Log.i("RatatoskNetwork", "==================================================")
+                        println(">>> RatatoskNetwork: networkChanged() called <<<")
+                        RatatoskCore.getClient().networkChanged()
+                    } else {
+                        android.util.Log.w("RatatoskNetwork", "Network change detected, but core is not ready")
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("RatatoskNetwork", "Failed to notify core about network change", e)
                 }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskService", "Failed to notify core about network change", e)
+            } else {
+                android.util.Log.d("RatatoskNetwork", "Network callback received, but state is unchanged ($newSnapshot)")
             }
         }
     }

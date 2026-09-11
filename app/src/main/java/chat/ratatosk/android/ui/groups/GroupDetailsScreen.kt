@@ -339,7 +339,12 @@ fun GroupDetailsScreen(
             text = { Text(stringResource(R.string.delete_group_desc)) },
             confirmButton = {
                 TextButton(onClick = {
+                    if (group.joined) {
+                        viewModel.leaveGroup(chatId)
+                    }
+                    viewModel.clearChat(chatId)
                     showDeleteDialog = false
+                    onBack()
                 }, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                     Text(stringResource(R.string.delete))
                 }

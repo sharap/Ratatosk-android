@@ -22,6 +22,7 @@ import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
 import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -116,7 +117,7 @@ fun AdaptiveMainScreen(
         else MainTab.entries
     }
 
-    var selectedTab by remember { mutableStateOf(MainTab.CHATS) }
+    var selectedTab by rememberSaveable { mutableStateOf(MainTab.CHATS) }
     
     LaunchedEffect(isCompanionMode) {
         if (isCompanionMode && selectedTab == MainTab.CONTACTS) {
@@ -128,7 +129,6 @@ fun AdaptiveMainScreen(
     LaunchedEffect(activeChatId) {
         if (activeChatId != null) {
             isPairedDevicesOpen = false
-            selectedTab = MainTab.CHATS
             val key = "chat_${activeChatId!!.toHexString()}"
             if (navigator.currentDestination?.contentKey != key) {
                 navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, key)
@@ -138,9 +138,9 @@ fun AdaptiveMainScreen(
 
     LaunchedEffect(activeContactId) {
         if (activeContactId != null) {
+            isPairedDevicesOpen = false
             val key = "contact_${activeContactId!!.toHexString()}"
             if (navigator.currentDestination?.contentKey != key) {
-                // Always navigate to Detail pane for simplicity and reliability
                 navigator.navigateTo(ListDetailPaneScaffoldRole.Detail, key)
             }
         }
@@ -209,6 +209,13 @@ fun AdaptiveMainScreen(
                 onTabSelect = { tab ->
                     isPairedDevicesOpen = false
                     selectedTab = tab
+                    viewModel.setActiveChat(null)
+                    viewModel.setActiveContact(null)
+                    scope.launch {
+                        while (navigator.canNavigateBack()) {
+                            navigator.navigateBack()
+                        }
+                    }
                 }
             )
         }
@@ -276,7 +283,17 @@ fun AdaptiveMainScreen(
                                                     },
                                                     label = { Text(stringResource(tab.labelRes)) },
                                                     selected = selectedTab == tab,
-                                                    onClick = { selectedTab = tab }
+                                                    onClick = {
+                                                        isPairedDevicesOpen = false
+                                                        selectedTab = tab
+                                                        viewModel.setActiveChat(null)
+                                                        viewModel.setActiveContact(null)
+                                                        scope.launch {
+                                                            while (navigator.canNavigateBack()) {
+                                                                navigator.navigateBack()
+                                                            }
+                                                        }
+                                                    }
                                                 )
                                             }
                                         }

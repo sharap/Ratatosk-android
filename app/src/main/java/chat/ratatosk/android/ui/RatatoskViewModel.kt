@@ -225,6 +225,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _yggPeers = MutableStateFlow<List<String>>(emptyList())
     val yggPeers = _yggPeers.asStateFlow()
 
+    private val _yggPeersAlive = MutableStateFlow<List<org.ratatosk.core.FfiYggPeer>?>(null)
+    val yggPeersAlive = _yggPeersAlive.asStateFlow()
+
     private val _onionAddress = MutableStateFlow<String?>(null)
     val onionAddress = _onionAddress.asStateFlow()
 
@@ -1473,6 +1476,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 val ykHex = if (ykBytes.isNotEmpty()) ykBytes.toHexString() else null
                 val ya = if (ykBytes.isNotEmpty()) org.ratatosk.core.yggAddress(ykBytes) else null
                 val yp = client.yggPeers()
+                val ypa = try { client.yggPeersAlive() } catch (e: Exception) { null }
                 
                 withContext(Dispatchers.Main) {
                     _transportsEnabled.value = en
@@ -1484,6 +1488,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     _yggKey.value = ykHex
                     _yggAddress.value = ya
                     _yggPeers.value = yp
+                    _yggPeersAlive.value = ypa
                 }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to refresh transport status", e)
@@ -1608,7 +1613,37 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         if (RatatoskCore.isCompanionMode()) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
+                val oldContacts = RatatoskCore.getClient().contacts()
                 RatatoskCore.getClient().addContact(uri, metInPerson)
+                val contactList = RatatoskCore.getClient().contacts()
+                val groupList = RatatoskCore.getClient().groups()
+
+                val addedContact = contactList.find { newC ->
+                    oldContacts.none { oldC -> oldC.chatId.contentEquals(newC.chatId) }
+                } ?: contactList.find { c ->
+                    val ikHex = c.peerIk.toHexString()
+                    val chatIdHex = c.chatId.toHexString()
+                    val base64Ik = android.util.Base64.encodeToString(c.peerIk, android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE).trimEnd('=')
+                    val base64ChatId = android.util.Base64.encodeToString(c.chatId, android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE).trimEnd('=')
+                    uri.contains(ikHex, ignoreCase = true) ||
+                            uri.contains(chatIdHex, ignoreCase = true) ||
+                            (base64Ik.length > 4 && uri.contains(base64Ik)) ||
+                            (base64ChatId.length > 4 && uri.contains(base64ChatId))
+                }
+
+                withContext(Dispatchers.Main) {
+                    _contacts.value = contactList
+                    _groups.value = groupList
+                    if (addedContact != null) {
+                        setActiveContact(addedContact.chatId)
+                    }
+                }
+
+                (contactList.map { it.chatId } + groupList.map { it.chatId }).forEach { chatId ->
+                    launch(Dispatchers.IO) {
+                        loadMessages(chatId)
+                    }
+                }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     _error.value = "Failed to add contact: ${e.message}"
@@ -1691,6 +1726,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     RatatoskCore.getCompanion().leaveGroup(chatId)
                 } else {
                     RatatoskCore.getClient().leaveGroup(chatId)
+                    refreshContacts()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {

@@ -33,10 +33,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -644,34 +648,38 @@ fun ChatScreen(
                         items(displayMessages, key = { it.msgId.toHexString() }) { msg ->
                             val status = messageStatuses[msg.msgId.toHexString()] ?: msg.status
                             Box(modifier = Modifier.fillMaxWidth().animateItem()) {
-                                MessageBubble(
-                                    message = msg,
-                                    viewModel = viewModel,
-                                    chatId = chatId,
-                                    snackbarHostState = snackbarHostState,
-                                    outgoingColor = if (chatTheme.themeColor != Color.Unspecified) chatTheme.themeColor else MaterialTheme.colorScheme.primary,
-                                    status = status,
-                                    onRetry = { viewModel.resendMessage(chatId, msg.body) },
-                                    onDelete = { viewModel.deleteMessages(chatId, listOf(msg.msgId)) },
-                                    onRetract = { viewModel.retractMessages(chatId, listOf(msg.msgId)) },
-                                    onEdit = { 
-                                        editingMessage = msg
-                                        text = msg.body
-                                    },
-                                    onReply = { replyingTo = msg },
-                                    onForward = { showForwardDialog = listOf(msg.msgId) },
-                                    onReaction = { emoji -> viewModel.setReaction(chatId, msg.msgId, emoji) },
-                                    onReplyClick = { replyId ->
-                                        val hex = replyId.toHexString()
-                                        pendingScrollToId = hex
-                                    },
-                                    retractionNotice = { viewModel.getRetractionNotice() },
-                                    getRepliedMessage = { id -> viewModel.getMessage(id) },
-                                    isHighlighted = highlightedMsgId == msg.msgId.toHexString(),
-                                    isCompact = isCompact,
-                                    showAuthor = isGroupChat,
-                                    isMember = isMember
-                                )
+                                SwipeToReplyBox(
+                                    onReply = { replyingTo = msg }
+                                ) {
+                                    MessageBubble(
+                                        message = msg,
+                                        viewModel = viewModel,
+                                        chatId = chatId,
+                                        snackbarHostState = snackbarHostState,
+                                        outgoingColor = if (chatTheme.themeColor != Color.Unspecified) chatTheme.themeColor else MaterialTheme.colorScheme.primary,
+                                        status = status,
+                                        onRetry = { viewModel.resendMessage(chatId, msg.body) },
+                                        onDelete = { viewModel.deleteMessages(chatId, listOf(msg.msgId)) },
+                                        onRetract = { viewModel.retractMessages(chatId, listOf(msg.msgId)) },
+                                        onEdit = { 
+                                            editingMessage = msg
+                                            text = msg.body
+                                        },
+                                        onReply = { replyingTo = msg },
+                                        onForward = { showForwardDialog = listOf(msg.msgId) },
+                                        onReaction = { emoji -> viewModel.setReaction(chatId, msg.msgId, emoji) },
+                                        onReplyClick = { replyId ->
+                                            val hex = replyId.toHexString()
+                                            pendingScrollToId = hex
+                                        },
+                                        retractionNotice = { viewModel.getRetractionNotice() },
+                                        getRepliedMessage = { id -> viewModel.getMessage(id) },
+                                        isHighlighted = highlightedMsgId == msg.msgId.toHexString(),
+                                        isCompact = isCompact,
+                                        showAuthor = isGroupChat,
+                                        isMember = isMember
+                                    )
+                                }
                             }
                         }
 
@@ -889,6 +897,108 @@ fun ChatScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+fun SwipeToReplyBox(
+    onReply: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    val haptics = LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val offsetX = remember { Animatable(0f) }
+    var hasTriggeredHaptic by remember { mutableStateOf(false) }
+
+    val maxDragPx = remember(density) { with(density) { 80.dp.toPx() } }
+    val triggerThresholdPx = remember(density) { with(density) { 40.dp.toPx() } }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragStart = {
+                        hasTriggeredHaptic = false
+                    },
+                    onDragEnd = {
+                        scope.launch {
+                            val currentOffset = -offsetX.value
+                            if (currentOffset >= triggerThresholdPx) {
+                                onReply()
+                            }
+                            offsetX.animateTo(
+                                targetValue = 0f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+                            )
+                        }
+                    },
+                    onDragCancel = {
+                        scope.launch {
+                            offsetX.animateTo(0f)
+                        }
+                    },
+                    onHorizontalDrag = { change, dragAmount ->
+                        val newOffset = (offsetX.value + dragAmount).coerceIn(-maxDragPx, 0f)
+                        scope.launch {
+                            offsetX.snapTo(newOffset)
+                        }
+
+                        if (-newOffset >= triggerThresholdPx && !hasTriggeredHaptic) {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            hasTriggeredHaptic = true
+                        } else if (-newOffset < triggerThresholdPx && hasTriggeredHaptic) {
+                            hasTriggeredHaptic = false
+                        }
+                        change.consume()
+                    }
+                )
+            }
+    ) {
+        val currentOffset = -offsetX.value
+        val iconAlpha = (currentOffset / triggerThresholdPx).coerceIn(0f, 1f)
+        val iconScale = 0.5f + 0.5f * iconAlpha
+
+        if (currentOffset > 2f) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 16.dp)
+                    .graphicsLayer {
+                        alpha = iconAlpha
+                        scaleX = iconScale
+                        scaleY = iconScale
+                    }
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Reply,
+                            contentDescription = "Reply",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(offsetX.value.toInt(), 0) }
+        ) {
+            content()
+        }
     }
 }
 
@@ -1522,5 +1632,27 @@ fun formatFileSize(bytes: ULong): String {
         b < 1024 * 1024 -> "%.1f KB".format(java.util.Locale.US, b / 1024)
         b < 1024 * 1024 * 1024 -> "%.1f MB".format(java.util.Locale.US, b / (1024 * 1024))
         else -> "%.1f GB".format(java.util.Locale.US, b / (1024 * 1024 * 1024))
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, widthDp = 360)
+@Composable
+fun SwipeToReplyPreview() {
+    MaterialTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            SwipeToReplyBox(onReply = {}) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    Text(
+                        text = "Свайпните влево для ответа",
+                        modifier = Modifier.padding(12.dp),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
     }
 }

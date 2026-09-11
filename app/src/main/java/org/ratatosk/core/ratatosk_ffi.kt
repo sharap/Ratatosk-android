@@ -955,6 +955,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers_alive(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_companionobserver_on_event(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_accept_file(
@@ -1244,6 +1246,8 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_mode(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peers(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peers_alive(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_clone_companionobserver(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
@@ -1877,6 +1881,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers() != 23128) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers_alive() != 8974) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_companionobserver_on_event() != 21474) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2278,6 +2285,29 @@ public object FfiConverterFloat: FfiConverter<Float, Float> {
 
     override fun write(value: Float, buf: ByteBuffer) {
         buf.putFloat(value)
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterDouble: FfiConverter<Double, Double> {
+    override fun lift(value: Double): Double {
+        return value
+    }
+
+    override fun read(buf: ByteBuffer): Double {
+        return buf.getDouble()
+    }
+
+    override fun lower(value: Double): Double {
+        return value
+    }
+
+    override fun allocationSize(value: Double) = 8UL
+
+    override fun write(value: Double, buf: ByteBuffer) {
+        buf.putDouble(value)
     }
 }
 
@@ -5117,6 +5147,35 @@ public interface RatatoskClientInterface {
      */
     fun `yggPeers`(): List<kotlin.String>
     
+    /**
+     * Пиры встроенного узла и их состояние **прямо сейчас** (0.2).
+     *
+     * Пара к [`RatatoskClient::ygg_peers`], и пара неразлучная: тот
+     * отдаёт список, который назвал человек, этот — сколько из него
+     * работает. Порознь ни то, ни другое вопроса не закрывает.
+     *
+     * # Зачем это человеку
+     *
+     * Пир — чужой узел, который кто-то держит по доброй воле. Он может
+     * исчезнуть навсегда: владелец выключил ноду, кончился хостинг,
+     * сменился адрес. Без этого числа «меш не работает» и «один из трёх
+     * пиров умер полгода назад» выглядят на экране одинаково, а чинятся
+     * по-разному: в первом случае смотреть на сеть, во втором — убрать
+     * мёртвую строку из списка.
+     *
+     * Мёртвый пир из списка **не исчезает**: он остаётся с `up = false`
+     * и своим адресом. Поэтому сшивать этот список с настроенным не надо —
+     * живой состав называет всех, и «которую строку убрать» видно прямо
+     * здесь.
+     *
+     * # Что означает `None`
+     *
+     * **Своего узла нет**: ступень выключена, выбран внешний демон или узел
+     * ещё поднимается. Это не то же, что пустой список: пустой означает
+     * «узел есть, а соединён он ни с кем», и это другая неисправность.
+     */
+    fun `yggPeersAlive`(): List<FfiYggPeer>?
+    
     companion object
 }
 
@@ -7032,6 +7091,47 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
     callWithHandle {
     uniffiRustCallWithError(RatatoskException) { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peers(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Пиры встроенного узла и их состояние **прямо сейчас** (0.2).
+     *
+     * Пара к [`RatatoskClient::ygg_peers`], и пара неразлучная: тот
+     * отдаёт список, который назвал человек, этот — сколько из него
+     * работает. Порознь ни то, ни другое вопроса не закрывает.
+     *
+     * # Зачем это человеку
+     *
+     * Пир — чужой узел, который кто-то держит по доброй воле. Он может
+     * исчезнуть навсегда: владелец выключил ноду, кончился хостинг,
+     * сменился адрес. Без этого числа «меш не работает» и «один из трёх
+     * пиров умер полгода назад» выглядят на экране одинаково, а чинятся
+     * по-разному: в первом случае смотреть на сеть, во втором — убрать
+     * мёртвую строку из списка.
+     *
+     * Мёртвый пир из списка **не исчезает**: он остаётся с `up = false`
+     * и своим адресом. Поэтому сшивать этот список с настроенным не надо —
+     * живой состав называет всех, и «которую строку убрать» видно прямо
+     * здесь.
+     *
+     * # Что означает `None`
+     *
+     * **Своего узла нет**: ступень выключена, выбран внешний демон или узел
+     * ещё поднимается. Это не то же, что пустой список: пустой означает
+     * «узел есть, а соединён он ни с кем», и это другая неисправность.
+     */
+    @Throws(RatatoskException::class)override fun `yggPeersAlive`(): List<FfiYggPeer>? {
+            return FfiConverterOptionalSequenceTypeFfiYggPeer.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peers_alive(
         it,
         _status)
 }
@@ -11523,6 +11623,75 @@ public object FfiConverterTypeFfiTorStatus: FfiConverterRustBuffer<FfiTorStatus>
 
 
 /**
+ * Пир встроенного узла меша, как его видит экран настроек (0.2).
+ */
+data class FfiYggPeer (
+    /**
+     * Адрес, которым соединились: `tcp://host:port`, `tls://host:port`.
+     *
+     * Та же строка, что человек ввёл в настройках, — по ней он и узнаёт,
+     * какую убирать.
+     */
+    val `uri`: kotlin.String
+    , 
+    /**
+     * Соединение работает.
+     */
+    val `up`: kotlin.Boolean
+    , 
+    /**
+     * Соединение начал он, а не мы.
+     *
+     * Такого пира в настройках нет, и кнопка «убрать» рядом с ним была бы
+     * обманом: мы его не добавляли и убрать не можем.
+     */
+    val `inbound`: kotlin.Boolean
+    , 
+    /**
+     * Задержка, мс. У неживого — ноль: она не измерялась.
+     */
+    val `latencyMs`: kotlin.Double
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiYggPeer: FfiConverterRustBuffer<FfiYggPeer> {
+    override fun read(buf: ByteBuffer): FfiYggPeer {
+        return FfiYggPeer(
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterDouble.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiYggPeer) = (
+            FfiConverterString.allocationSize(value.`uri`) +
+            FfiConverterBoolean.allocationSize(value.`up`) +
+            FfiConverterBoolean.allocationSize(value.`inbound`) +
+            FfiConverterDouble.allocationSize(value.`latencyMs`)
+    )
+
+    override fun write(value: FfiYggPeer, buf: ByteBuffer) {
+            FfiConverterString.write(value.`uri`, buf)
+            FfiConverterBoolean.write(value.`up`, buf)
+            FfiConverterBoolean.write(value.`inbound`, buf)
+            FfiConverterDouble.write(value.`latencyMs`, buf)
+    }
+}
+
+
+
+/**
  * Наибольший размер файла, который поедет почтой (§10.3).
  *
  * Файл крупнее ждёт прямого канала: почтой он поехал бы сутками, и §14
@@ -14569,6 +14738,38 @@ public object FfiConverterOptionalTypeFfiTransport: FfiConverterRustBuffer<FfiTr
 /**
  * @suppress
  */
+public object FfiConverterOptionalSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<FfiYggPeer>?> {
+    override fun read(buf: ByteBuffer): List<FfiYggPeer>? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterSequenceTypeFfiYggPeer.read(buf)
+    }
+
+    override fun allocationSize(value: List<FfiYggPeer>?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterSequenceTypeFfiYggPeer.allocationSize(value)
+        }
+    }
+
+    override fun write(value: List<FfiYggPeer>?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterSequenceTypeFfiYggPeer.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceString: FfiConverterRustBuffer<List<kotlin.String>> {
     override fun read(buf: ByteBuffer): List<kotlin.String> {
         val len = buf.getInt()
@@ -15063,6 +15264,34 @@ public object FfiConverterSequenceTypeFfiRung: FfiConverterRustBuffer<List<FfiRu
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeFfiRung.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<FfiYggPeer>> {
+    override fun read(buf: ByteBuffer): List<FfiYggPeer> {
+        val len = buf.getInt()
+        return List<FfiYggPeer>(len) {
+            FfiConverterTypeFfiYggPeer.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiYggPeer>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiYggPeer.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiYggPeer>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiYggPeer.write(it, buf)
         }
     }
 }
