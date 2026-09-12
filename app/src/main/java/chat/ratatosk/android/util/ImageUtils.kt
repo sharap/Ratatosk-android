@@ -24,11 +24,18 @@ object ImageUtils {
 
     fun loadBitmap(context: Context, uri: Uri): Bitmap? {
         return try {
+            val resolver = context.contentResolver
+
             // Первый проход — только размеры, без выделения памяти под пиксели.
+            //
+            // **Возвращает он null всегда**, и это не ошибка, а весь смысл
+            // inJustDecodeBounds: заполняются лишь outWidth/outHeight.
+            // Проверять здесь результат декодирования нельзя — именно на
+            // этом loadBitmap и отдавал null на любой картинке, из-за чего
+            // экран обрезки ждал битмап бесконечно. Проверяем поток.
             val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                BitmapFactory.decodeStream(input, null, bounds)
-            } ?: return null
+            val boundsStream = resolver.openInputStream(uri) ?: return null
+            boundsStream.use { input -> BitmapFactory.decodeStream(input, null, bounds) }
             if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
             // Второй — с прореживанием. inSampleSize округляется вниз до
@@ -36,11 +43,13 @@ object ImageUtils {
             val options = BitmapFactory.Options().apply {
                 inSampleSize = sampleSizeFor(bounds.outWidth, bounds.outHeight)
             }
-            val bitmap = context.contentResolver.openInputStream(uri)?.use { input ->
+            // Здесь результат уже настоящий: decodeStream возвращает битмап,
+            // и null означает, что картинку не разобрать.
+            val bitmap = resolver.openInputStream(uri)?.use { input ->
                 BitmapFactory.decodeStream(input, null, options)
             } ?: return null
 
-            val orientation = context.contentResolver.openInputStream(uri)?.use { input ->
+            val orientation = resolver.openInputStream(uri)?.use { input ->
                 ExifInterface(input).getAttributeInt(
                     ExifInterface.TAG_ORIENTATION,
                     ExifInterface.ORIENTATION_NORMAL
@@ -61,8 +70,11 @@ object ImageUtils {
     }
 
     private fun sampleSizeFor(width: Int, height: Int): Int {
+        // Условие на **итоговый** размер, а не на следующий шаг: иначе
+        // предел срабатывал вдвое позже обещанного и снимок на 12 Мп
+        // всё равно разворачивался целиком.
         var sample = 1
-        while (width / (sample * 2) >= MAX_DIMENSION || height / (sample * 2) >= MAX_DIMENSION) {
+        while (width / sample > MAX_DIMENSION || height / sample > MAX_DIMENSION) {
             sample *= 2
         }
         return sample

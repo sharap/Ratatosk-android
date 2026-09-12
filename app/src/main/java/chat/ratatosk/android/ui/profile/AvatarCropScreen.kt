@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.toSize
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.util.ImageUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,13 +41,24 @@ fun AvatarCropScreen(
     val maxBytes by viewModel.maxAvatarBytes.collectAsState()
     
     var sourceBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    // Отдельно от «ещё грузится»: без этого неудача выглядела бы тем же
+    // бесконечным кружком, что и загрузка, — и выглядела, пока loadBitmap
+    // отдавал null на каждой картинке.
+    var loadFailed by remember { mutableStateOf(false) }
     var offset by remember { mutableStateOf(Offset.Zero) }
     var scale by remember { mutableStateOf(1f) }
     var containerSize by remember { mutableStateOf(Size.Zero) }
 
     LaunchedEffect(uri) {
         uri?.let {
-            sourceBitmap = ImageUtils.loadBitmap(context, it)
+            sourceBitmap = null
+            loadFailed = false
+            // Разбор снимка — не на главном потоке: даже прореженный он
+            // занимает десятки миллисекунд, а на большом файле заметно
+            // подвешивал бы экран.
+            val loaded = withContext(Dispatchers.IO) { ImageUtils.loadBitmap(context, it) }
+            sourceBitmap = loaded
+            loadFailed = loaded == null
         }
     }
 
@@ -146,7 +159,14 @@ fun AvatarCropScreen(
                     // Dim outside
                     // (Omitted for simplicity, but good for UX)
                 }
-            } ?: CircularProgressIndicator()
+            } ?: if (loadFailed) {
+                Text(
+                    text = stringResource(R.string.avatar_load_failed),
+                    color = Color.White
+                )
+            } else {
+                CircularProgressIndicator()
+            }
         }
     }
 }
