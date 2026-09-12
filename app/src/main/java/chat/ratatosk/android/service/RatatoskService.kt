@@ -19,6 +19,7 @@ import androidx.core.app.NotificationManagerCompat
 import chat.ratatosk.android.MainActivity
 import chat.ratatosk.android.R
 import chat.ratatosk.android.core.RatatoskCore
+import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.data.SettingsRepository
 import chat.ratatosk.android.util.MarkdownUtils
 import chat.ratatosk.android.util.toHexString
@@ -26,6 +27,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import org.ratatosk.core.RatatoskException
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -122,10 +125,8 @@ class RatatoskService : Service() {
             }
         }
 
-        // Recovery: if service was killed and restarted but process lived, auto-unlock
-        if (!RatatoskCore.isInitialized()) {
-            RatatoskCore.tryAutoInitialize()
-        }
+        recoverSessionIfNeeded()
+        scheduleWatchdog(this)
 
         // Listen to core events for notifications
         RatatoskCore.events
@@ -296,7 +297,90 @@ class RatatoskService : Service() {
         }
     }
 
+    /**
+     * Поднимает ядро после того, как процесс перезапустили.
+     *
+     * Раньше здесь стоял только `tryAutoInitialize()`, а он берёт учётные
+     * данные из поля в памяти. Поле умирает вместе с процессом, поэтому
+     * после ночного отстрела START_STICKY поднимал сервис, тот честно рисовал
+     * уведомление — и на этом всё: ядро не открывалось никогда, сообщения
+     * не приходили. Снаружи это и выглядело как «к утру приложение не живо».
+     *
+     * Восстанавливаем из того, что и так лежит на диске: какой аккаунт был
+     * последним и как он называется. Ничего нового при этом не сохраняем.
+     *
+     * **Аккаунт под PIN не открываем.** Секрета у нас нет и быть не должно;
+     * такой аккаунт дождётся человека. Отличаем по `RatatoskException.Locked`.
+     */
+    private fun recoverSessionIfNeeded() {
+        serviceScope.launch {
+            if (RatatoskCore.isInitialized()) return@launch
+            // Процесс жив, пересоздали только сервис — данные ещё в памяти.
+            if (RatatoskCore.tryAutoInitialize() != null) return@launch
+
+            val settings = SettingsRepository(applicationContext)
+            val lastId = settings.lastAccountId.firstOrNull() ?: return@launch
+            try {
+                RatatoskCore.initializeRegistry(applicationContext)
+            } catch (t: Throwable) {
+                android.util.Log.e("RatatoskService", "Registry not available for recovery", t)
+                return@launch
+            }
+
+            if (lastId.startsWith("companion:")) {
+                val link = settings.companionLinks.firstOrNull()
+                    ?.firstOrNull { "companion:${it.inviteUri.hashCode()}" == lastId }
+                if (link == null) {
+                    android.util.Log.w("RatatoskService", "No stored companion link to recover")
+                    return@launch
+                }
+                try {
+                    // cachePath у сохранённой ссылки уже абсолютный.
+                    RatatoskCore.initializeCompanion(
+                        link.inviteUri, link.port.toUShort(), link.peerAddr, link.cachePath, link.torDir
+                    )
+                    android.util.Log.i("RatatoskService", "Companion session recovered")
+                } catch (t: Throwable) {
+                    android.util.Log.e("RatatoskService", "Companion recovery failed", t)
+                }
+                return@launch
+            }
+
+            val accountId = try {
+                lastId.hexToByteArray()
+            } catch (e: Exception) {
+                return@launch
+            }
+            val name = settings.getDisplayName(lastId).firstOrNull() ?: "Ratatosk"
+            try {
+                RatatoskCore.initialize(accountId, null, null, name)
+                android.util.Log.i("RatatoskService", "Account session recovered")
+            } catch (locked: RatatoskException.Locked) {
+                android.util.Log.i("RatatoskService", "Account needs a PIN — waiting for the user")
+            } catch (t: Throwable) {
+                android.util.Log.e("RatatoskService", "Session recovery failed", t)
+            }
+        }
+    }
+
+    /**
+     * Карточку смахнули из недавних.
+     *
+     * Многие оболочки (MIUI в их числе) убивают при этом весь процесс,
+     * не считаясь с foreground-сервисом. Просим систему поднять сервис
+     * через секунду: ядро восстановится тем же путём, что и после
+     * любой другой смерти процесса.
+     */
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        scheduleWatchdog(this, delayMs = 1_000)
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Каждый заход — повод проверить, живо ли ядро: сюда мы попадаем
+        // и после START_STICKY, и по будильнику сторожа.
+        recoverSessionIfNeeded()
+        scheduleWatchdog(this)
         return START_STICKY
     }
 

@@ -37,11 +37,26 @@
             android:foregroundServiceType="dataSync"
             android:exported="false" />
 
-        <receiver android:name=".service.BootReceiver" android:exported="false">
+        <receiver
+            android:name=".service.BootReceiver"
+            android:exported="true"
+            android:directBootAware="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <!-- MIUI шлёт своё вместо BOOT_COMPLETED. -->
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+            <intent-filter>
+                <!-- После обновления приложения процесс не поднимают сами. -->
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+
+        <!-- Сторож: будильник, поднимающий сервис, если его отстрелили. -->
+        <receiver
+            android:name=".service.ServiceWatchdogReceiver"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"
