@@ -15,7 +15,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 
 @Composable
 fun Avatar(
@@ -32,8 +35,22 @@ fun Avatar(
         color = MaterialTheme.colorScheme.secondaryContainer
     ) {
         if (avatarBytes != null) {
+            // Ключ кэша задаём сами. У Coil для сырого ByteArray ключ
+            // выводится из самого объекта, то есть на каждый новый массив
+            // (и после пересборки экрана) картинка декодируется заново —
+            // аватарки успевали моргнуть. По содержимому ключ стабилен:
+            // тот же аватар берётся из памяти, изменившийся — перечитывается.
+            val cacheKey = remember(avatarBytes) {
+                "avatar-${avatarBytes.size}-${avatarBytes.contentHashCode()}"
+            }
             Image(
-                painter = rememberAsyncImagePainter(model = avatarBytes),
+                painter = rememberAsyncImagePainter(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(avatarBytes)
+                        .memoryCacheKey(cacheKey)
+                        .diskCacheKey(cacheKey)
+                        .build()
+                ),
                 contentDescription = name,
                 modifier = Modifier.fillMaxSize().clip(shape),
                 contentScale = ContentScale.Crop

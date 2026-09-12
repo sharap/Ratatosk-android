@@ -29,7 +29,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Ratatosk">
+        android:theme="@style/Theme.Ratatosk"
+        android:enableOnBackInvokedCallback="true">
 
         <service
             android:name=".service.RatatoskService"

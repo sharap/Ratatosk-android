@@ -3,6 +3,8 @@ package chat.ratatosk.android.ui.main
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.*
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -37,6 +39,9 @@ import chat.ratatosk.android.ui.chat.ChatScreen
 import chat.ratatosk.android.ui.chatlist.ChatItem
 import chat.ratatosk.android.ui.chatlist.ChatListScreen
 import chat.ratatosk.android.ui.components.AddContactDialog
+import chat.ratatosk.android.ui.components.SwipeBackLayer
+import chat.ratatosk.android.ui.components.rememberSwipeBackState
+import chat.ratatosk.android.ui.components.swipeBackUnderlay
 import chat.ratatosk.android.ui.components.Avatar
 import chat.ratatosk.android.ui.contacts.ContactDetailsScreen
 import chat.ratatosk.android.ui.contacts.ContactsScreen
@@ -178,13 +183,157 @@ fun AdaptiveMainScreen(
         isPairedDevicesOpen = true
     }
     
-    if (isPairedDevicesOpen) {
-        BackHandler(enabled = true) {
-            isPairedDevicesOpen = false
+    // «Назад» обрабатывает SwipeBackHost ниже: он берёт на себя и кнопку,
+    // и системный жест — через PredictiveBackHandler, потому что рисовать
+    // уход экрана и отдельно слушать back двумя разными местами значит
+    // однажды их рассогласовать. Отдельные BackHandler здесь стояли раньше.
+
+    // В компактном режиме движение панелей рисует SwipeBackHost. Своя
+    // растворялка панели накладывалась бы на него второй анимацией —
+    // сразу после слайда экран проявлялся бы ещё раз, и это читается
+    // как рывок в конце жеста. На планшете она к месту: там панели
+    // сменяются без жеста.
+    val paneEnter = if (isCompact) EnterTransition.None else fadeIn(animationSpec = tween(150))
+    val paneExit = if (isCompact) ExitTransition.None else fadeOut(animationSpec = tween(150))
+
+    // Содержимое списка вынесено отдельно: в компактном режиме его надо
+    // показать **под** уходящей деталью, а внутри ListDetailPaneScaffold
+    // неактивная панель не компонуется вовсе.
+    val listPaneBody: @Composable () -> Unit = {
+        Scaffold(
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            bottomBar = {
+                if (!isTabletMode) {
+                    NavigationBar {
+                        visibleTabs.forEach { tab ->
+                            NavigationBarItem(
+                                icon = {
+                                    BadgedBox(
+                                        badge = {
+                                            if (tab == MainTab.CHATS && totalUnreadCount > 0) {
+                                                Badge { Text(totalUnreadCount.toString()) }
+                                            }
+                                        }
+                                    ) { Icon(tab.icon, contentDescription = null) }
+                                },
+                                label = { Text(stringResource(tab.labelRes)) },
+                                selected = selectedTab == tab,
+                                onClick = {
+                                    isPairedDevicesOpen = false
+                                    selectedTab = tab
+                                    viewModel.setActiveChat(null)
+                                    viewModel.setActiveContact(null)
+                                    scope.launch {
+                                        while (navigator.canNavigateBack()) {
+                                            navigator.navigateBack()
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        ) { innerPadding ->
+            Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                key(selectedTab) {
+                    MainTabContent(
+                        currentTab = selectedTab,
+                        viewModel = viewModel,
+                        onScanClick = onScanClick,
+                        onCropAvatar = onCropAvatar,
+                        onPairedDevicesClick = handlePairedDevicesClick,
+                        onChatClick = { chatId -> viewModel.setActiveChat(chatId) },
+                        onContactClick = { contactId -> 
+                            viewModel.setActiveContact(contactId)
+                        },
+                        chatGridState = chatGridState,
+                        contactsGridState = contactsGridState,
+                        showFab = true
+                    )
+                }
+            }
         }
-    } else if (showBackButton) {
-        BackHandler(enabled = true) {
-            scope.launch { navigator.navigateBack() }
+    }
+
+    // Панели как они есть. В компактном режиме это то, что едет за пальцем.
+    val paneArea: @Composable () -> Unit = {
+        if (isTabletMode && (selectedTab == MainTab.SETTINGS || selectedTab == MainTab.PROFILE)) {
+            androidx.compose.animation.Crossfade(targetState = selectedTab, label = "full_pane_fade") { tab ->
+                when (tab) {
+                    MainTab.SETTINGS -> SettingsScreen(
+                        viewModel = viewModel,
+                        onPairedDevicesClick = handlePairedDevicesClick,
+                        isTwoColumn = true
+                    )
+                    MainTab.PROFILE -> ProfileScreen(
+                        viewModel = viewModel,
+                        onCropAvatar = onCropAvatar,
+                        isTwoColumn = true
+                    )
+                    else -> {}
+            }
+                }
+
+        } else {
+            ListDetailPaneScaffold(
+                modifier = Modifier.fillMaxSize(),
+                directive = navigator.scaffoldDirective,
+                scaffoldState = navigator.scaffoldState,
+                listPane = {
+                    AnimatedPane(
+                        modifier = if (isTabletMode) {
+                            Modifier
+                                .preferredWidth(340.dp)
+                                .border(
+                                    width = 0.5.dp,
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
+                        } else Modifier,
+                        boundsAnimationSpec = snap(),
+                        enterTransition = paneEnter,
+                        exitTransition = paneExit
+                    ) {
+                        listPaneBody()
+                    }
+                },
+                detailPane = {
+                    AnimatedPane(
+                        modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                        boundsAnimationSpec = snap(),
+                        enterTransition = paneEnter,
+                        exitTransition = paneExit
+                    ) {
+                        DetailPaneContent(
+                            navigator = navigator,
+                            viewModel = viewModel,
+                            isCompanionMode = isCompanionMode,
+                            showBackButton = showBackButton,
+                            isCompact = isCompact,
+                            activeChatId = activeChatId,
+                            activeContactId = activeContactId,
+                            onCropAvatar = onCropAvatar
+                        )
+                    }
+                },
+                extraPane = {
+                    AnimatedPane(
+                        modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                        boundsAnimationSpec = snap(),
+                        enterTransition = paneEnter,
+                        exitTransition = paneExit
+                    ) {
+                        ExtraPaneContent(
+                            navigator = navigator,
+                            viewModel = viewModel,
+                            isCompact = isCompact,
+                            activeContactId = activeContactId,
+                            onCropAvatar = onCropAvatar
+                        )
+                    }
+                }
+            )
+
         }
     }
 
@@ -225,138 +374,78 @@ fun AdaptiveMainScreen(
                 .weight(1f)
                 .fillMaxHeight()
         ) {
-            if (isPairedDevicesOpen) {
+            if (isCompact) {
+                // Компактный режим — два слоя, а не подмена панелей.
+                //
+                // Список лежит снизу **всегда** и из дерева не уходит.
+                // Раньше он компоновался заново в начале каждого жеста:
+                // лента пересобиралась, Coil перезапрашивал аватарки,
+                // и они моргали. Теперь он просто уезжает с параллаксом.
+                //
+                // ListDetailPaneScaffold здесь не нужен вовсе: панель
+                // одна за раз, а Extra в этом приложении не открывается
+                // ниоткуда. Он остаётся для планшета, где панелей две.
+                val backSwipe = rememberSwipeBackState()
+                val detailKey = navigator.currentDestination?.contentKey
+                val overlayOpen = isPairedDevicesOpen || detailKey != null
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .swipeBackUnderlay(backSwipe, blockInput = overlayOpen)
+                    ) {
+                        listPaneBody()
+                    }
+
+                    if (isPairedDevicesOpen) {
+                        SwipeBackLayer(
+                            state = backSwipe,
+                            onBack = { isPairedDevicesOpen = false },
+                            contentKey = "paired_devices"
+                        ) {
+                            chat.ratatosk.android.ui.settings.PairedDevicesScreen(
+                                viewModel = viewModel,
+                                onBack = { isPairedDevicesOpen = false }
+                            )
+                        }
+                    } else if (detailKey != null) {
+                        SwipeBackLayer(
+                            state = backSwipe,
+                            onBack = { scope.launch { navigator.navigateBack() } },
+                            contentKey = detailKey
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background)
+                            ) {
+                                DetailPaneContent(
+                                    navigator = navigator,
+                                    viewModel = viewModel,
+                                    isCompanionMode = isCompanionMode,
+                                    showBackButton = true,
+                                    isCompact = true,
+                                    activeChatId = activeChatId,
+                                    activeContactId = activeContactId,
+                                    onCropAvatar = onCropAvatar
+                                )
+                            }
+                        }
+                    }
+                }
+            } else if (isPairedDevicesOpen) {
+                // Планшет: сюда приходят из полноэкранной панели настроек,
+                // и показать под уходящим экраном пришлось бы paneArea —
+                // второй ListDetailPaneScaffold с тем же scaffoldState,
+                // а это падение. Поэтому здесь только обычное «назад».
+                BackHandler(enabled = true) { isPairedDevicesOpen = false }
                 chat.ratatosk.android.ui.settings.PairedDevicesScreen(
                     viewModel = viewModel,
                     onBack = { isPairedDevicesOpen = false }
                 )
-            } else if (isTabletMode && (selectedTab == MainTab.SETTINGS || selectedTab == MainTab.PROFILE)) {
-                androidx.compose.animation.Crossfade(targetState = selectedTab, label = "full_pane_fade") { tab ->
-                    when (tab) {
-                        MainTab.SETTINGS -> SettingsScreen(
-                            viewModel = viewModel,
-                            onPairedDevicesClick = handlePairedDevicesClick,
-                            isTwoColumn = true
-                        )
-                        MainTab.PROFILE -> ProfileScreen(
-                            viewModel = viewModel,
-                            onCropAvatar = onCropAvatar,
-                            isTwoColumn = true
-                        )
-                        else -> {}
-                    }
-                }
             } else {
-                ListDetailPaneScaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    directive = navigator.scaffoldDirective,
-                    scaffoldState = navigator.scaffoldState,
-                    listPane = {
-                        AnimatedPane(
-                            modifier = if (isTabletMode) {
-                                Modifier
-                                    .preferredWidth(340.dp)
-                                    .border(
-                                        width = 0.5.dp,
-                                        color = MaterialTheme.colorScheme.outlineVariant
-                                    )
-                            } else Modifier,
-                            boundsAnimationSpec = snap(),
-                            enterTransition = fadeIn(animationSpec = tween(150)),
-                            exitTransition = fadeOut(animationSpec = tween(150))
-                        ) {
-                            Scaffold(
-                                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                                bottomBar = {
-                                    if (!isTabletMode) {
-                                        NavigationBar {
-                                            visibleTabs.forEach { tab ->
-                                                NavigationBarItem(
-                                                    icon = {
-                                                        BadgedBox(
-                                                            badge = {
-                                                                if (tab == MainTab.CHATS && totalUnreadCount > 0) {
-                                                                    Badge { Text(totalUnreadCount.toString()) }
-                                                                }
-                                                            }
-                                                        ) { Icon(tab.icon, contentDescription = null) }
-                                                    },
-                                                    label = { Text(stringResource(tab.labelRes)) },
-                                                    selected = selectedTab == tab,
-                                                    onClick = {
-                                                        isPairedDevicesOpen = false
-                                                        selectedTab = tab
-                                                        viewModel.setActiveChat(null)
-                                                        viewModel.setActiveContact(null)
-                                                        scope.launch {
-                                                            while (navigator.canNavigateBack()) {
-                                                                navigator.navigateBack()
-                                                            }
-                                                        }
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            ) { innerPadding ->
-                                Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-                                    key(selectedTab) {
-                                        MainTabContent(
-                                            currentTab = selectedTab,
-                                            viewModel = viewModel,
-                                            onScanClick = onScanClick,
-                                            onCropAvatar = onCropAvatar,
-                                            onPairedDevicesClick = handlePairedDevicesClick,
-                                            onChatClick = { chatId -> viewModel.setActiveChat(chatId) },
-                                            onContactClick = { contactId -> 
-                                                viewModel.setActiveContact(contactId)
-                                            },
-                                            chatGridState = chatGridState,
-                                            contactsGridState = contactsGridState,
-                                            showFab = true
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    detailPane = {
-                        AnimatedPane(
-                            modifier = Modifier.background(MaterialTheme.colorScheme.background),
-                            boundsAnimationSpec = snap(),
-                            enterTransition = fadeIn(animationSpec = tween(150)),
-                            exitTransition = fadeOut(animationSpec = tween(150))
-                        ) {
-                            DetailPaneContent(
-                                navigator = navigator,
-                                viewModel = viewModel,
-                                isCompanionMode = isCompanionMode,
-                                showBackButton = showBackButton,
-                                isCompact = isCompact,
-                                activeChatId = activeChatId,
-                                activeContactId = activeContactId,
-                                onCropAvatar = onCropAvatar
-                            )
-                        }
-                    },
-                    extraPane = {
-                        AnimatedPane(
-                            modifier = Modifier.background(MaterialTheme.colorScheme.background),
-                            boundsAnimationSpec = snap(),
-                            enterTransition = fadeIn(animationSpec = tween(150)),
-                            exitTransition = fadeOut(animationSpec = tween(150))
-                        ) {
-                            ExtraPaneContent(
-                                navigator = navigator,
-                                viewModel = viewModel,
-                                isCompact = isCompact,
-                                activeContactId = activeContactId,
-                                onCropAvatar = onCropAvatar
-                            )
-                        }
-                    }
-                )
+                paneArea()
             }
         }
     }
