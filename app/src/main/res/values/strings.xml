@@ -301,4 +301,16 @@
     <string name="done">Done</string>
     <string name="companion_mode_desc">Companion Mode: Linked to main device.</string>
     <string name="avatar_load_failed">Could not open this image</string>
+    <string name="preview_photo">[Photo]</string>
+    <string name="preview_video">[Video]</string>
+    <string name="preview_audio">[Audio]</string>
+    <string name="preview_file">[File]</string>
+    <string name="preview_contact">[Contact]</string>
+    <string name="preview_empty">[Message]</string>
+    <plurals name="preview_attachments">
+        <item quantity="one">[%d attachment]</item>
+        <item quantity="other">[%d attachments]</item>
+    </plurals>
+    <string name="reaction_to_message">%1$s to: %2$s</string>
+    <string name="reaction_received">Reacted %1$s</string>
 </resources>

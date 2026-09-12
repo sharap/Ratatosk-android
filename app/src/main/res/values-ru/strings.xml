@@ -301,4 +301,18 @@
     <string name="done">Готово</string>
     <string name="companion_mode_desc">Режим компаньона: Привязано к основному устройству.</string>
     <string name="avatar_load_failed">Не удалось открыть это изображение</string>
+    <string name="preview_photo">[фото]</string>
+    <string name="preview_video">[видео]</string>
+    <string name="preview_audio">[аудио]</string>
+    <string name="preview_file">[файл]</string>
+    <string name="preview_contact">[контакт]</string>
+    <string name="preview_empty">[сообщение]</string>
+    <plurals name="preview_attachments">
+        <item quantity="one">[%d вложение]</item>
+        <item quantity="few">[%d вложения]</item>
+        <item quantity="many">[%d вложений]</item>
+        <item quantity="other">[%d вложения]</item>
+    </plurals>
+    <string name="reaction_to_message">%1$s на: %2$s</string>
+    <string name="reaction_received">Реакция %1$s</string>
 </resources>

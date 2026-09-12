@@ -21,7 +21,8 @@ import chat.ratatosk.android.R
 import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.data.SettingsRepository
-import chat.ratatosk.android.util.MarkdownUtils
+import chat.ratatosk.android.util.MessagePreview
+import chat.ratatosk.android.util.reactionToAnnounce
 import chat.ratatosk.android.util.toHexString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -134,6 +135,9 @@ class RatatoskService : Service() {
                 android.util.Log.d("RatatoskService", "event: ${event::class.java.simpleName}")
                 if (event is FfiEvent.MessageReceived && !RatatoskCore.isCompanionMode()) {
                     showIncomingMessageNotification(event)
+                }
+                if (event is FfiEvent.ReactionChanged && !RatatoskCore.isCompanionMode()) {
+                    showReactionNotification(event)
                 }
             }
             .launchIn(serviceScope)
@@ -490,8 +494,18 @@ class RatatoskService : Service() {
             }
 
             val body = if (showText) {
-                val rawBody = msg?.body ?: getString(R.string.message)
-                val formatted = MarkdownUtils.formatForNotification(rawBody, getString(R.string.spoiler))
+                // Через общий помощник: он же снимает разметку и он же
+                // подписывает вложение, когда текста нет вовсе.
+                val formatted = if (msg != null) {
+                    MessagePreview.of(
+                        context = this@RatatoskService,
+                        body = msg.body,
+                        fileNames = msg.files.map { it.name },
+                        hasSharedContact = msg.sharedContact != null
+                    )
+                } else {
+                    getString(R.string.message)
+                }
                 if (group != null && !msg?.author.isNullOrBlank()) {
                     "${msg.author}: $formatted"
                 } else {
@@ -543,6 +557,120 @@ class RatatoskService : Service() {
         }
     }
 
+    /**
+     * Уведомление о поставленной реакции.
+     *
+     * # Почему приходится смотреть в сообщение
+     *
+     * Событие ядра одно на постановку и на снятие: в нём есть чат,
+     * сообщение и автор, но нет ни смайлика, ни того, что именно
+     * случилось. Поэтому перечитываем сообщение и ищем реакцию этого
+     * автора: нашлась — поставили, не нашлась — сняли, и уведомлять
+     * не о чем (о снятии человека беспокоить не просили).
+     *
+     * # Только на свои сообщения
+     *
+     * Реакция на чужое сообщение в группе — не событие для человека,
+     * а шум: в разговоре на десять участников он получал бы уведомление
+     * на каждый смайлик каждого. Поэтому `msg.mine`.
+     *
+     * Своя же реакция пропускается отдельно: она прилетает тем же
+     * событием, а уведомлять себя о себе незачем.
+     */
+    private fun showReactionNotification(event: FfiEvent.ReactionChanged) {
+        val accountId = RatatoskCore.getActiveAccountId() ?: return
+        val chatIdHex = event.chatId.toHexString()
+        val msgIdHex = event.msgId.toHexString()
+
+        serviceScope.launch {
+            val msg = try {
+                if (RatatoskCore.isInitialized() && !RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getClient().message(event.msgId)
+                } else null
+            } catch (e: Exception) {
+                null
+            } ?: return@launch
+
+            // Решение вынесено в чистую функцию и покрыто тестами:
+            // живьём реакцию без второго устройства не воспроизвести.
+            val reaction = reactionToAnnounce(msg, event.authorIk) ?: return@launch
+
+            // Один и тот же смайлик от того же человека второй раз
+            // не показываем: событие может приехать повторно из replay.
+            if (alreadyNotified("reaction:$msgIdHex:${event.authorIk.toHexString()}:${reaction.emoji}")) {
+                return@launch
+            }
+
+            val settings = SettingsRepository(this@RatatoskService)
+            val showName = settings.getNotificationsShowName(accountId).first()
+            val showText = settings.getNotificationsShowText(accountId).first()
+
+            val who = if (showName) reactionAuthorName(event.chatId, event.authorIk) else null
+            val title = who ?: getString(R.string.app_name)
+
+            val body = if (showText) {
+                val preview = MessagePreview.of(
+                    context = this@RatatoskService,
+                    body = msg.body,
+                    fileNames = msg.files.map { it.name },
+                    hasSharedContact = msg.sharedContact != null
+                )
+                getString(R.string.reaction_to_message, reaction.emoji, preview)
+            } else {
+                getString(R.string.reaction_received, reaction.emoji)
+            }
+
+            val intent = Intent(this@RatatoskService, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("chatId", chatIdHex)
+                // Чат откроется на этом сообщении, а не просто в конце.
+                putExtra("msgId", msgIdHex)
+            }
+            val pendingIntent = PendingIntent.getActivity(
+                this@RatatoskService,
+                // Свой код на сообщение: иначе намерение переиспользовалось бы
+                // от прошлого уведомления и вело бы не туда.
+                ("reaction:" + msgIdHex).hashCode(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notification = NotificationCompat.Builder(this@RatatoskService, MESSAGE_CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .build()
+
+            try {
+                // Идентификатор по сообщению: новая реакция на то же сообщение
+                // заменяет прежнее уведомление, а не копится рядом.
+                NotificationManagerCompat.from(this@RatatoskService)
+                    .notify(("reaction:" + msgIdHex).hashCode(), notification)
+            } catch (e: SecurityException) {
+                // Разрешение на уведомления ещё не выдано.
+            }
+        }
+    }
+
+    /** Имя того, кто поставил реакцию: из контактов, иначе из состава группы. */
+    private fun reactionAuthorName(chatId: ByteArray, authorIk: ByteArray): String? = try {
+        val client = RatatoskCore.getClient()
+        val contact = client.contacts().firstOrNull { it.peerIk.contentEquals(authorIk) }
+        contact?.let { it.localName ?: it.displayName }
+            // Не контакт — значит участник группы: состав приезжает
+            // вместе с самой группой, отдельного запроса не нужно.
+            ?: client.groups()
+                .firstOrNull { it.chatId.contentEquals(chatId) }
+                ?.members
+                ?.firstOrNull { it.ik.contentEquals(authorIk) }
+                ?.name
+    } catch (e: Exception) {
+        null
+    }
+
     private fun showCompanionMessageNotification(message: FfiCompanionMessage) {
         if (message.mine) {
             android.util.Log.d("RatatoskService", "Skipping notification for own companion message")
@@ -565,7 +693,12 @@ class RatatoskService : Service() {
             }
 
             val body = if (showText) {
-                val formatted = MarkdownUtils.formatForNotification(message.body, getString(R.string.spoiler))
+                val formatted = MessagePreview.of(
+                    context = this@RatatoskService,
+                    body = message.body,
+                    fileNames = message.files.map { it.name },
+                    hasSharedContact = message.shared != null
+                )
                 if (!message.author.isNullOrBlank()) {
                     "${message.author}: $formatted"
                 } else {

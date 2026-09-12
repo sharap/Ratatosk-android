@@ -204,10 +204,27 @@ fun ChatListScreen(
                             },
                             supportingContent = { 
                                 if (lastMessage != null) {
+                                    // Тем же помощником, что и уведомления: снимает
+                                    // разметку и подписывает вложение, когда текста
+                                    // нет — раньше такая строка была просто пустой.
+                                    val ctx = androidx.compose.ui.platform.LocalContext.current
+                                    val fileNames = lastMessage.files.map { it.name }
+                                    val hasCard = lastMessage.sharedContact != null
+                                    // Ключи — по значению. msgId сюда не годится:
+                                    // это ByteArray, он сравнивается по ссылке,
+                                    // и разбор шёл бы заново на каждую перезагрузку.
+                                    val preview = remember(lastMessage.body, fileNames, hasCard) {
+                                        chat.ratatosk.android.util.MessagePreview.of(
+                                            context = ctx,
+                                            body = lastMessage.body,
+                                            fileNames = fileNames,
+                                            hasSharedContact = hasCard
+                                        )
+                                    }
                                     val content = if (lastMessage.mine) {
-                                        stringResource(R.string.you_prefix, lastMessage.body)
+                                        stringResource(R.string.you_prefix, preview)
                                     } else {
-                                        lastMessage.body
+                                        preview
                                     }
                                     Text(
                                         text = content,

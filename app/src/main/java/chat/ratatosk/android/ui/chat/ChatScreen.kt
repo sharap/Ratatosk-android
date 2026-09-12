@@ -192,6 +192,15 @@ fun ChatScreen(
         derivedStateOf { !isAtBottom && !lastDirectionIsUp }
     }
 
+    // Просьба извне (уведомление о реакции) — в тот же механизм перехода,
+    // что и переход по ответу: он умеет догружать историю и подсвечивать.
+    val requestedScrollTo by viewModel.pendingScrollToMsgId.collectAsState()
+    LaunchedEffect(requestedScrollTo, chatIdHex) {
+        val target = requestedScrollTo ?: return@LaunchedEffect
+        pendingScrollToId = target
+        viewModel.consumeScrollRequest()
+    }
+
     // Handle pending scroll and search in history
     LaunchedEffect(pendingScrollToId) {
         val targetId = pendingScrollToId ?: return@LaunchedEffect

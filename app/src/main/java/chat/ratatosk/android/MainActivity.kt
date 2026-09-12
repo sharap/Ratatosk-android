@@ -43,12 +43,16 @@ class MainActivity : ComponentActivity() {
     ) { _ -> }
 
     private var pendingChatId by mutableStateOf<String?>(null)
+    // Сообщение, на котором надо открыть чат: уведомление о реакции
+    // ведёт не просто в чат, а на то место, где её поставили.
+    private var pendingMsgId by mutableStateOf<String?>(null)
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         intent.getStringExtra("chatId")?.let {
             pendingChatId = it
+            pendingMsgId = intent.getStringExtra("msgId")
         }
     }
 
@@ -57,6 +61,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         
         pendingChatId = intent.getStringExtra("chatId")
+        pendingMsgId = intent.getStringExtra("msgId")
 
         setContent {
             val appViewModel: RatatoskViewModel = viewModel()
@@ -120,8 +125,12 @@ class MainActivity : ComponentActivity() {
                         val bytes = try { chatId.hexToByteArray() } catch (e: Exception) { null }
                         if (bytes != null) {
                             appViewModel.setActiveChat(bytes)
+                            // Просьбу о переходе ставим после открытия чата:
+                            // снимет её сам экран, когда доскроллит.
+                            appViewModel.requestScrollToMessage(pendingMsgId)
                         }
                         pendingChatId = null
+                        pendingMsgId = null
                     }
                 }
             }

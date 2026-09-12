@@ -183,6 +183,23 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _contactAvatars = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
     val contactAvatars = _contactAvatars.asStateFlow()
 
+    // К какому сообщению просят перейти при открытии чата.
+    //
+    // Ставится снаружи — сейчас из уведомления о реакции, — а снимает его
+    // сам экран чата, когда доскроллил. Через ViewModel, а не через аргумент
+    // экрана, потому что чат к моменту нажатия может быть уже открыт:
+    // тогда менять нечего, нужен именно сигнал.
+    private val _pendingScrollToMsgId = MutableStateFlow<String?>(null)
+    val pendingScrollToMsgId = _pendingScrollToMsgId.asStateFlow()
+
+    fun requestScrollToMessage(msgIdHex: String?) {
+        _pendingScrollToMsgId.value = msgIdHex
+    }
+
+    fun consumeScrollRequest() {
+        _pendingScrollToMsgId.value = null
+    }
+
     private val _pendingAvatarUri = MutableStateFlow<android.net.Uri?>(null)
     val pendingAvatarUri = _pendingAvatarUri.asStateFlow()
 

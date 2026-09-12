@@ -36,14 +36,59 @@ object MarkdownUtils {
         }
     }
 
-    fun formatForNotification(text: String, spoilerPlaceholder: String): String {
-        // Replace spoilers first
-        val noSpoilers = text.replace(Regex("\\|\\|.+?\\|\\|"), "[$spoilerPlaceholder]")
-        
-        // Very basic markdown stripping (bold, italic, strikethrough)
-        return noSpoilers
-            .replace(Regex("\\*\\*|__|\\*|_|~~"), "")
-            .trim()
+    /**
+     * Разметка в одну строку простого текста — для уведомлений и превью
+     * в списке чатов.
+     *
+     * Разбирается **тем же парсером**, что и сама переписка, а не набором
+     * регулярок. Прежняя версия вырезала только `**`, `_` и `~~`, поэтому
+     * в уведомление целиком уезжали обратные кавычки, огороженные блоки
+     * кода, ссылки вида `[текст](адрес)`, заголовки и цитаты. Общий парсер
+     * заодно означает, что превью не разойдётся с сообщением, когда
+     * разметку в чате доработают.
+     *
+     * Показывается именно текст: код остаётся содержимым, ссылка — своей
+     * подписью, адрес отбрасывается. Переносы строк и границы блоков
+     * становятся пробелами: и уведомление, и строка в списке чатов
+     * однострочные.
+     */
+    fun toPlainText(text: String, spoilerPlaceholder: String): String {
+        if (text.isBlank()) return ""
+        val processed = text.replace(Regex("\\|\\|(.+?)\\|\\|"), "[$spoilerPlaceholder]")
+        val builder = StringBuilder()
+        parser.parse(processed).accept(PlainTextVisitor(builder))
+        // Схлопываем пробелы: границы блоков дают их пачками.
+        return builder.toString().replace(Regex("\\s+"), " ").trim()
+    }
+
+    /**
+     * Собирает из дерева разметки голый текст.
+     *
+     * Узлы, у которых текст лежит в `literal` (код), берутся напрямую:
+     * обойти их детьми нельзя, детей у них нет. У остальных берётся
+     * содержимое, а сама разметка отбрасывается.
+     */
+    private class PlainTextVisitor(private val out: StringBuilder) : AbstractVisitor() {
+        private fun spaced(node: Node) {
+            visitChildren(node)
+            out.append(' ')
+        }
+
+        override fun visit(text: Text) { out.append(text.literal) }
+        override fun visit(code: Code) { out.append(code.literal) }
+        override fun visit(fencedCodeBlock: FencedCodeBlock) { out.append(fencedCodeBlock.literal).append(' ') }
+        override fun visit(indentedCodeBlock: IndentedCodeBlock) { out.append(indentedCodeBlock.literal).append(' ') }
+        override fun visit(softLineBreak: SoftLineBreak) { out.append(' ') }
+        override fun visit(hardLineBreak: HardLineBreak) { out.append(' ') }
+        override fun visit(thematicBreak: ThematicBreak) { out.append(' ') }
+        override fun visit(paragraph: Paragraph) = spaced(paragraph)
+        override fun visit(heading: Heading) = spaced(heading)
+        override fun visit(blockQuote: BlockQuote) = spaced(blockQuote)
+        override fun visit(listItem: ListItem) = spaced(listItem)
+        // Ссылка показывается подписью; адрес в превью не нужен.
+        override fun visit(link: Link) { visitChildren(link) }
+        // У картинки текста нет — остаётся её подпись, если она есть.
+        override fun visit(image: Image) { visitChildren(image) }
     }
 
     private class ComposeAnnotatedStringVisitor(
