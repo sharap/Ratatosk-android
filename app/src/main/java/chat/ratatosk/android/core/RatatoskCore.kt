@@ -196,7 +196,12 @@ object RatatoskCore : EventObserver, CompanionObserver {
         val accountId = java.util.UUID.randomUUID().toString().replace("-", "").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
         val idHex = accountId.toHexString()
         val destination = File(root, "$idHex.db").absolutePath
-        val filesDir = File(root, idHex).absolutePath
+        // Каталог вложений — строго "<id>.files": так его строит ядро
+        // (AccountRegistry: BLOBS_EXTENSION = "files"), и так же его будет
+        // искать openAccount после восстановления. Без расширения куски
+        // вложений ложились в "<id>/", аккаунт открывался и не находил
+        // ни одного — вся переписка восстанавливалась без картинок.
+        val filesDir = File(root, "$idHex.files").absolutePath
         
         android.util.Log.d("RatatoskCore", "Restoring archive to $idHex.db")
         val result = org.ratatosk.core.importArchive(archivePath, unlock, destination, filesDir)

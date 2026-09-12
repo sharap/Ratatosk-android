@@ -56,6 +56,15 @@ fun SettingsScreen(
     val yggPeers by viewModel.yggPeers.collectAsState()
     val yggPeersAlive by viewModel.yggPeersAlive.collectAsState()
     
+    val nostrEnabled by viewModel.nostrEnabled.collectAsState()
+    val nostrRelays by viewModel.nostrRelays.collectAsState()
+    val nostrRelaysAlive by viewModel.nostrRelaysAlive.collectAsState()
+    val nostrNpub by viewModel.nostrNpub.collectAsState()
+    val nostrDirect by viewModel.nostrDirect.collectAsState()
+    var showNostrWarning by remember { mutableStateOf(false) }
+    var showNostrDirectWarning by remember { mutableStateOf(false) }
+    var showNostrRelaysSetup by remember { mutableStateOf(false) }
+    
     val showName by viewModel.notificationsShowName.collectAsState()
     val showText by viewModel.notificationsShowText.collectAsState()
     var showLanWarning by remember { mutableStateOf(false) }
@@ -140,6 +149,10 @@ fun SettingsScreen(
                             yggKey = yggKey,
                             yggAddress = yggAddress,
                             yggPeers = yggPeers,
+                            nostrRelays = nostrRelays,
+                            nostrRelaysAlive = nostrRelaysAlive,
+                            nostrNpub = nostrNpub,
+                            nostrDirect = nostrDirect,
                             onToggleLan = { if (it) showLanWarning = true else viewModel.setTransportEnabled(FfiTransport.LAN, false) },
                             onSelectYggMode = { mode ->
                                 if (mode == yggMode) return@SettingsTransportsSection
@@ -152,11 +165,26 @@ fun SettingsScreen(
                             },
                             onToggleTor = { viewModel.setTransportEnabled(FfiTransport.ONION, it) },
                             onToggleMail = { viewModel.setTransportEnabled(FfiTransport.MAIL, it) },
+                            onToggleNostr = { enabled ->
+                                if (enabled) {
+                                    showNostrWarning = true
+                                } else {
+                                    viewModel.setTransportEnabled(FfiTransport.NOSTR, false)
+                                }
+                            },
+                            onToggleNostrDirect = { direct ->
+                                if (direct) {
+                                    showNostrDirectWarning = true
+                                } else {
+                                    viewModel.setNostrDirect(false)
+                                }
+                            },
                             onShowMailSetup = { showMailSetup = true },
                             onShowMailCreate = { showMailCreate = true },
                             onClearMailAccount = { viewModel.clearMailAccount() },
                             onShowYggSetup = { showYggSetup = true },
-                            onShowYggPeersSetup = { showYggPeersSetup = true }
+                            onShowYggPeersSetup = { showYggPeersSetup = true },
+                            onShowNostrRelaysSetup = { showNostrRelaysSetup = true }
                         )
 
                         Spacer(modifier = Modifier.height(24.dp))
@@ -229,6 +257,10 @@ fun SettingsScreen(
                         yggKey = yggKey,
                         yggAddress = yggAddress,
                         yggPeers = yggPeers,
+                        nostrRelays = nostrRelays,
+                        nostrRelaysAlive = nostrRelaysAlive,
+                        nostrNpub = nostrNpub,
+                        nostrDirect = nostrDirect,
                         onToggleLan = { if (it) showLanWarning = true else viewModel.setTransportEnabled(FfiTransport.LAN, false) },
                         onSelectYggMode = { mode ->
                             if (mode == yggMode) return@SettingsTransportsSection
@@ -241,11 +273,26 @@ fun SettingsScreen(
                         },
                         onToggleTor = { viewModel.setTransportEnabled(FfiTransport.ONION, it) },
                         onToggleMail = { viewModel.setTransportEnabled(FfiTransport.MAIL, it) },
+                        onToggleNostr = { enabled ->
+                            if (enabled) {
+                                showNostrWarning = true
+                            } else {
+                                viewModel.setTransportEnabled(FfiTransport.NOSTR, false)
+                            }
+                        },
+                        onToggleNostrDirect = { direct ->
+                            if (direct) {
+                                showNostrDirectWarning = true
+                            } else {
+                                viewModel.setNostrDirect(false)
+                            }
+                        },
                         onShowMailSetup = { showMailSetup = true },
                         onShowMailCreate = { showMailCreate = true },
                         onClearMailAccount = { viewModel.clearMailAccount() },
                         onShowYggSetup = { showYggSetup = true },
-                        onShowYggPeersSetup = { showYggPeersSetup = true }
+                        onShowYggPeersSetup = { showYggPeersSetup = true },
+                        onShowNostrRelaysSetup = { showNostrRelaysSetup = true }
                     )
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
@@ -768,6 +815,293 @@ fun SettingsScreen(
             )
         }
     }
+
+    if (showNostrWarning) {
+        AlertDialog(
+            onDismissRequest = { showNostrWarning = false },
+            title = { Text(stringResource(R.string.nostr_warning_title)) },
+            text = {
+                val warningText = viewModel.getNostrWarning() + "\n\n" + viewModel.getNostrNoFilesNotice()
+                Text(warningText)
+            },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.setTransportEnabled(FfiTransport.NOSTR, true)
+                    showNostrWarning = false
+                }) {
+                    Text(stringResource(R.string.enable))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNostrWarning = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    if (showNostrDirectWarning) {
+        AlertDialog(
+            onDismissRequest = { showNostrDirectWarning = false },
+            title = { Text(stringResource(R.string.nostr_direct_warning_title)) },
+            text = { Text(viewModel.getNostrDirectWarning()) },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.setNostrDirect(true)
+                    showNostrDirectWarning = false
+                }) {
+                    Text(stringResource(R.string.enable))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNostrDirectWarning = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    if (showNostrRelaysSetup) {
+        var showAddRelayDialog by remember { mutableStateOf(false) }
+        var relayToEdit by remember { mutableStateOf<String?>(null) }
+        var newRelayInput by remember { mutableStateOf("") }
+        var editRelayInput by remember { mutableStateOf("") }
+
+        LaunchedEffect(Unit) {
+            while (true) {
+                viewModel.refreshTransportStatus()
+                kotlinx.coroutines.delay(2000)
+            }
+        }
+
+        AlertDialog(
+            onDismissRequest = { showNostrRelaysSetup = false },
+            title = { Text(stringResource(R.string.setup_nostr_relays)) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    if (nostrRelays.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.nostr_no_relays_warning),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    } else {
+                        nostrRelays.forEach { relayUrl ->
+                            val aliveInfo = nostrRelaysAlive?.find { 
+                                it.url == relayUrl || it.url.trim() == relayUrl.trim() 
+                            }
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clickable {
+                                        relayToEdit = relayUrl
+                                        editRelayInput = relayUrl
+                                    },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = relayUrl,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (nostrRelaysAlive == null) {
+                                                Surface(
+                                                    modifier = Modifier.size(8.dp),
+                                                    shape = CircleShape,
+                                                    color = Color.Gray
+                                                ) {}
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = stringResource(R.string.peer_node_stopped),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.outline
+                                                )
+                                            } else if (aliveInfo != null && aliveInfo.up) {
+                                                Surface(
+                                                    modifier = Modifier.size(8.dp),
+                                                    shape = CircleShape,
+                                                    color = Color(0xFF4CAF50)
+                                                ) {}
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = stringResource(R.string.peer_connected),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = Color(0xFF4CAF50),
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            } else {
+                                                Surface(
+                                                    modifier = Modifier.size(8.dp),
+                                                    shape = CircleShape,
+                                                    color = MaterialTheme.colorScheme.error
+                                                ) {}
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = if (aliveInfo?.note?.isNotBlank() == true) aliveInfo.note else stringResource(R.string.peer_disconnected),
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            relayToEdit = relayUrl
+                                            editRelayInput = relayUrl
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit Relay",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            viewModel.setNostrRelays(nostrRelays - relayUrl)
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Remove Relay",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = { showAddRelayDialog = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.add_nostr_relay))
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showNostrRelaysSetup = false }) {
+                    Text(stringResource(R.string.close))
+                }
+            }
+        )
+
+        if (showAddRelayDialog) {
+            AlertDialog(
+                onDismissRequest = {
+                    newRelayInput = ""
+                    showAddRelayDialog = false
+                },
+                title = { Text(stringResource(R.string.add_nostr_relay_title)) },
+                text = {
+                    OutlinedTextField(
+                        value = newRelayInput,
+                        onValueChange = { newRelayInput = it },
+                        label = { Text(stringResource(R.string.nostr_relays_label)) },
+                        placeholder = { Text("wss://relay.damus.io") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val raw = newRelayInput.trim()
+                            val trimmed = if (raw.startsWith("wss://") || raw.startsWith("ws://")) raw else if (raw.isNotEmpty()) "wss://$raw" else ""
+                            if (trimmed.isNotEmpty() && !nostrRelays.contains(trimmed)) {
+                                viewModel.setNostrRelays(nostrRelays + trimmed)
+                            }
+                            newRelayInput = ""
+                            showAddRelayDialog = false
+                        },
+                        enabled = newRelayInput.isNotBlank()
+                    ) {
+                        Text(stringResource(R.string.add_nostr_relay))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        newRelayInput = ""
+                        showAddRelayDialog = false
+                    }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
+
+        if (relayToEdit != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    relayToEdit = null
+                    editRelayInput = ""
+                },
+                title = { Text(stringResource(R.string.add_nostr_relay_title)) },
+                text = {
+                    OutlinedTextField(
+                        value = editRelayInput,
+                        onValueChange = { editRelayInput = it },
+                        label = { Text(stringResource(R.string.nostr_relays_label)) },
+                        placeholder = { Text("wss://relay.damus.io") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val raw = editRelayInput.trim()
+                            val trimmed = if (raw.startsWith("wss://") || raw.startsWith("ws://")) raw else if (raw.isNotEmpty()) "wss://$raw" else ""
+                            val oldRelay = relayToEdit!!
+                            if (trimmed.isNotEmpty()) {
+                                val updatedList = nostrRelays.map { if (it == oldRelay) trimmed else it }
+                                viewModel.setNostrRelays(updatedList)
+                            }
+                            relayToEdit = null
+                            editRelayInput = ""
+                        },
+                        enabled = editRelayInput.isNotBlank()
+                    ) {
+                        Text(stringResource(R.string.save))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        relayToEdit = null
+                        editRelayInput = ""
+                    }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
+    }
 }
 
 @Composable
@@ -780,15 +1114,22 @@ fun SettingsTransportsSection(
     yggKey: String?,
     yggAddress: String?,
     yggPeers: List<String>,
+    nostrRelays: List<String>,
+    nostrRelaysAlive: List<FfiNostrRelay>?,
+    nostrNpub: String?,
+    nostrDirect: Boolean,
     onToggleLan: (Boolean) -> Unit,
     onSelectYggMode: (FfiYggMode) -> Unit,
     onToggleTor: (Boolean) -> Unit,
     onToggleMail: (Boolean) -> Unit,
+    onToggleNostr: (Boolean) -> Unit,
+    onToggleNostrDirect: (Boolean) -> Unit,
     onShowMailSetup: () -> Unit,
     onShowMailCreate: () -> Unit,
     onClearMailAccount: () -> Unit,
     onShowYggSetup: () -> Unit,
-    onShowYggPeersSetup: () -> Unit
+    onShowYggPeersSetup: () -> Unit,
+    onShowNostrRelaysSetup: () -> Unit
 ) {
     Text(text = stringResource(R.string.transports), style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(16.dp))
@@ -974,6 +1315,90 @@ fun SettingsTransportsSection(
                         TextButton(onClick = onClearMailAccount, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                             Text(stringResource(R.string.remove))
                         }
+                    }
+                }
+            }
+        }
+    )
+
+    // Nostr
+    TransportItem(
+        title = stringResource(R.string.nostr_transport),
+        description = stringResource(R.string.nostr_desc),
+        enabled = transportsEnabled[FfiTransport.NOSTR] ?: false,
+        ready = transportsReady[FfiTransport.NOSTR] ?: false,
+        onToggle = onToggleNostr,
+        statusContent = {
+            if (transportsEnabled[FfiTransport.NOSTR] == true) {
+                Column(modifier = Modifier.padding(top = 4.dp)) {
+                    if (!nostrNpub.isNullOrBlank()) {
+                        val clipboard = LocalClipboardManager.current
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    clipboard.setText(AnnotatedString(nostrNpub))
+                                }
+                                .padding(vertical = 2.dp)
+                        ) {
+                            val npubShort = if (nostrNpub.length > 24) "${nostrNpub.take(12)}...${nostrNpub.takeLast(8)}" else nostrNpub
+                            Text(
+                                text = stringResource(R.string.nostr_npub_status, npubShort),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy Npub",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.nostr_direct_label),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Switch(
+                            checked = nostrDirect,
+                            onCheckedChange = onToggleNostrDirect
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    if (nostrRelays.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.nostr_no_relays_warning),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    } else {
+                        val activeRelays = nostrRelaysAlive?.count { it.up } ?: 0
+                        Text(
+                            text = stringResource(R.string.ygg_peers_status, nostrRelays.size) + if (activeRelays > 0) " (активно: $activeRelays)" else "",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (activeRelays > 0) Color(0xFF4CAF50) else MaterialTheme.colorScheme.outline
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(
+                        onClick = onShowNostrRelaysSetup,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(stringResource(R.string.setup_nostr_relays))
                     }
                 }
             }
@@ -1196,6 +1621,74 @@ fun ExportArchiveDialog(
             }
         }
     )
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, widthDp = 360)
+@Composable
+fun NostrTransportPreview() {
+    MaterialTheme {
+        Surface(modifier = Modifier.padding(16.dp)) {
+            TransportItem(
+                title = "Реле Nostr (через Tor)",
+                description = "Передает сообщения через реле Nostr поверх сети Tor.",
+                enabled = true,
+                ready = true,
+                onToggle = {},
+                statusContent = {
+                    Column(modifier = Modifier.padding(top = 4.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "Npub: npub1abc123...xyz890",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy Npub",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Прямое соединение (мимо Tor)",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Switch(checked = false, onCheckedChange = {})
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = "Реле настроено: 2 (активно: 2)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF4CAF50)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = {},
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Настроить реле Nostr")
+                        }
+                    }
+                }
+            )
+        }
+    }
 }
 
 @Composable

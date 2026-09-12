@@ -1603,7 +1603,16 @@ fun FileAttachment(
                 }
             }
             if (file.hasPreview) {
-                 val previewBytes = viewModel.getFilePreview(file.fileId)
+                 // Читаем из потока, а не снимком: у компаньона байты
+                 // приезжают отдельным событием уже после первой отрисовки,
+                 // да и у своего ядра — из фоновой корутины. Снимок `.value`
+                 // Compose не наблюдает, и превью оставалось крутилкой.
+                 val previews by viewModel.filePreviews.collectAsState()
+                 val previewBytes = previews[fileIdHex]
+                 // Заказ — эффектом, а не в теле composable: в теле он уходил
+                 // бы на каждую перерисовку. Идемпотентен и на стороне
+                 // ViewModel, но плодить вызовы всё равно незачем.
+                 LaunchedEffect(fileIdHex) { viewModel.requestFilePreview(file.fileId) }
                  Box(modifier = Modifier
                      .fillMaxWidth()
                      .heightIn(min = 100.dp, max = 300.dp)

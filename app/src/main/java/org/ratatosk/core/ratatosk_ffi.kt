@@ -767,6 +767,12 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_no_pin_warning(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_nostr_direct_warning(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_nostr_no_files_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_nostr_warning(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_owner_leave_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_peek_archive(
@@ -891,6 +897,16 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_network_changed(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_nostr_advertised_relays(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_nostr_direct(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_nostr_npub(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_nostr_relays(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_nostr_relays_alive(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_open_file(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_pair_device(
@@ -926,6 +942,10 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_local_name(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_mail_account(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_nostr_direct(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_nostr_relays(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_observer(
     ): Int
@@ -1183,6 +1203,16 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_network_changed(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_nostr_advertised_relays(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_nostr_direct(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_nostr_npub(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_nostr_relays(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_nostr_relays_alive(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_open_file(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_pair_device(`ptr`: Long,`label`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1218,6 +1248,10 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_local_name(`ptr`: Long,`peerIk`: RustBuffer.ByValue,`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_mail_account(`ptr`: Long,`address`: RustBuffer.ByValue,`password`: RustBuffer.ByValue,`imapHost`: RustBuffer.ByValue,`imapPort`: Short,`smtpHost`: RustBuffer.ByValue,`smtpPort`: Short,`viaTor`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_nostr_direct(`ptr`: Long,`direct`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_nostr_relays(`ptr`: Long,`relays`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_observer(`ptr`: Long,`observer`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1384,6 +1418,12 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_func_max_text_bytes(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     external fun uniffi_ratatosk_ffi_fn_func_no_pin_warning(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_nostr_direct_warning(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_nostr_no_files_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_nostr_warning(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_owner_leave_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1599,6 +1639,15 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_no_pin_warning() != 45718) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_nostr_direct_warning() != 19853) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_nostr_no_files_notice() != 5015) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_nostr_warning() != 2261) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_owner_leave_notice() != 58740) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1785,6 +1834,21 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_network_changed() != 31964) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_nostr_advertised_relays() != 4281) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_nostr_direct() != 1978) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_nostr_npub() != 1863) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_nostr_relays() != 7877) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_nostr_relays_alive() != 39040) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_open_file() != 10493) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1837,6 +1901,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_mail_account() != 20283) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_nostr_direct() != 15468) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_nostr_relays() != 4390) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_observer() != 31702) {
@@ -4685,6 +4755,57 @@ public interface RatatoskClientInterface {
     fun `networkChanged`()
     
     /**
+     * Реле, которые **объявляет наша карточка** (0.3).
+     *
+     * Не то же, что [`RatatoskClient::nostr_relays`], и разница видна
+     * человеку: названные — места, откуда мы **читаем**; объявленные —
+     * места, куда собеседник будет **класть**. В карточку уходят не все,
+     * а первые три, и расхождение «названо пять, объявлено три» стоит
+     * показать глазами, а не оставлять выяснять по молчанию.
+     */
+    fun `nostrAdvertisedRelays`(): List<kotlin.String>
+    
+    /**
+     * Ходит ли ступень nostr мимо Tor (0.3). Ложь — через Tor.
+     */
+    fun `nostrDirect`(): kotlin.Boolean
+    
+    /**
+     * Свой ключ nostr в виде `npub1…` (NIP-19). Пусто — ступень не включали.
+     *
+     * Читается из своей карточки: там он и живёт. Человеку он нужен ровно
+     * для одного — сверить, что в другом клиенте nostr стоит тот же ключ.
+     * Байтами это не сверяется, на то bech32 и придуман.
+     */
+    fun `nostrNpub`(): kotlin.String
+    
+    /**
+     * Реле nostr, как их назвал человек (0.3).
+     */
+    fun `nostrRelays`(): List<kotlin.String>
+    
+    /**
+     * Реле и их состояние **прямо сейчас** (0.3).
+     *
+     * Пара к [`RatatoskClient::nostr_relays`], и пара неразлучная — ровно
+     * как у пиров меша: тот отдаёт список, который назвал человек, этот —
+     * сколько из него работает. Порознь ни то, ни другое вопроса
+     * не закрывает.
+     *
+     * Здесь только **свои** реле, те, с которых мы читаем. Реле
+     * собеседников, куда мы кладём события, сюда не попадают нарочно:
+     * живое чужое реле не означает, что до нас кто-то дозовётся, и
+     * показывать его как признак работоспособности было бы обманом.
+     *
+     * # Что означает `None`
+     *
+     * Ступень ничего ещё не сказала о себе: она выключена, либо раннера
+     * нет в сборке, либо он только поднимается. Это не то же, что пустой
+     * список: пустой означает «ступень работает, а реле не названы».
+     */
+    fun `nostrRelaysAlive`(): List<FfiNostrRelay>?
+    
+    /**
      * Открывает вложение на чтение (§10.2).
      *
      * **Один вызов на файл, а не на кусок.** Дальше куски берутся
@@ -4968,6 +5089,42 @@ public interface RatatoskClientInterface {
      * и не следует.
      */
     fun `setMailAccount`(`address`: kotlin.String, `password`: kotlin.String, `imapHost`: kotlin.String, `imapPort`: kotlin.UShort, `smtpHost`: kotlin.String, `smtpPort`: kotlin.UShort, `viaTor`: kotlin.Boolean)
+    
+    /**
+     * Ходить ли на реле мимо Tor (0.3).
+     *
+     * **Размен, а не настройка скорости**, и цену клиент обязан назвать
+     * человеку **до** переключения — [`nostr_direct_warning`]. Умолчание
+     * — через Tor.
+     *
+     * Включается это там, где Tor недоступен физически: ступень, которая
+     * в таком месте просто не работает, — не забота о приватности, а
+     * отсутствие связи. Тот же размен и у почты.
+     */
+    fun `setNostrDirect`(`direct`: kotlin.Boolean)
+    
+    /**
+     * Называет реле nostr (0.3): `wss://relay.example`.
+     *
+     * Список заменяется целиком. Зашитого списка нет и не будет: реле
+     * видит, какие ключи переписываются между собой и когда (0.3.3), —
+     * и выбирать за человека, кто это будет, приложение не вправе.
+     *
+     * Негодные адреса **отбрасываются, а не сохраняются**: ядро называет
+     * их в журнале и оставляет прежний список. Открытый `ws://` годится
+     * только до самого устройства (`127.0.0.1`, `localhost`) — наружу он
+     * отдал бы наблюдателю по дороге тот самый граф, ради сокрытия
+     * которого всё и городится.
+     *
+     * **Первые три уезжают в карточку** и становятся тем местом, куда
+     * собеседник будет класть события. Читаем мы со всех названных;
+     * объявляем три — карточка едет в QR, и каждый лишний адрес это
+     * плотность кода. Что именно объявлено, видно в
+     * [`RatatoskClient::nostr_advertised_relays`].
+     *
+     * Перед включением ступени клиент обязан показать [`nostr_warning`].
+     */
+    fun `setNostrRelays`(`relays`: List<kotlin.String>)
     
     /**
      * Подписывает UI на события.
@@ -6229,6 +6386,117 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Реле, которые **объявляет наша карточка** (0.3).
+     *
+     * Не то же, что [`RatatoskClient::nostr_relays`], и разница видна
+     * человеку: названные — места, откуда мы **читаем**; объявленные —
+     * места, куда собеседник будет **класть**. В карточку уходят не все,
+     * а первые три, и расхождение «названо пять, объявлено три» стоит
+     * показать глазами, а не оставлять выяснять по молчанию.
+     */
+    @Throws(RatatoskException::class)override fun `nostrAdvertisedRelays`(): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_nostr_advertised_relays(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Ходит ли ступень nostr мимо Tor (0.3). Ложь — через Tor.
+     */
+    @Throws(RatatoskException::class)override fun `nostrDirect`(): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_nostr_direct(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Свой ключ nostr в виде `npub1…` (NIP-19). Пусто — ступень не включали.
+     *
+     * Читается из своей карточки: там он и живёт. Человеку он нужен ровно
+     * для одного — сверить, что в другом клиенте nostr стоит тот же ключ.
+     * Байтами это не сверяется, на то bech32 и придуман.
+     */
+    @Throws(RatatoskException::class)override fun `nostrNpub`(): kotlin.String {
+            return FfiConverterString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_nostr_npub(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Реле nostr, как их назвал человек (0.3).
+     */
+    @Throws(RatatoskException::class)override fun `nostrRelays`(): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_nostr_relays(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Реле и их состояние **прямо сейчас** (0.3).
+     *
+     * Пара к [`RatatoskClient::nostr_relays`], и пара неразлучная — ровно
+     * как у пиров меша: тот отдаёт список, который назвал человек, этот —
+     * сколько из него работает. Порознь ни то, ни другое вопроса
+     * не закрывает.
+     *
+     * Здесь только **свои** реле, те, с которых мы читаем. Реле
+     * собеседников, куда мы кладём события, сюда не попадают нарочно:
+     * живое чужое реле не означает, что до нас кто-то дозовётся, и
+     * показывать его как признак работоспособности было бы обманом.
+     *
+     * # Что означает `None`
+     *
+     * Ступень ничего ещё не сказала о себе: она выключена, либо раннера
+     * нет в сборке, либо он только поднимается. Это не то же, что пустой
+     * список: пустой означает «ступень работает, а реле не названы».
+     */
+    @Throws(RatatoskException::class)override fun `nostrRelaysAlive`(): List<FfiNostrRelay>? {
+            return FfiConverterOptionalSequenceTypeFfiNostrRelay.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_nostr_relays_alive(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Открывает вложение на чтение (§10.2).
      *
      * **Один вызов на файл, а не на кусок.** Дальше куски берутся
@@ -6743,6 +7011,66 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         FfiConverterString.lower(`smtpHost`),
         FfiConverterUShort.lower(`smtpPort`),
         FfiConverterBoolean.lower(`viaTor`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Ходить ли на реле мимо Tor (0.3).
+     *
+     * **Размен, а не настройка скорости**, и цену клиент обязан назвать
+     * человеку **до** переключения — [`nostr_direct_warning`]. Умолчание
+     * — через Tor.
+     *
+     * Включается это там, где Tor недоступен физически: ступень, которая
+     * в таком месте просто не работает, — не забота о приватности, а
+     * отсутствие связи. Тот же размен и у почты.
+     */
+    @Throws(RatatoskException::class)override fun `setNostrDirect`(`direct`: kotlin.Boolean)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_nostr_direct(
+        it,
+        
+        FfiConverterBoolean.lower(`direct`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Называет реле nostr (0.3): `wss://relay.example`.
+     *
+     * Список заменяется целиком. Зашитого списка нет и не будет: реле
+     * видит, какие ключи переписываются между собой и когда (0.3.3), —
+     * и выбирать за человека, кто это будет, приложение не вправе.
+     *
+     * Негодные адреса **отбрасываются, а не сохраняются**: ядро называет
+     * их в журнале и оставляет прежний список. Открытый `ws://` годится
+     * только до самого устройства (`127.0.0.1`, `localhost`) — наружу он
+     * отдал бы наблюдателю по дороге тот самый граф, ради сокрытия
+     * которого всё и городится.
+     *
+     * **Первые три уезжают в карточку** и становятся тем местом, куда
+     * собеседник будет класть события. Читаем мы со всех названных;
+     * объявляем три — карточка едет в QR, и каждый лишний адрес это
+     * плотность кода. Что именно объявлено, видно в
+     * [`RatatoskClient::nostr_advertised_relays`].
+     *
+     * Перед включением ступени клиент обязан показать [`nostr_warning`].
+     */
+    @Throws(RatatoskException::class)override fun `setNostrRelays`(`relays`: List<kotlin.String>)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_nostr_relays(
+        it,
+        
+        FfiConverterSequenceString.lower(`relays`),_status)
 }
     }
     
@@ -9931,6 +10259,16 @@ data class FfiContact (
     val `ygg`: kotlin.ByteArray?
     , 
     /**
+     * Реле nostr, которые объявляет **его** карточка (0.3).
+     *
+     * Туда уйдёт событие, когда §5.4 выберет ступень nostr: реле в карточке
+     * — это места, где владелец читает. Показывать стоит там же, где onion
+     * и ключ меша: на карточке человека, а не в списке. Пусто — карточка
+     * реле не называет, и мы положим на свои, надеясь на общее.
+     */
+    val `nostrRelays`: List<kotlin.String>
+    , 
+    /**
      * Версия карточки, монотонная (§4.3).
      *
      * Диагностика: по ней видно, доехало ли до нас обновление адресов.
@@ -9991,6 +10329,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalByteArray.read(buf),
+            FfiConverterSequenceString.read(buf),
             FfiConverterULong.read(buf),
             FfiConverterULong.read(buf),
             FfiConverterTypeFfiReachability.read(buf),
@@ -10011,6 +10350,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterOptionalString.allocationSize(value.`onion`) +
             FfiConverterOptionalString.allocationSize(value.`chatmail`) +
             FfiConverterOptionalByteArray.allocationSize(value.`ygg`) +
+            FfiConverterSequenceString.allocationSize(value.`nostrRelays`) +
             FfiConverterULong.allocationSize(value.`cardVersion`) +
             FfiConverterULong.allocationSize(value.`addedMs`) +
             FfiConverterTypeFfiReachability.allocationSize(value.`reachability`) +
@@ -10030,6 +10370,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterOptionalString.write(value.`onion`, buf)
             FfiConverterOptionalString.write(value.`chatmail`, buf)
             FfiConverterOptionalByteArray.write(value.`ygg`, buf)
+            FfiConverterSequenceString.write(value.`nostrRelays`, buf)
             FfiConverterULong.write(value.`cardVersion`, buf)
             FfiConverterULong.write(value.`addedMs`, buf)
             FfiConverterTypeFfiReachability.write(value.`reachability`, buf)
@@ -10985,6 +11326,70 @@ public object FfiConverterTypeFfiMessage: FfiConverterRustBuffer<FfiMessage> {
 
 
 /**
+ * Реле nostr и его состояние **прямо сейчас** (0.3).
+ *
+ * Пара к `FfiYggPeer`, и по той же причине: реле держит кто-то посторонний,
+ * и оно может исчезнуть навсегда. Без живого состава «nostr не работает»
+ * и «одно из трёх реле умерло полгода назад» выглядят на экране одинаково,
+ * а чинятся по-разному.
+ */
+data class FfiNostrRelay (
+    /**
+     * Адрес, которым соединялись: та же строка, что человек ввёл.
+     */
+    val `url`: kotlin.String
+    , 
+    /**
+     * Соединение работает и подписка принята.
+     */
+    val `up`: kotlin.Boolean
+    , 
+    /**
+     * Почему не работает — словами, для показа человеку (§14).
+     *
+     * Пусто у живого, а у неживого пусто означает «ещё не пробовали»:
+     * задача реле до соединения не дошла. Различать это стоит — первое
+     * чинится ожиданием, второе временем.
+     */
+    val `note`: kotlin.String
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiNostrRelay: FfiConverterRustBuffer<FfiNostrRelay> {
+    override fun read(buf: ByteBuffer): FfiNostrRelay {
+        return FfiNostrRelay(
+            FfiConverterString.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiNostrRelay) = (
+            FfiConverterString.allocationSize(value.`url`) +
+            FfiConverterBoolean.allocationSize(value.`up`) +
+            FfiConverterString.allocationSize(value.`note`)
+    )
+
+    override fun write(value: FfiNostrRelay, buf: ByteBuffer) {
+            FfiConverterString.write(value.`url`, buf)
+            FfiConverterBoolean.write(value.`up`, buf)
+            FfiConverterString.write(value.`note`, buf)
+    }
+}
+
+
+
+/**
  * Файл, который клиент просит отправить.
  */
 data class FfiOutgoingFile (
@@ -11068,6 +11473,32 @@ data class FfiOwnCard (
      * Почтовый адрес (§5.3). Пустая строка — ящика нет.
      */
     val `chatmail`: kotlin.String
+    , 
+    /**
+     * Открытый ключ узла Yggdrasil (0.2). Пусто — меша нет.
+     *
+     * В ссылке он уже есть — карточка везёт его сама, — а здесь лежит
+     * отдельно затем же, зачем onion: показать человеку, чем до него
+     * вообще можно достучаться, не разбирая ссылку глазами.
+     */
+    val `ygg`: kotlin.ByteArray
+    , 
+    /**
+     * Открытый ключ nostr (0.3). Пусто — ступень ни разу не включали.
+     *
+     * Байтами, а не строкой `npub1…`: строку отдаёт
+     * [`RatatoskClient::nostr_npub`], и держать два представления одного
+     * ключа значило бы однажды показать одно, а подписывать другим.
+     */
+    val `nostr`: kotlin.ByteArray
+    , 
+    /**
+     * Реле nostr, которые объявляет эта карточка (0.3).
+     *
+     * Именно объявленные, а не названные: сюда собеседник будет класть
+     * события. Разбор различия — у [`RatatoskClient::nostr_advertised_relays`].
+     */
+    val `nostrRelays`: List<kotlin.String>
     
 ){
     
@@ -11088,6 +11519,9 @@ public object FfiConverterTypeFfiOwnCard: FfiConverterRustBuffer<FfiOwnCard> {
             FfiConverterULong.read(buf),
             FfiConverterString.read(buf),
             FfiConverterString.read(buf),
+            FfiConverterByteArray.read(buf),
+            FfiConverterByteArray.read(buf),
+            FfiConverterSequenceString.read(buf),
         )
     }
 
@@ -11095,7 +11529,10 @@ public object FfiConverterTypeFfiOwnCard: FfiConverterRustBuffer<FfiOwnCard> {
             FfiConverterString.allocationSize(value.`uri`) +
             FfiConverterULong.allocationSize(value.`version`) +
             FfiConverterString.allocationSize(value.`onion`) +
-            FfiConverterString.allocationSize(value.`chatmail`)
+            FfiConverterString.allocationSize(value.`chatmail`) +
+            FfiConverterByteArray.allocationSize(value.`ygg`) +
+            FfiConverterByteArray.allocationSize(value.`nostr`) +
+            FfiConverterSequenceString.allocationSize(value.`nostrRelays`)
     )
 
     override fun write(value: FfiOwnCard, buf: ByteBuffer) {
@@ -11103,6 +11540,9 @@ public object FfiConverterTypeFfiOwnCard: FfiConverterRustBuffer<FfiOwnCard> {
             FfiConverterULong.write(value.`version`, buf)
             FfiConverterString.write(value.`onion`, buf)
             FfiConverterString.write(value.`chatmail`, buf)
+            FfiConverterByteArray.write(value.`ygg`, buf)
+            FfiConverterByteArray.write(value.`nostr`, buf)
+            FfiConverterSequenceString.write(value.`nostrRelays`, buf)
     }
 }
 
@@ -14175,6 +14615,17 @@ enum class FfiTransport {
      */
     ONION,
     /**
+     * Реле nostr поверх Tor (0.3). По умолчанию **выключен**: ступень
+     * не работает, пока человек не назвал реле, а реле видит, кто кому
+     * пишет. UI обязан сказать об этом рядом с переключателем — ровно
+     * так же, как про меш.
+     *
+     * **В этой сборке ступень не поднимается ни при каких настройках.**
+     * Она заведена в лестнице §5.4 и честно отвечает «не поднята»:
+     * раннера ещё нет. Показывать её человеку как рабочую нельзя (§14).
+     */
+    NOSTR,
+    /**
      * Почта chatmail поверх Tor (§5.3). По умолчанию включена.
      */
     MAIL;
@@ -14738,6 +15189,38 @@ public object FfiConverterOptionalTypeFfiTransport: FfiConverterRustBuffer<FfiTr
 /**
  * @suppress
  */
+public object FfiConverterOptionalSequenceTypeFfiNostrRelay: FfiConverterRustBuffer<List<FfiNostrRelay>?> {
+    override fun read(buf: ByteBuffer): List<FfiNostrRelay>? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterSequenceTypeFfiNostrRelay.read(buf)
+    }
+
+    override fun allocationSize(value: List<FfiNostrRelay>?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterSequenceTypeFfiNostrRelay.allocationSize(value)
+        }
+    }
+
+    override fun write(value: List<FfiNostrRelay>?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterSequenceTypeFfiNostrRelay.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterOptionalSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<FfiYggPeer>?> {
     override fun read(buf: ByteBuffer): List<FfiYggPeer>? {
         if (buf.get().toInt() == 0) {
@@ -15152,6 +15635,34 @@ public object FfiConverterSequenceTypeFfiMessage: FfiConverterRustBuffer<List<Ff
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeFfiMessage.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFfiNostrRelay: FfiConverterRustBuffer<List<FfiNostrRelay>> {
+    override fun read(buf: ByteBuffer): List<FfiNostrRelay> {
+        val len = buf.getInt()
+        return List<FfiNostrRelay>(len) {
+            FfiConverterTypeFfiNostrRelay.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiNostrRelay>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiNostrRelay.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiNostrRelay>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiNostrRelay.write(it, buf)
         }
     }
 }
@@ -15693,6 +16204,63 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_func_no_pin_warning(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Что сказать **до** переключения ступени nostr на путь мимо Tor (0.3).
+         *
+         * Обязательно, а не по желанию: ключ nostr долговечен и общий для всех
+         * собеседников, и реле, увидевшее адрес устройства рядом с ним, связывает
+         * их навсегда. Решение при этом остаётся за человеком — есть места, где
+         * Tor недоступен физически, и там ступень без этого не работает вовсе.
+         */ fun `nostrDirectWarning`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_nostr_direct_warning(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Что сказать про файлы на ступени nostr (0.3).
+         *
+         * Файлы этой ступенью не ходят и ходить не будут: кусок файла — кадр
+         * класса L, мебибайт, а реле меряют событие десятками килобайт. Передача
+         * ждёт прямой связи или уходит почтой, и сказать об этом надо словами —
+         * молчащая передача выглядит как поломка.
+         */ fun `nostrNoFilesNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_nostr_no_files_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Предупреждение при включении ступени nostr (0.3).
+         *
+         * Показывается **до** `set_transport_enabled(Nostr, true)`, как у LAN
+         * и у меша. Цена своя: реле видит, какие ключи переписываются между собой
+         * и когда, — то же, что почтовый сервер видит по `From:` и `To:`.
+         *
+         * Средство у человека одно, и оно настоящее: реле он называет сам и может
+         * назвать несколько, поделив след между ними. У почты такого выбора нет —
+         * сервер один.
+         */ fun `nostrWarning`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_nostr_warning(
     
         _status)
 }

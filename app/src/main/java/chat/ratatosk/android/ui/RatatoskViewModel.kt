@@ -51,6 +51,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _filePreviews = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
     val filePreviews = _filePreviews.asStateFlow()
 
+    // Превью, которые уже заказаны. Держит от лавины запросов: заказ идёт
+    // из composable, то есть на каждую перерисовку строки.
+    private val previewRequests: MutableSet<String> =
+        java.util.Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
+
     private val activeJobs = ConcurrentHashMap<String, Job>()
     private val _activeJobsFlow = MutableStateFlow<Set<String>>(emptySet())
     val activeJobsFlow = _activeJobsFlow.asStateFlow()
@@ -212,6 +217,24 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     val yggEnabled = transportsEnabled.map { it[FfiTransport.YGG] ?: false }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val nostrEnabled = transportsEnabled.map { it[FfiTransport.NOSTR] ?: false }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    private val _nostrRelays = MutableStateFlow<List<String>>(emptyList())
+    val nostrRelays = _nostrRelays.asStateFlow()
+
+    private val _nostrRelaysAlive = MutableStateFlow<List<org.ratatosk.core.FfiNostrRelay>?>(null)
+    val nostrRelaysAlive = _nostrRelaysAlive.asStateFlow()
+
+    private val _nostrNpub = MutableStateFlow<String?>(null)
+    val nostrNpub = _nostrNpub.asStateFlow()
+
+    private val _nostrDirect = MutableStateFlow(false)
+    val nostrDirect = _nostrDirect.asStateFlow()
+
+    private val _nostrAdvertisedRelays = MutableStateFlow<List<String>>(emptyList())
+    val nostrAdvertisedRelays = _nostrAdvertisedRelays.asStateFlow()
 
     private val _yggMode = MutableStateFlow(FfiYggMode.OFF)
     val yggMode = _yggMode.asStateFlow()
@@ -398,6 +421,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                         onion = null,
                         chatmail = null,
                         ygg = null,
+                        nostrRelays = emptyList(),
                         cardVersion = 0UL,
                         addedMs = 0UL,
                         reachability = FfiReachability(emptyList(), null, null),
@@ -581,6 +605,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             onion = null,
             chatmail = null,
             ygg = null,
+            nostrRelays = emptyList(),
             cardVersion = 0UL,
             addedMs = 0UL,
             reachability = FfiReachability(emptyList(), null, null),
@@ -1013,6 +1038,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         _unreadCounts.value = emptyMap()
         _fileProgress.value = emptyMap()
         _filePreviews.value = emptyMap()
+        previewRequests.clear()
         _repliedMessages.value = emptyMap()
         _activeJobsFlow.value = emptySet()
         _searchResults.value = emptyList()
@@ -1201,23 +1227,43 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun getFilePreview(fileId: ByteArray): ByteArray? {
+    // Просит превью вложения. Ответ кладётся в [filePreviews] — читать надо
+    // оттуда, а не из возвращаемого значения: у компаньона байты приезжают
+    // позже, событием FilePreview, и вернуть их отсюда нечем.
+    //
+    // Звать можно сколько угодно: уже полученное и уже заказанное
+    // второй раз не спрашивается. Раньше эта функция возвращала байты
+    // и звалась прямо из composable — экран читал снимок `.value`,
+    // на который Compose не подписан, и превью не появлялось до тех пор,
+    // пока что-нибудь другое не перерисует строку.
+    fun requestFilePreview(fileId: ByteArray) {
         val hex = fileId.toHexString()
-        _filePreviews.value[hex]?.let { return it }
-        
+        if (_filePreviews.value.containsKey(hex)) return
+        // Заказ уже в пути — второй ни к чему: composable зовёт нас
+        // на каждую перерисовку.
+        if (!previewRequests.add(hex)) return
+
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (RatatoskCore.isCompanionMode()) {
+                    // Это запрос, а не чтение: байты приедут событием
+                    // FfiCompanionEvent.FilePreview и лягут в _filePreviews.
                     RatatoskCore.getCompanion().preview(fileId)
                 } else {
                     val bytes = RatatoskCore.getClient().previewOf(fileId)
                     if (bytes != null) {
                         _filePreviews.update { it + (hex to bytes) }
                     }
+                    // bytes == null означает «превью у этого файла нет».
+                    // Отметку заказа не снимаем: спрашивать снова незачем.
                 }
-            } catch (e: Exception) { /* ignore */ }
+            } catch (e: Exception) {
+                // Отметку снимаем, чтобы следующая попытка состоялась:
+                // ядро могло быть ещё не поднято.
+                previewRequests.remove(hex)
+                android.util.Log.w("RatatoskVM", "Failed to fetch preview for $hex: ${e.message}")
+            }
         }
-        return null
     }
 
     fun saveFile(file: FfiFile, destination: java.io.File, onComplete: (java.io.File) -> Unit) {
@@ -1477,6 +1523,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 val ya = if (ykBytes.isNotEmpty()) org.ratatosk.core.yggAddress(ykBytes) else null
                 val yp = client.yggPeers()
                 val ypa = try { client.yggPeersAlive() } catch (e: Exception) { null }
+                val nr = try { client.nostrRelays() } catch (e: Exception) { emptyList() }
+                val nra = try { client.nostrRelaysAlive() } catch (e: Exception) { null }
+                val npub = try { client.nostrNpub() } catch (e: Exception) { "" }
+                val nd = try { client.nostrDirect() } catch (e: Exception) { false }
+                val nar = try { client.nostrAdvertisedRelays() } catch (e: Exception) { emptyList() }
                 
                 withContext(Dispatchers.Main) {
                     _transportsEnabled.value = en
@@ -1489,6 +1540,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     _yggAddress.value = ya
                     _yggPeers.value = yp
                     _yggPeersAlive.value = ypa
+                    _nostrRelays.value = nr
+                    _nostrRelaysAlive.value = nra
+                    _nostrNpub.value = if (npub.isNotBlank()) npub else null
+                    _nostrDirect.value = nd
+                    _nostrAdvertisedRelays.value = nar
                 }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to refresh transport status", e)
@@ -1499,7 +1555,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun setTransportEnabled(transport: FfiTransport, enabled: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().setTransportEnabled(transport, enabled)
+                val client = RatatoskCore.getClient()
+                client.setTransportEnabled(transport, enabled)
+                client.networkChanged()
                 refreshTransportStatus()
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -1608,6 +1666,43 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             }
         }
     }
+
+    fun setNostrRelays(relays: List<String>) {
+        if (RatatoskCore.isCompanionMode()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val cleanedRelays = relays.map { it.trim() }.filter { it.isNotEmpty() }
+                val client = RatatoskCore.getClient()
+                client.setNostrRelays(cleanedRelays)
+                client.networkChanged()
+                refreshTransportStatus()
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to set Nostr relays: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun setNostrDirect(direct: Boolean) {
+        if (RatatoskCore.isCompanionMode()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val client = RatatoskCore.getClient()
+                client.setNostrDirect(direct)
+                client.networkChanged()
+                refreshTransportStatus()
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    _error.value = "Failed to set Nostr direct mode: ${e.message}"
+                }
+            }
+        }
+    }
+
+    fun getNostrWarning(): String = try { org.ratatosk.core.nostrWarning() } catch (e: Exception) { "" }
+    fun getNostrDirectWarning(): String = try { org.ratatosk.core.nostrDirectWarning() } catch (e: Exception) { "" }
+    fun getNostrNoFilesNotice(): String = try { org.ratatosk.core.nostrNoFilesNotice() } catch (e: Exception) { "" }
 
     fun addContact(uri: String, metInPerson: Boolean) {
         if (RatatoskCore.isCompanionMode()) return
@@ -2383,8 +2478,22 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 val progress = if (event.total > 0UL) event.received.toFloat() / event.total.toFloat() else 0f
                 _fileProgress.update { it + (hex to progress) }
                 
-                if (event.received == event.total && RatatoskCore.isCompanionMode()) {
-                    // Reload active chat to update 'complete' status of FfiFile objects
+                if (event.received == event.total) {
+                    // Перечитываем чат, чтобы у FfiFile обновился `complete`.
+                    //
+                    // FileProgress — единственный сигнал о завершении: ядро
+                    // шлёт его на каждый чанк «и на завершение», отдельного
+                    // события «файл собран» нет. Сам объект FfiFile приехал
+                    // вместе со списком сообщений и об этом не знает.
+                    //
+                    // Раньше здесь стояло ещё и `&& isCompanionMode()`, то
+                    // есть в обычном режиме — основном — статус не обновлялся
+                    // вовсе: вложение до перезахода в чат висело с крутилкой
+                    // и кнопками «принять/отклонить», а «открыть» и
+                    // «сохранить» не появлялись.
+                    //
+                    // Условие `received == total` нарочно без `total > 0`:
+                    // у пустого файла оба нуля, и это тоже завершение.
                     activeChatId?.let { loadMessages(it.hexToByteArray()) }
                 }
             }

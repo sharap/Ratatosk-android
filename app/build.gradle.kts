@@ -17,18 +17,37 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        create("release") {
-            storeFile = file("keystore/release.jks")
-            storePassword = "ratatosk"
-            keyAlias = "ratatosk-release"
-            keyPassword = "ratatosk"
-        }
-    }
+    // ВРЕМЕННО, НА ВРЕМЯ РАЗРАБОТКИ.
+    //
+    // Настоящего release-ключа у проекта ещё нет, а отладочная сборка
+    // тяжела: без R8 и без ужатия ресурсов. Поэтому release собирается
+    // как release (ужатый), но подписывается **отладочным** ключом —
+    // тем самым, которым подписаны debug-сборки.
+    //
+    // Что это даёт: ужатый APK ставится поверх отладочного без удаления
+    // (подпись одна и та же), и никакого ключа заводить не надо.
+    //
+    // Чем за это платим — вслух, потому что для мессенджера это не мелочь:
+    //
+    //  * отладочный ключ **общий для всех**. Его пароль (`android`)
+    //    и псевдоним (`androiddebugkey`) записаны в документации Android,
+    //    так что подделать подпись такой сборки может кто угодно. Для
+    //    приложения, где подпись — единственное, чем система отличает
+    //    обновление от подмены, это означает: раздавать такой APK нельзя;
+    //  * в Google Play он не уйдёт: подписанное отладочным ключом
+    //    там не принимают;
+    //  * ключ лежит в `~/.android/debug.keystore`, то есть у каждого
+    //    свой. Собранное на одной машине не обновится поверх собранного
+    //    на другой.
+    //
+    // Когда появится настоящий ключ: вернуть сюда `signingConfigs`
+    // с ним (хранилище и пароли — мимо репозитория, через
+    // `~/.gradle/gradle.properties` или переменные окружения) и заменить
+    // строку подписи в `release` ниже. Больше менять нечего.
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -112,7 +131,7 @@ val buildRustCore = tasks.register<Exec>("buildRustCore") {
         "-t", "x86_64",
         "-t", "arm64-v8a",
         "-o", jniLibsDir.absolutePath,
-        "build", "--profile", "release-android", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail ygg-node"
+        "build", "--profile", "release-android", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail ygg-node nostr"
     )
     
     inputs.dir(rustProjectDir.resolve("crates"))
@@ -121,7 +140,7 @@ val buildRustCore = tasks.register<Exec>("buildRustCore") {
 
 val buildRustHost = tasks.register<Exec>("buildRustHost") {
     workingDir = rustProjectDir
-    commandLine("cargo", "build", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail ygg-node")
+    commandLine("cargo", "build", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail ygg-node nostr")
     
     inputs.dir(rustProjectDir.resolve("crates"))
     outputs.file(rustProjectDir.resolve("target/debug/libratatosk_ffi.so"))
