@@ -29,7 +29,14 @@ object RatatoskCore : EventObserver, CompanionObserver {
     @Volatile
     private var nativeError: Throwable? = null
 
+    // @Volatile обязателен: пишутся они под synchronized(this), а читаются
+    // без него — isCompanionMode() и getActiveAccountId() зовут из фоновых
+    // корутин на каждый вызов ядра. Без барьера фоновый поток может увидеть
+    // прежний режим и уйти к клиенту вместо компаньона.
+    @Volatile
     private var activeAccountIdHex: String? = null
+
+    @Volatile
     private var isCompanionMode: Boolean = false
 
     private val companionChatCache = java.util.concurrent.ConcurrentHashMap<String, String>()
@@ -116,42 +123,58 @@ object RatatoskCore : EventObserver, CompanionObserver {
 
     @Throws(RatatoskException::class)
     fun initializeCompanion(inviteUri: String, port: UShort, peerAddr: String?, cachePath: String?, torDir: String?): RatatoskCompanion {
+        android.util.Log.d("RatatoskCore", "InitializeCompanion called")
+
         synchronized(this) {
-            android.util.Log.d("RatatoskCore", "InitializeCompanion called for: $inviteUri")
-            
             client?.destroy()
             client = null
             companion?.destroy()
             companion = null
             companionChatCache.clear()
-            
-            var lastError: Throwable? = null
-            for (attempt in 1..5) {
+        }
+
+        // Ожидание между попытками — **вне** монитора, и это не мелочь.
+        // Порт освобождает ядро, которое мы только что уничтожили; пауза
+        // здесь может дойти до трёх секунд, и раньше все эти секунды
+        // монитор был занят, то есть стоял любой другой поток, зашедший
+        // в RatatoskCore.
+        var lastError: Throwable? = null
+        for (attempt in 1..5) {
+            if (attempt > 1) {
+                val pause = 200L * (attempt - 1)
+                android.util.Log.w("RatatoskCore", "Port $port still busy, waiting ${pause}ms (attempt $attempt)")
                 try {
-                    val newCompanion = RatatoskCompanion.open(inviteUri, port, peerAddr, cachePath, torDir)
-                    newCompanion.setObserver(this)
-                    
+                    Thread.sleep(pause)
+                } catch (interrupted: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    throw interrupted
+                }
+            }
+            try {
+                val newCompanion = RatatoskCompanion.open(inviteUri, port, peerAddr, cachePath, torDir)
+                newCompanion.setObserver(this)
+                synchronized(this) {
                     companion = newCompanion
                     activeAccountIdHex = "companion:${inviteUri.hashCode()}"
                     isCompanionMode = true
                     nativeError = null
-                    return newCompanion
-                } catch (t: Throwable) {
-                    lastError = t
-                    val msg = t.message ?: ""
-                    if (msg.contains("Address already in use") || msg.contains("98")) {
-                        android.util.Log.w("RatatoskCore", "Port $port still busy after destroy (attempt $attempt), waiting...")
-                        Thread.sleep(200 * attempt.toLong()) // Exponential backoff
-                        continue
-                    }
-                    break
                 }
+                return newCompanion
+            } catch (t: Throwable) {
+                lastError = t
+                val msg = t.message ?: ""
+                // Занятый порт — единственная причина, по которой стоит
+                // пробовать снова: его вот-вот отпустит прежнее ядро.
+                if (msg.contains("Address already in use") || msg.contains("98")) {
+                    continue
+                }
+                break
             }
-            
-            android.util.Log.e("RatatoskCore", "Failed to initialize companion after retries", lastError)
-            nativeError = lastError
-            throw lastError ?: RuntimeException("Unknown initialization error")
         }
+
+        android.util.Log.e("RatatoskCore", "Failed to initialize companion after retries", lastError)
+        nativeError = lastError
+        throw lastError ?: RuntimeException("Unknown initialization error")
     }
 
     fun setForeground(accountId: ByteArray?) {
@@ -236,7 +259,12 @@ object RatatoskCore : EventObserver, CompanionObserver {
     }
 
     override fun onEvent(`event`: FfiEvent) {
-        android.util.Log.i("RatatoskCore", "RECEIVING EVENT: $`event`")
+        // Только вид события, без полей. FfiEvent несёт идентификаторы чатов
+        // и сообщений, то есть метаданные переписки, а у FfiCompanionEvent
+        // внутри лежит и сам текст. Журнал приложения переживает выключение
+        // и читается отладчиком — писать туда то, что мы шифруем на диске,
+        // значит обойти собственное шифрование.
+        android.util.Log.i("RatatoskCore", "event: ${`event`.eventName()}")
         if (`event` is FfiEvent.TorStatus) {
             android.util.Log.i("RatatoskCore", "Tor status: [${(`event`.fraction * 100).toInt()}%] ${`event`.note}${`event`.blocked?.let { " (BLOCKED: $it)" } ?: ""}")
         }
@@ -247,7 +275,10 @@ object RatatoskCore : EventObserver, CompanionObserver {
     }
 
     override fun onEvent(`event`: FfiCompanionEvent) {
-        android.util.Log.i("RatatoskCore", "RECEIVING COMPANION EVENT: $`event`")
+        // Вид события и ничего больше — см. пояснение у onEvent(FfiEvent).
+        // Здесь это особенно важно: FfiCompanionEvent.Arrived везёт
+        // FfiCompanionMessage целиком, вместе с полем body.
+        android.util.Log.i("RatatoskCore", "companion event: ${`event`.eventName()}")
         _companionEvents.tryEmit(`event`)
         
         when (`event`) {
@@ -284,6 +315,13 @@ object RatatoskCore : EventObserver, CompanionObserver {
             else -> {}
         }
     }
+
+    // Имя ветки события без её содержимого. Пишется вручную, а не через
+    // toString(): toString() у data-класса печатает все поля, и однажды
+    // добавленное поле с текстом уехало бы в журнал молча.
+    private fun FfiEvent.eventName(): String = this::class.java.simpleName
+
+    private fun FfiCompanionEvent.eventName(): String = this::class.java.simpleName
 
     fun getClient(): RatatoskClient {
         val error = nativeError

@@ -85,6 +85,13 @@ class RatatoskService : Service() {
         const val SERVICE_CHANNEL_ID = "ratatosk_service_channel"
         const val MESSAGE_CHANNEL_ID = "ratatosk_message_channel"
         const val NOTIFICATION_ID = 1
+
+        // Потолок жизни wake-lock и срок его продления. Смысл не в том,
+        // чтобы отпускать замок на ходу, — ядру он нужен постоянно, — а в
+        // том, чтобы зависший или убитый процесс не держал процессор
+        // до перезагрузки телефона: система снимет замок по сроку сама.
+        private const val WAKELOCK_TIMEOUT_MS = 24L * 60 * 60 * 1000
+        private const val WAKELOCK_REFRESH_MS = 12L * 60 * 60 * 1000
     }
 
     override fun onCreate() {
@@ -96,8 +103,23 @@ class RatatoskService : Service() {
         
         // Acquire WakeLock to keep core running when screen is off
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        // С таймаутом, а не бессрочно. Бессрочный PARTIAL_WAKE_LOCK держится
+        // всё время жизни сервиса, то есть до перезагрузки телефона, и не
+        // отпускается даже если сервис зависнет. Сутки — потолок, а не срок
+        // работы: пока сервис жив, замок продлевается корутиной ниже.
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Ratatosk:CoreWakeLock").apply {
-            acquire()
+            acquire(WAKELOCK_TIMEOUT_MS)
+        }
+        // Продление, пока сервис жив. Умрёт вместе с serviceScope в onDestroy.
+        serviceScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(WAKELOCK_REFRESH_MS)
+                try {
+                    wakeLock?.acquire(WAKELOCK_TIMEOUT_MS)
+                } catch (t: Throwable) {
+                    android.util.Log.w("RatatoskService", "Failed to refresh wake lock: ${t.message}")
+                }
+            }
         }
 
         // Recovery: if service was killed and restarted but process lived, auto-unlock
@@ -108,7 +130,7 @@ class RatatoskService : Service() {
         // Listen to core events for notifications
         RatatoskCore.events
             .onEach { event ->
-                android.util.Log.d("RatatoskService", "Service received event: $event")
+                android.util.Log.d("RatatoskService", "event: ${event::class.java.simpleName}")
                 if (event is FfiEvent.MessageReceived && !RatatoskCore.isCompanionMode()) {
                     showIncomingMessageNotification(event)
                 }
@@ -117,7 +139,8 @@ class RatatoskService : Service() {
 
         RatatoskCore.companionEvents
             .onEach { event ->
-                android.util.Log.d("RatatoskService", "Service received companion event: $event")
+                // Без полей: Arrived несёт текст сообщения.
+                android.util.Log.d("RatatoskService", "companion event: ${event::class.java.simpleName}")
                 if (event is FfiCompanionEvent.Arrived && !event.message.mine) {
                     showCompanionMessageNotification(event.message)
                 }
@@ -320,9 +343,29 @@ class RatatoskService : Service() {
             .build()
     }
 
+    // Сообщения, о которых уже уведомляли.
+    //
+    // Шина событий отдаёт новому подписчику полсотни прошлых событий
+    // (replay), а сервис подписывается заново при каждом своём создании —
+    // START_STICKY поднимает его после смерти. Без этой отметки человек
+    // получал бы пачку уведомлений о сообщениях, которые давно прочитал.
+    //
+    // Потолок нужен, чтобы набор не рос всю жизнь процесса; при вытеснении
+    // худшее, что случится, — повторное уведомление о совсем старом
+    // сообщении, чего replay всё равно не достанет.
+    private val notifiedMsgIds = object : LinkedHashMap<String, Boolean>(64, 0.75f, false) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Boolean>?): Boolean =
+            size > 256
+    }
+
+    private fun alreadyNotified(msgIdHex: String): Boolean = synchronized(notifiedMsgIds) {
+        notifiedMsgIds.put(msgIdHex, true) != null
+    }
+
     private fun showIncomingMessageNotification(event: FfiEvent.MessageReceived) {
         val chatIdHex = event.chatId.toHexString()
         val accountId = RatatoskCore.getActiveAccountId() ?: return
+        if (alreadyNotified(event.msgId.toHexString())) return
         
         serviceScope.launch {
             val msg = try {
@@ -418,9 +461,10 @@ class RatatoskService : Service() {
 
     private fun showCompanionMessageNotification(message: FfiCompanionMessage) {
         if (message.mine) {
-            android.util.Log.d("RatatoskService", "Skipping notification for own companion message (msgId=${message.msgId.toHexString()})")
+            android.util.Log.d("RatatoskService", "Skipping notification for own companion message")
             return
         }
+        if (alreadyNotified(message.msgId.toHexString())) return
 
         val chatIdHex = message.chatId.toHexString()
         val accountId = RatatoskCore.getActiveAccountId() ?: return

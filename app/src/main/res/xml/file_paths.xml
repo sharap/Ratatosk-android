@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Только те подкаталоги, из которых приложение действительно раздаёт URI:
+  temp_open (кнопка «открыть» в чате) и media_viewer (кнопка «поделиться»
+  в просмотрщике). Оба лежат в кэше и содержат расшифрованные копии
+  вложений.
+
+  Раньше здесь стояли <cache-path path="."/> и <external-path path="."/> —
+  то есть весь кэш и весь корень общего хранилища. Приложение само таких
+  URI не строило, но провайдер, отдающий /sdcard целиком, — это область
+  выдачи на порядок шире нужной.
+-->
 <paths>
-    <external-files-path name="my_downloads" path="Download" />
-    <cache-path name="my_cache" path="." />
-    <external-path name="external_files" path="." />
+    <cache-path name="temp_open" path="temp_open/" />
+    <cache-path name="media_viewer" path="media_viewer/" />
 </paths>

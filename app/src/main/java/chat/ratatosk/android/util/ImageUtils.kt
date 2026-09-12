@@ -11,22 +11,61 @@ import java.io.InputStream
 
 object ImageUtils {
     
+    /**
+     * Наибольшая сторона битмапа, который мы готовы держать в памяти.
+     *
+     * Картинка идёт под обрезку аватарки, а та ужимается до 512 — держать
+     * ради этого исходник снимка незачем. Без предела снимок с современной
+     * камеры (50 Мп) разворачивается в ARGB_8888 примерно в 200 МБ и кладёт
+     * приложение: OutOfMemoryError это Error, а не Exception, и прежний
+     * `catch (e: Exception)` его не ловил.
+     */
+    private const val MAX_DIMENSION = 2048
+
     fun loadBitmap(context: Context, uri: Uri): Bitmap? {
         return try {
-            val inputStream = context.contentResolver.openInputStream(uri)
-            val bitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
-            
-            // Fix orientation
-            val exifInputStream = context.contentResolver.openInputStream(uri)
-            val exif = exifInputStream?.let { ExifInterface(it) }
-            val orientation = exif?.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
-            exifInputStream?.close()
-            
-            rotateBitmap(bitmap, orientation ?: ExifInterface.ORIENTATION_NORMAL)
+            // Первый проход — только размеры, без выделения памяти под пиксели.
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, bounds)
+            } ?: return null
+            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+            // Второй — с прореживанием. inSampleSize округляется вниз до
+            // степени двойки самим декодером, так что считаем ею же.
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = sampleSizeFor(bounds.outWidth, bounds.outHeight)
+            }
+            val bitmap = context.contentResolver.openInputStream(uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, options)
+            } ?: return null
+
+            val orientation = context.contentResolver.openInputStream(uri)?.use { input ->
+                ExifInterface(input).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+            } ?: ExifInterface.ORIENTATION_NORMAL
+
+            rotateBitmap(bitmap, orientation)
         } catch (e: Exception) {
+            android.util.Log.w("ImageUtils", "Failed to load bitmap: ${e.message}")
+            null
+        } catch (e: OutOfMemoryError) {
+            // Ловим отдельно и намеренно: прореживание делает это
+            // маловероятным, но «маловероятно» не значит «никогда», а падать
+            // приложению из-за выбранной картинки нельзя.
+            android.util.Log.w("ImageUtils", "Out of memory decoding bitmap")
             null
         }
+    }
+
+    private fun sampleSizeFor(width: Int, height: Int): Int {
+        var sample = 1
+        while (width / (sample * 2) >= MAX_DIMENSION || height / (sample * 2) >= MAX_DIMENSION) {
+            sample *= 2
+        }
+        return sample
     }
 
     private fun rotateBitmap(bitmap: Bitmap?, orientation: Int): Bitmap? {

@@ -7,6 +7,7 @@ import chat.ratatosk.android.R
 import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.data.SettingsRepository
 import chat.ratatosk.android.ui.theme.ChatThemeData
+import chat.ratatosk.android.util.FileUtils
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
 import androidx.documentfile.provider.DocumentFile
@@ -57,6 +58,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         java.util.Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
 
     private val activeJobs = ConcurrentHashMap<String, Job>()
+
+    // Идущие загрузки истории, по одной на чат. См. loadMessages.
+    private val messageLoads = ConcurrentHashMap<String, Job>()
     private val _activeJobsFlow = MutableStateFlow<Set<String>>(emptySet())
     val activeJobsFlow = _activeJobsFlow.asStateFlow()
 
@@ -258,6 +262,17 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     val cardVersion = _cardVersion.asStateFlow()
 
     init {
+        // Расшифрованные копии, пережившие прошлый запуск (приложение
+        // могли убить, не дав выйти из аккаунта). Сутки — чтобы не тронуть
+        // то, с чем человек работает прямо сейчас, но и не копить вечно.
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                FileUtils.clearDecryptedCaches(application, olderThanMs = 24L * 60 * 60 * 1000)
+            } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to sweep decrypted caches: ${e.message}")
+            }
+        }
+
         // Initialize Registry and monitor accounts
         viewModelScope.launch {
             try {
@@ -816,7 +831,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         
         android.util.Log.d("RatatoskVM", "loadMessages for $chatIdHex, current: $currentSize, target: $targetLimit")
         
-        viewModelScope.launch(Dispatchers.IO) {
+        // Одна загрузка на чат. Прежде каждый вызов запускал свою корутину,
+        // и две наложившиеся приходили в произвольном порядке: медленная
+        // выборка на 100 сообщений перезаписывала уже приехавшие 500,
+        // и список на экране схлопывался. Зовут её часто — из событий,
+        // из открытия чата, из «загрузить ещё».
+        val load = viewModelScope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
             try {
                 if (!RatatoskCore.isInitialized()) {
                     android.util.Log.w("RatatoskVM", "loadMessages called but core not initialized")
@@ -824,14 +844,22 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 }
                 val msgs = RatatoskCore.getClient().messages(chatId, maxOf(targetLimit, 1).toUInt())
                 android.util.Log.d("RatatoskVM", "Fetched ${msgs.size} messages for $chatIdHex")
-                
+
                 _messages.update { currentMap ->
                     currentMap + (chatIdHex to msgs)
                 }
             } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to load messages for $chatIdHex", e)
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    android.util.Log.e("RatatoskVM", "Failed to load messages for $chatIdHex", e)
+                }
+            } finally {
+                messageLoads.remove(chatIdHex, coroutineContext[Job])
             }
         }
+        // Регистрируем до запуска и снимаем прежнюю — по тем же причинам,
+        // что и у файловых задач.
+        messageLoads.put(chatIdHex, load)?.cancel()
+        load.start()
     }
 
     fun refreshAccounts() {
@@ -852,7 +880,18 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     fun exportHistory(scope: FfiExportScope, phrase: String?, onResult: (FfiExported) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                // Каталог приложения на общем хранилище, а не публичные
+                // «Загрузки». Архив пишет **ядро**, ему нужен настоящий путь
+                // в файловой системе, поэтому MediaStore здесь не подходит,
+                // а прямая запись в публичные «Загрузки» с Android 10
+                // запрещена без разрешений, которых у приложения нет: она
+                // отваливалась EACCES, а человек видел только «Export failed».
+                //
+                // Этот путь разрешений не требует и виден проводником:
+                // Android/data/chat.ratatosk.android/files/Download/ratatosk_backups.
+                val downloadsDir = getApplication<Application>()
+                    .getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
+                    ?: getApplication<Application>().filesDir
                 val ratatoskDir = java.io.File(downloadsDir, "ratatosk_backups")
                 ratatoskDir.mkdirs()
                 val fileName = "ratatosk_backup_${System.currentTimeMillis()}.db"
@@ -1039,6 +1078,13 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         _fileProgress.value = emptyMap()
         _filePreviews.value = emptyMap()
         previewRequests.clear()
+        // Расшифрованные копии вложений в кэше — вместе с сессией. Они
+        // лежат открытым текстом, и переживать выход из аккаунта им незачем.
+        try {
+            FileUtils.clearDecryptedCaches(getApplication())
+        } catch (e: Exception) {
+            android.util.Log.w("RatatoskVM", "Failed to clear decrypted caches: ${e.message}")
+        }
         _repliedMessages.value = emptyMap()
         _activeJobsFlow.value = emptySet()
         _searchResults.value = emptyList()
@@ -1295,7 +1341,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        val job = viewModelScope.launch(Dispatchers.IO) {
+        // start = LAZY, потому что регистрация обязана произойти раньше, чем
+        // задача успеет закончиться. При DEFAULT корутина уже бежала, и на
+        // быстром отказе её finally снимал отметку до того, как строки ниже
+        // её поставят: вложение навсегда оставалось с крутилкой «отменить».
+        val job = viewModelScope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
             var reader: FfiFileReader? = null
             try {
                 destination.parentFile?.mkdirs()
@@ -1325,14 +1375,22 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 }
             } finally {
                 reader?.destroy()
-                activeJobs.remove(fileIdHex)
-                _activeJobsFlow.update { it - fileIdHex }
+                // По ключу **и значению**: по одному ключу нас могла уже
+                // сменить следующая задача, и remove(key) снёс бы её
+                // регистрацию — она качала бы дальше, но без прогресса
+                // и без возможности отмены.
+                if (activeJobs.remove(fileIdHex, coroutineContext[Job])) {
+                    _activeJobsFlow.update { it - fileIdHex }
+                }
             }
         }
         
-        activeJobs[fileIdHex]?.cancel()
-        activeJobs[fileIdHex] = job
+        // Прежнюю задачу снимаем и **ждать её finally не нужно**: удаление
+        // идёт по совпадению значения (см. ниже), так что её уборка нашу
+        // регистрацию не затрёт.
+        activeJobs.put(fileIdHex, job)?.cancel()
         _activeJobsFlow.update { it + fileIdHex }
+        job.start()
     }
 
     fun downloadFile(file: FfiFile, onComplete: (String) -> Unit) {
@@ -1363,14 +1421,22 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                             }
                         }
                         
-                        // Default downloads if SAF fails
-                        val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                        val ratatoskDir = java.io.File(downloadsDir, "ratatosk")
-                        ratatoskDir.mkdirs()
-                        val dest = java.io.File(ratatoskDir, file.name)
-                        savedFile.copyTo(dest, overwrite = true)
+                        // Запасной путь, когда каталог через SAF не выбран.
+                        // Через MediaStore: прямая запись в публичные
+                        // «Загрузки» на Android 10+ запрещена без разрешений.
+                        val sink = FileUtils.openDownloadSink(getApplication(), file.name)
+                        if (sink == null) {
+                            withContext(Dispatchers.Main) {
+                                _error.value = "Не удалось сохранить файл в «Загрузки»"
+                            }
+                            savedFile.delete()
+                            return@launch
+                        }
+                        sink.stream.use { output ->
+                            savedFile.inputStream().use { input -> input.copyTo(output) }
+                        }
                         savedFile.delete()
-                        viewModelScope.launch { onComplete(dest.absolutePath) }
+                        viewModelScope.launch { onComplete(sink.displayPath) }
                     } catch (e: Exception) {
                         android.util.Log.e("RatatoskVM", "Failed companion download copy", e)
                     }
@@ -1379,7 +1445,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        val job = viewModelScope.launch(Dispatchers.IO) {
+        // start = LAZY, потому что регистрация обязана произойти раньше, чем
+        // задача успеет закончиться. При DEFAULT корутина уже бежала, и на
+        // быстром отказе её finally снимал отметку до того, как строки ниже
+        // её поставят: вложение навсегда оставалось с крутилкой «отменить».
+        val job = viewModelScope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
             var reader: FfiFileReader? = null
             try {
                 reader = RatatoskCore.getClient().openFile(file.fileId)
@@ -1412,12 +1482,16 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
                 
-                val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                val ratatoskDir = java.io.File(downloadsDir, "ratatosk")
-                ratatoskDir.mkdirs()
-                val dest = java.io.File(ratatoskDir, file.name)
-                
-                dest.outputStream().use { output ->
+                // См. пояснение выше: только через MediaStore.
+                val sink = FileUtils.openDownloadSink(getApplication(), file.name)
+                if (sink == null) {
+                    withContext(Dispatchers.Main) {
+                        _error.value = "Не удалось сохранить файл в «Загрузки»"
+                    }
+                    return@launch
+                }
+
+                sink.stream.use { output ->
                     val total = reader.chunkTotal()
                     for (i in 0UL until total) {
                         ensureActive()
@@ -1430,21 +1504,29 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
                 _fileProgress.update { it + (fileIdHex to 1f) }
-                viewModelScope.launch { onComplete(dest.absolutePath) }
+                viewModelScope.launch { onComplete(sink.displayPath) }
             } catch (e: Exception) {
                 if (e !is kotlinx.coroutines.CancellationException) {
                     android.util.Log.e("RatatoskVM", "Failed to download file", e)
                 }
             } finally {
                 reader?.destroy()
-                activeJobs.remove(fileIdHex)
-                _activeJobsFlow.update { it - fileIdHex }
+                // По ключу **и значению**: по одному ключу нас могла уже
+                // сменить следующая задача, и remove(key) снёс бы её
+                // регистрацию — она качала бы дальше, но без прогресса
+                // и без возможности отмены.
+                if (activeJobs.remove(fileIdHex, coroutineContext[Job])) {
+                    _activeJobsFlow.update { it - fileIdHex }
+                }
             }
         }
         
-        activeJobs[fileIdHex]?.cancel()
-        activeJobs[fileIdHex] = job
+        // Прежнюю задачу снимаем и **ждать её finally не нужно**: удаление
+        // идёт по совпадению значения (см. ниже), так что её уборка нашу
+        // регистрацию не затрёт.
+        activeJobs.put(fileIdHex, job)?.cancel()
         _activeJobsFlow.update { it + fileIdHex }
+        job.start()
     }
 
     fun cancelFileJob(fileId: ByteArray) {
