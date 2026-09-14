@@ -653,6 +653,24 @@ internal interface UniffiForeignFutureCompleteVoid : com.sun.jna.Callback {
 internal interface UniffiCallbackInterfaceEventObserverMethod0 : com.sun.jna.Callback {
     fun callback(`uniffiHandle`: Long,`event`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
 }
+internal interface UniffiCallbackInterfaceFfiBtRadioMethod0 : com.sun.jna.Callback {
+    fun callback(`uniffiHandle`: Long,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
+}
+internal interface UniffiCallbackInterfaceFfiBtRadioMethod1 : com.sun.jna.Callback {
+    fun callback(`uniffiHandle`: Long,`payload`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
+}
+internal interface UniffiCallbackInterfaceFfiBtRadioMethod2 : com.sun.jna.Callback {
+    fun callback(`uniffiHandle`: Long,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
+}
+internal interface UniffiCallbackInterfaceFfiBtRadioMethod3 : com.sun.jna.Callback {
+    fun callback(`uniffiHandle`: Long,`channel`: Long,`address`: RustBuffer.ByValue,`random`: Byte,`psm`: Short,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
+}
+internal interface UniffiCallbackInterfaceFfiBtRadioMethod4 : com.sun.jna.Callback {
+    fun callback(`uniffiHandle`: Long,`channel`: Long,`bytes`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
+}
+internal interface UniffiCallbackInterfaceFfiBtRadioMethod5 : com.sun.jna.Callback {
+    fun callback(`uniffiHandle`: Long,`channel`: Long,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
+}
 internal interface UniffiCallbackInterfaceCompanionObserverMethod0 : com.sun.jna.Callback {
     fun callback(`uniffiHandle`: Long,`event`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
 }
@@ -672,6 +690,40 @@ internal open class UniffiVTableCallbackInterfaceEventObserver(
         `uniffiFree` = other.`uniffiFree`
         `uniffiClone` = other.`uniffiClone`
         `onEvent` = other.`onEvent`
+    }
+
+}
+@Structure.FieldOrder("uniffiFree", "uniffiClone", "start", "advertise", "stop", "open", "write", "close")
+internal open class UniffiVTableCallbackInterfaceFfiBtRadio(
+    @JvmField internal var `uniffiFree`: UniffiCallbackInterfaceFree? = null,
+    @JvmField internal var `uniffiClone`: UniffiCallbackInterfaceClone? = null,
+    @JvmField internal var `start`: UniffiCallbackInterfaceFfiBtRadioMethod0? = null,
+    @JvmField internal var `advertise`: UniffiCallbackInterfaceFfiBtRadioMethod1? = null,
+    @JvmField internal var `stop`: UniffiCallbackInterfaceFfiBtRadioMethod2? = null,
+    @JvmField internal var `open`: UniffiCallbackInterfaceFfiBtRadioMethod3? = null,
+    @JvmField internal var `write`: UniffiCallbackInterfaceFfiBtRadioMethod4? = null,
+    @JvmField internal var `close`: UniffiCallbackInterfaceFfiBtRadioMethod5? = null,
+) : Structure() {
+    class UniffiByValue(
+        `uniffiFree`: UniffiCallbackInterfaceFree? = null,
+        `uniffiClone`: UniffiCallbackInterfaceClone? = null,
+        `start`: UniffiCallbackInterfaceFfiBtRadioMethod0? = null,
+        `advertise`: UniffiCallbackInterfaceFfiBtRadioMethod1? = null,
+        `stop`: UniffiCallbackInterfaceFfiBtRadioMethod2? = null,
+        `open`: UniffiCallbackInterfaceFfiBtRadioMethod3? = null,
+        `write`: UniffiCallbackInterfaceFfiBtRadioMethod4? = null,
+        `close`: UniffiCallbackInterfaceFfiBtRadioMethod5? = null,
+    ): UniffiVTableCallbackInterfaceFfiBtRadio(`uniffiFree`,`uniffiClone`,`start`,`advertise`,`stop`,`open`,`write`,`close`,), Structure.ByValue
+
+   internal fun uniffiSetValue(other: UniffiVTableCallbackInterfaceFfiBtRadio) {
+        `uniffiFree` = other.`uniffiFree`
+        `uniffiClone` = other.`uniffiClone`
+        `start` = other.`start`
+        `advertise` = other.`advertise`
+        `stop` = other.`stop`
+        `open` = other.`open`
+        `write` = other.`write`
+        `close` = other.`close`
     }
 
 }
@@ -724,6 +776,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_func_deletion_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_edit_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_enable_logging(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_eviction_notice(
     ): Int
@@ -817,6 +871,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ffifilereader_chunk(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffifilereader_chunk_bytes(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ffifilereader_chunk_total(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ffifilereader_own(
@@ -834,6 +890,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_auto_accept_bytes(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_avatar_of(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_bluetooth(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_chat_id_for(
     ): Int
@@ -977,6 +1035,38 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers_alive(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibluetooth_has_radio(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_bytes(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_closed(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_heard(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_incoming(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_lost(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_open_failed(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_opened(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_ready(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibluetooth_set_radio(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibtradio_start(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibtradio_advertise(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibtradio_stop(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibtradio_open(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibtradio_write(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ffibtradio_close(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_companionobserver_on_event(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_accept_file(
@@ -1075,6 +1165,7 @@ internal object UniffiLib {
         Native.register(UniffiLib::class.java, findLibraryName(componentName = "ratatosk_ffi"))
         uniffiCallbackInterfaceCompanionObserver.register(this)
         uniffiCallbackInterfaceEventObserver.register(this)
+        uniffiCallbackInterfaceFfiBtRadio.register(this)
         
     }
     external fun uniffi_ratatosk_ffi_fn_clone_accountregistry(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1117,6 +1208,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ffifilereader_chunk(`ptr`: Long,`index`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ffifilereader_chunk_bytes(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Int
     external fun uniffi_ratatosk_ffi_fn_method_ffifilereader_chunk_total(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_ratatosk_ffi_fn_method_ffifilereader_own(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1141,6 +1234,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_avatar_of(`ptr`: Long,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_bluetooth(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_chat_id_for(`ptr`: Long,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_clear_chat(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1283,6 +1378,48 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peers_alive(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_clone_ffibluetooth(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_ratatosk_ffi_fn_free_ffibluetooth(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibluetooth_has_radio(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_bytes(`ptr`: Long,`channel`: Long,`data`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_closed(`ptr`: Long,`channel`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_heard(`ptr`: Long,`payload`: RustBuffer.ByValue,`address`: RustBuffer.ByValue,`random`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_incoming(`ptr`: Long,`channel`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_lost(`ptr`: Long,`reason`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_open_failed(`ptr`: Long,`channel`: Long,`reason`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_opened(`ptr`: Long,`channel`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_ready(`ptr`: Long,`psm`: Short,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibluetooth_set_radio(`ptr`: Long,`radio`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_clone_ffibtradio(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_ratatosk_ffi_fn_free_ffibtradio(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_init_callback_vtable_ffibtradio(`vtable`: UniffiVTableCallbackInterfaceFfiBtRadio,
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibtradio_start(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibtradio_advertise(`ptr`: Long,`payload`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibtradio_stop(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibtradio_open(`ptr`: Long,`channel`: Long,`address`: RustBuffer.ByValue,`random`: Byte,`psm`: Short,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibtradio_write(`ptr`: Long,`channel`: Long,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ffibtradio_close(`ptr`: Long,`channel`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_clone_companionobserver(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_ratatosk_ffi_fn_free_companionobserver(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1377,6 +1514,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_edit_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_enable_logging(`filter`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_func_eviction_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_file_source_gone_notice(uniffi_out_err: UniffiRustCallStatus, 
@@ -1564,7 +1703,7 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
 }
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
-    if (lib.uniffi_ratatosk_ffi_checksum_func_chunk_bytes() != 13798) {
+    if (lib.uniffi_ratatosk_ffi_checksum_func_chunk_bytes() != 36065) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_default_auto_accept_bytes() != 57392) {
@@ -1574,6 +1713,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_edit_notice() != 60333) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_enable_logging() != 13479) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_eviction_notice() != 35024) {
@@ -1711,7 +1853,10 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_eventobserver_on_event() != 445) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ffifilereader_chunk() != 42768) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffifilereader_chunk() != 43902) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffifilereader_chunk_bytes() != 65024) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ffifilereader_chunk_total() != 8868) {
@@ -1739,6 +1884,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_avatar_of() != 7705) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_bluetooth() != 57893) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_chat_id_for() != 27868) {
@@ -1952,6 +2100,54 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers_alive() != 8974) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_has_radio() != 29089) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_bytes() != 53349) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_closed() != 40365) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_heard() != 31146) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_incoming() != 18095) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_lost() != 35419) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_open_failed() != 39370) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_opened() != 49588) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_ready() != 48613) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_set_radio() != 50725) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibtradio_start() != 63564) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibtradio_advertise() != 65280) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibtradio_stop() != 21812) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibtradio_open() != 39887) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibtradio_write() != 30301) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibtradio_close() != 27569) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_companionobserver_on_event() != 21474) {
@@ -3902,6 +4098,1117 @@ public object FfiConverterTypeEventObserver: FfiConverter<EventObserver, Long> {
 
 
 /**
+ * Ручка эфира, которую держит платформа.
+ *
+ * Отдельным объектом, а не методами на клиенте, и причина не в порядке:
+ * эфиром занимается своя часть приложения (служба переднего плана
+ * с разрешениями), и давать ей весь клиент значило бы давать ей переписку.
+ */
+public interface FfiBluetoothInterface {
+    
+    /**
+     * Есть ли у ядра радио.
+     *
+     * Нужно экрану настроек: «ступень включена, но радио не вручено» —
+     * это состояние приложения, а не сети, и показывать его надо словами,
+     * а не тишиной.
+     */
+    fun `hasRadio`(): kotlin.Boolean
+    
+    /**
+     * Из канала пришли байты.
+     *
+     * Куски произвольные — ровно те, что вернуло чтение сокета. Резать
+     * их по кадрам платформе не нужно и нельзя: где кончается кадр, знает
+     * кадрирование, и знает оно это по эту сторону границы.
+     */
+    fun `onBytes`(`channel`: kotlin.ULong, `data`: kotlin.ByteArray)
+    
+    /**
+     * Канал закрылся — с той стороны или по ошибке записи.
+     *
+     * Сообщать об этом обязательно. Молчание здесь стоит дороже всего:
+     * связь считала бы кадры записанными, §5.4 ждал бы квитанцию полный
+     * срок, а человек видел бы «отправляется» на мёртвом канале.
+     */
+    fun `onClosed`(`channel`: kotlin.ULong)
+    
+    /**
+     * Услышано объявление под нашим кодом производителя.
+     *
+     * Чьё оно — решает маяк по эту сторону границы. Платформа сообщает
+     * «слышал такие байты с такого адреса» и не знает, чьи они: радио,
+     * опознающее контакты само, было бы радио, знающим, кто с кем
+     * переписывается.
+     */
+    fun `onHeard`(`payload`: kotlin.ByteArray, `address`: kotlin.ByteArray, `random`: kotlin.Boolean)
+    
+    /**
+     * К нам подключились.
+     *
+     * Такой канал работает **только на чтение**: соединения односторонние,
+     * и отвечать мы будем по своему, который наберём сами. Читать его
+     * платформа обязана до самого закрытия, отдавая куски
+     * [`FfiBluetooth::on_bytes`].
+     */
+    fun `onIncoming`(`channel`: kotlin.ULong)
+    
+    /**
+     * Эфир не поднялся или отвалился, и вот почему.
+     *
+     * Причина словами, а не кодом: показывать её человеку («включите
+     * Bluetooth», «нет разрешения») будет клиент, и разбирать для этого
+     * числа он не должен.
+     */
+    fun `onLost`(`reason`: kotlin.String)
+    
+    /**
+     * Канал открыть не удалось.
+     */
+    fun `onOpenFailed`(`channel`: kotlin.ULong, `reason`: kotlin.String)
+    
+    /**
+     * Канал, который просили открыть, открылся.
+     */
+    fun `onOpened`(`channel`: kotlin.ULong)
+    
+    /**
+     * Сокет поднят, слушаем на этом номере канала.
+     *
+     * Номер PSM выдаёт система тому, кто открыл серверный сокет, — то есть
+     * платформа. Отсюда он и приходит; объявление собирается уже после.
+     */
+    fun `onReady`(`psm`: kotlin.UShort)
+    
+    /**
+     * Вручает ядру радио платформы.
+     *
+     * До этого вызова ступень не поднимается **никак**: подниматься
+     * нечем, и молчаливое согласие было бы обманом — §5.4 считал бы
+     * ступень живой и жёг бы на ней попытки. Включённая без радио,
+     * она честно объявляется потерянной.
+     */
+    fun `setRadio`(`radio`: FfiBtRadio)
+    
+    companion object
+}
+
+/**
+ * Ручка эфира, которую держит платформа.
+ *
+ * Отдельным объектом, а не методами на клиенте, и причина не в порядке:
+ * эфиром занимается своя часть приложения (служба переднего плана
+ * с разрешениями), и давать ей весь клиент значило бы давать ей переписку.
+ */
+open class FfiBluetooth: Disposable, AutoCloseable, FfiBluetoothInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_ratatosk_ffi_fn_free_ffibluetooth(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_ratatosk_ffi_fn_clone_ffibluetooth(handle, status)
+        }
+    }
+
+    
+    /**
+     * Есть ли у ядра радио.
+     *
+     * Нужно экрану настроек: «ступень включена, но радио не вручено» —
+     * это состояние приложения, а не сети, и показывать его надо словами,
+     * а не тишиной.
+     */override fun `hasRadio`(): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibluetooth_has_radio(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Из канала пришли байты.
+     *
+     * Куски произвольные — ровно те, что вернуло чтение сокета. Резать
+     * их по кадрам платформе не нужно и нельзя: где кончается кадр, знает
+     * кадрирование, и знает оно это по эту сторону границы.
+     */override fun `onBytes`(`channel`: kotlin.ULong, `data`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_bytes(
+        it,
+        
+        FfiConverterULong.lower(`channel`),
+        FfiConverterByteArray.lower(`data`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Канал закрылся — с той стороны или по ошибке записи.
+     *
+     * Сообщать об этом обязательно. Молчание здесь стоит дороже всего:
+     * связь считала бы кадры записанными, §5.4 ждал бы квитанцию полный
+     * срок, а человек видел бы «отправляется» на мёртвом канале.
+     */override fun `onClosed`(`channel`: kotlin.ULong)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_closed(
+        it,
+        
+        FfiConverterULong.lower(`channel`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Услышано объявление под нашим кодом производителя.
+     *
+     * Чьё оно — решает маяк по эту сторону границы. Платформа сообщает
+     * «слышал такие байты с такого адреса» и не знает, чьи они: радио,
+     * опознающее контакты само, было бы радио, знающим, кто с кем
+     * переписывается.
+     */override fun `onHeard`(`payload`: kotlin.ByteArray, `address`: kotlin.ByteArray, `random`: kotlin.Boolean)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_heard(
+        it,
+        
+        FfiConverterByteArray.lower(`payload`),
+        FfiConverterByteArray.lower(`address`),
+        FfiConverterBoolean.lower(`random`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * К нам подключились.
+     *
+     * Такой канал работает **только на чтение**: соединения односторонние,
+     * и отвечать мы будем по своему, который наберём сами. Читать его
+     * платформа обязана до самого закрытия, отдавая куски
+     * [`FfiBluetooth::on_bytes`].
+     */override fun `onIncoming`(`channel`: kotlin.ULong)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_incoming(
+        it,
+        
+        FfiConverterULong.lower(`channel`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Эфир не поднялся или отвалился, и вот почему.
+     *
+     * Причина словами, а не кодом: показывать её человеку («включите
+     * Bluetooth», «нет разрешения») будет клиент, и разбирать для этого
+     * числа он не должен.
+     */override fun `onLost`(`reason`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_lost(
+        it,
+        
+        FfiConverterString.lower(`reason`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Канал открыть не удалось.
+     */override fun `onOpenFailed`(`channel`: kotlin.ULong, `reason`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_open_failed(
+        it,
+        
+        FfiConverterULong.lower(`channel`),
+        FfiConverterString.lower(`reason`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Канал, который просили открыть, открылся.
+     */override fun `onOpened`(`channel`: kotlin.ULong)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_opened(
+        it,
+        
+        FfiConverterULong.lower(`channel`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Сокет поднят, слушаем на этом номере канала.
+     *
+     * Номер PSM выдаёт система тому, кто открыл серверный сокет, — то есть
+     * платформа. Отсюда он и приходит; объявление собирается уже после.
+     */override fun `onReady`(`psm`: kotlin.UShort)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibluetooth_on_ready(
+        it,
+        
+        FfiConverterUShort.lower(`psm`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Вручает ядру радио платформы.
+     *
+     * До этого вызова ступень не поднимается **никак**: подниматься
+     * нечем, и молчаливое согласие было бы обманом — §5.4 считал бы
+     * ступень живой и жёг бы на ней попытки. Включённая без радио,
+     * она честно объявляется потерянной.
+     */override fun `setRadio`(`radio`: FfiBtRadio)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibluetooth_set_radio(
+        it,
+        
+        FfiConverterTypeFfiBtRadio.lower(`radio`),_status)
+}
+    }
+    
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiBluetooth: FfiConverter<FfiBluetooth, Long> {
+    override fun lower(value: FfiBluetooth): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): FfiBluetooth {
+        return FfiBluetooth(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): FfiBluetooth {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: FfiBluetooth) = 8UL
+
+    override fun write(value: FfiBluetooth, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+/**
+ * Радио платформы — то, чего в Rust на Android нет.
+ *
+ * Реализуется на Kotlin. Через границу ходят **только байты и числа**:
+ * ни адреса контакта, ни ключа, ни имени собеседника платформа не видит
+ * и видеть не должна — опознание живёт по эту сторону.
+ *
+ * `foreign`, а не `rust, foreign`: трейт реализует только платформа,
+ * и Rust-версии через границу не ходят — так не генерируется
+ * неиспользуемый скаффолдинг. Тот же выбор, что у `EventObserver`.
+ *
+ * **Ни один метод не ждёт исхода** — см. заголовок модуля.
+ */
+public interface FfiBtRadio {
+    
+    /**
+     * Поднять слушающий сокет L2CAP и начать сканировать эфир.
+     *
+     * Номер занятого канала приезжает обратно вызовом
+     * [`FfiBluetooth::on_ready`], беда — [`FfiBluetooth::on_lost`].
+     *
+     * Отдельно от [`FfiBtRadio::advertise`] потому, что объявлять
+     * **нечего**, пока номера нет: он едет в самом объявлении. Порядок
+     * поэтому один и тот же на обеих платформах: сокет, номер,
+     * объявление.
+     */
+    fun `start`()
+    
+    /**
+     * Объявлять вот эти байты, пока не сказано иное.
+     *
+     * Нагрузка приходит готовой — 18 байт. Собирать её платформе нельзя
+     * и не нужно: формат, живущий и в Rust, и в Kotlin, разошёлся бы
+     * на первой же правке, причём молча.
+     *
+     * Зовётся и при подъёме, и на каждой смене слота. Прежнее объявление
+     * платформа обязана **заменить**, а не добавить второе: два объявления
+     * одного радио — подсказка тому, кто их сличает.
+     */
+    fun `advertise`(`payload`: kotlin.ByteArray)
+    
+    /**
+     * Перестать объявляться и сканировать, закрыть все каналы.
+     *
+     * Человек выключил ступень именно затем, чтобы перестать быть
+     * слышимым, — поэтому немедленно.
+     */
+    fun `stop`()
+    
+    /**
+     * Открыть канал к устройству; исход — событием.
+     *
+     * Номер канала даёт **Rust**: платформе остаётся его запомнить.
+     * Иначе номера пришлось бы согласовывать в обе стороны, а это лишний
+     * повод им разойтись.
+     *
+     * `random` — вид адреса. Набирать надо тем же видом, каким устройство
+     * объявилось: тот же адрес, прочитанный как публичный, не найдётся.
+     */
+    fun `open`(`channel`: kotlin.ULong, `address`: kotlin.ByteArray, `random`: kotlin.Boolean, `psm`: kotlin.UShort)
+    
+    /**
+     * Записать байты в открытый канал.
+     *
+     * Платформа ставит их в свою очередь и пишет своим потоком: запись
+     * в `OutputStream` блокирует, а этот вызов — нет.
+     */
+    fun `write`(`channel`: kotlin.ULong, `bytes`: kotlin.ByteArray)
+    
+    /**
+     * Закрыть канал.
+     */
+    fun `close`(`channel`: kotlin.ULong)
+    
+    companion object
+}
+
+/**
+ * Радио платформы — то, чего в Rust на Android нет.
+ *
+ * Реализуется на Kotlin. Через границу ходят **только байты и числа**:
+ * ни адреса контакта, ни ключа, ни имени собеседника платформа не видит
+ * и видеть не должна — опознание живёт по эту сторону.
+ *
+ * `foreign`, а не `rust, foreign`: трейт реализует только платформа,
+ * и Rust-версии через границу не ходят — так не генерируется
+ * неиспользуемый скаффолдинг. Тот же выбор, что у `EventObserver`.
+ *
+ * **Ни один метод не ждёт исхода** — см. заголовок модуля.
+ */
+open class FfiBtRadioImpl: Disposable, AutoCloseable, FfiBtRadio
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_ratatosk_ffi_fn_free_ffibtradio(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_ratatosk_ffi_fn_clone_ffibtradio(handle, status)
+        }
+    }
+
+    
+    /**
+     * Поднять слушающий сокет L2CAP и начать сканировать эфир.
+     *
+     * Номер занятого канала приезжает обратно вызовом
+     * [`FfiBluetooth::on_ready`], беда — [`FfiBluetooth::on_lost`].
+     *
+     * Отдельно от [`FfiBtRadio::advertise`] потому, что объявлять
+     * **нечего**, пока номера нет: он едет в самом объявлении. Порядок
+     * поэтому один и тот же на обеих платформах: сокет, номер,
+     * объявление.
+     */override fun `start`()
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibtradio_start(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Объявлять вот эти байты, пока не сказано иное.
+     *
+     * Нагрузка приходит готовой — 18 байт. Собирать её платформе нельзя
+     * и не нужно: формат, живущий и в Rust, и в Kotlin, разошёлся бы
+     * на первой же правке, причём молча.
+     *
+     * Зовётся и при подъёме, и на каждой смене слота. Прежнее объявление
+     * платформа обязана **заменить**, а не добавить второе: два объявления
+     * одного радио — подсказка тому, кто их сличает.
+     */override fun `advertise`(`payload`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibtradio_advertise(
+        it,
+        
+        FfiConverterByteArray.lower(`payload`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Перестать объявляться и сканировать, закрыть все каналы.
+     *
+     * Человек выключил ступень именно затем, чтобы перестать быть
+     * слышимым, — поэтому немедленно.
+     */override fun `stop`()
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibtradio_stop(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Открыть канал к устройству; исход — событием.
+     *
+     * Номер канала даёт **Rust**: платформе остаётся его запомнить.
+     * Иначе номера пришлось бы согласовывать в обе стороны, а это лишний
+     * повод им разойтись.
+     *
+     * `random` — вид адреса. Набирать надо тем же видом, каким устройство
+     * объявилось: тот же адрес, прочитанный как публичный, не найдётся.
+     */override fun `open`(`channel`: kotlin.ULong, `address`: kotlin.ByteArray, `random`: kotlin.Boolean, `psm`: kotlin.UShort)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibtradio_open(
+        it,
+        
+        FfiConverterULong.lower(`channel`),
+        FfiConverterByteArray.lower(`address`),
+        FfiConverterBoolean.lower(`random`),
+        FfiConverterUShort.lower(`psm`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Записать байты в открытый канал.
+     *
+     * Платформа ставит их в свою очередь и пишет своим потоком: запись
+     * в `OutputStream` блокирует, а этот вызов — нет.
+     */override fun `write`(`channel`: kotlin.ULong, `bytes`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibtradio_write(
+        it,
+        
+        FfiConverterULong.lower(`channel`),
+        FfiConverterByteArray.lower(`bytes`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Закрыть канал.
+     */override fun `close`(`channel`: kotlin.ULong)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffibtradio_close(
+        it,
+        
+        FfiConverterULong.lower(`channel`),_status)
+}
+    }
+    
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+
+// Put the implementation in an object so we don't pollute the top-level namespace
+internal object uniffiCallbackInterfaceFfiBtRadio {
+    internal object `start`: UniffiCallbackInterfaceFfiBtRadioMethod0 {
+        override fun callback(`uniffiHandle`: Long,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,) {
+            val uniffiObj = FfiConverterTypeFfiBtRadio.handleMap.get(uniffiHandle)
+            val makeCall = { ->
+                uniffiObj.`start`(
+                )
+            }
+            val writeReturn = { _: Unit -> Unit }
+            uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
+        }
+    }
+    internal object `advertise`: UniffiCallbackInterfaceFfiBtRadioMethod1 {
+        override fun callback(`uniffiHandle`: Long,`payload`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,) {
+            val uniffiObj = FfiConverterTypeFfiBtRadio.handleMap.get(uniffiHandle)
+            val makeCall = { ->
+                uniffiObj.`advertise`(
+                    FfiConverterByteArray.lift(`payload`),
+                )
+            }
+            val writeReturn = { _: Unit -> Unit }
+            uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
+        }
+    }
+    internal object `stop`: UniffiCallbackInterfaceFfiBtRadioMethod2 {
+        override fun callback(`uniffiHandle`: Long,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,) {
+            val uniffiObj = FfiConverterTypeFfiBtRadio.handleMap.get(uniffiHandle)
+            val makeCall = { ->
+                uniffiObj.`stop`(
+                )
+            }
+            val writeReturn = { _: Unit -> Unit }
+            uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
+        }
+    }
+    internal object `open`: UniffiCallbackInterfaceFfiBtRadioMethod3 {
+        override fun callback(`uniffiHandle`: Long,`channel`: Long,`address`: RustBuffer.ByValue,`random`: Byte,`psm`: Short,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,) {
+            val uniffiObj = FfiConverterTypeFfiBtRadio.handleMap.get(uniffiHandle)
+            val makeCall = { ->
+                uniffiObj.`open`(
+                    FfiConverterULong.lift(`channel`),
+                    FfiConverterByteArray.lift(`address`),
+                    FfiConverterBoolean.lift(`random`),
+                    FfiConverterUShort.lift(`psm`),
+                )
+            }
+            val writeReturn = { _: Unit -> Unit }
+            uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
+        }
+    }
+    internal object `write`: UniffiCallbackInterfaceFfiBtRadioMethod4 {
+        override fun callback(`uniffiHandle`: Long,`channel`: Long,`bytes`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,) {
+            val uniffiObj = FfiConverterTypeFfiBtRadio.handleMap.get(uniffiHandle)
+            val makeCall = { ->
+                uniffiObj.`write`(
+                    FfiConverterULong.lift(`channel`),
+                    FfiConverterByteArray.lift(`bytes`),
+                )
+            }
+            val writeReturn = { _: Unit -> Unit }
+            uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
+        }
+    }
+    internal object `close`: UniffiCallbackInterfaceFfiBtRadioMethod5 {
+        override fun callback(`uniffiHandle`: Long,`channel`: Long,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,) {
+            val uniffiObj = FfiConverterTypeFfiBtRadio.handleMap.get(uniffiHandle)
+            val makeCall = { ->
+                uniffiObj.`close`(
+                    FfiConverterULong.lift(`channel`),
+                )
+            }
+            val writeReturn = { _: Unit -> Unit }
+            uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
+        }
+    }
+
+    internal object uniffiFree: UniffiCallbackInterfaceFree {
+        override fun callback(handle: Long) {
+            FfiConverterTypeFfiBtRadio.handleMap.remove(handle)
+        }
+    }
+
+    internal object uniffiClone: UniffiCallbackInterfaceClone {
+        override fun callback(handle: Long): Long {
+            return FfiConverterTypeFfiBtRadio.handleMap.clone(handle)
+        }
+    }
+
+    internal var vtable = UniffiVTableCallbackInterfaceFfiBtRadio.UniffiByValue(
+        uniffiFree,
+        uniffiClone,
+        `start`,
+        `advertise`,
+        `stop`,
+        `open`,
+        `write`,
+        `close`,
+    )
+
+    // Registers the foreign callback with the Rust side.
+    // This method is generated for each callback interface.
+    internal fun register(lib: UniffiLib) {
+        lib.uniffi_ratatosk_ffi_fn_init_callback_vtable_ffibtradio(vtable)
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiBtRadio: FfiConverter<FfiBtRadio, Long> {
+    internal val handleMap = UniffiHandleMap<FfiBtRadio>()
+
+    override fun lower(value: FfiBtRadio): Long {
+        if (value is FfiBtRadioImpl) {
+             // Rust-implemented object.  Clone the handle and return it
+            return value.uniffiCloneHandle()
+         } else {
+            // Kotlin object, generate a new vtable handle and return that.
+            return handleMap.insert(value)
+         }
+    }
+
+    override fun lift(value: Long): FfiBtRadio {
+        if ((value and 1.toLong()) == 0.toLong()) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return FfiBtRadioImpl(UniffiWithHandle, value)
+        } else {
+            // Kotlin-generated handle, get the object from the handle map
+            return handleMap.remove(value)
+        }
+    }
+
+    override fun read(buf: ByteBuffer): FfiBtRadio {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: FfiBtRadio) = 8UL
+
+    override fun write(value: FfiBtRadio, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+/**
  * Открытое на чтение вложение (§10.2).
  *
  * Живёт отдельно от клиента и не занимает ядро: читать можно из фонового
@@ -3918,12 +5225,23 @@ public interface FfiFileReaderInterface {
      * Расшифрованный кусок. `None` — показать нечего.
      *
      * Куски идут подряд, от нуля до `chunk_total() - 1`; размер каждого,
-     * кроме последнего, — [`chunk_bytes`].
+     * кроме последнего, — [`FfiFileReader::chunk_bytes`].
      *
      * Вызывать **не из UI-потока**: расшифровка мебибайта — это работа.
      * Ядру она больше не мешает, а вот отрисовке помешает.
      */
     fun `chunk`(`index`: kotlin.ULong): kotlin.ByteArray?
+    
+    /**
+     * Каким куском нарезан **этот** файл.
+     *
+     * Своё число у каждого файла, а не общее: по эфиру кусок вчетверо
+     * меньше килобайта (класс L туда не доходит вовсе), а у пересланного
+     * нарезку выбрал чужой аппарат. Свободная функция [`chunk_bytes`]
+     * отвечает на другой вопрос — «каким куском режем **мы** прямо
+     * сейчас», — и для показа принятого файла не годится.
+     */
+    fun `chunkBytes`(): kotlin.UInt
     
     /**
      * Сколько всего кусков.
@@ -4065,7 +5383,7 @@ open class FfiFileReader: Disposable, AutoCloseable, FfiFileReaderInterface
      * Расшифрованный кусок. `None` — показать нечего.
      *
      * Куски идут подряд, от нуля до `chunk_total() - 1`; размер каждого,
-     * кроме последнего, — [`chunk_bytes`].
+     * кроме последнего, — [`FfiFileReader::chunk_bytes`].
      *
      * Вызывать **не из UI-потока**: расшифровка мебибайта — это работа.
      * Ядру она больше не мешает, а вот отрисовке помешает.
@@ -4078,6 +5396,28 @@ open class FfiFileReader: Disposable, AutoCloseable, FfiFileReaderInterface
         it,
         
         FfiConverterULong.lower(`index`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Каким куском нарезан **этот** файл.
+     *
+     * Своё число у каждого файла, а не общее: по эфиру кусок вчетверо
+     * меньше килобайта (класс L туда не доходит вовсе), а у пересланного
+     * нарезку выбрал чужой аппарат. Свободная функция [`chunk_bytes`]
+     * отвечает на другой вопрос — «каким куском режем **мы** прямо
+     * сейчас», — и для показа принятого файла не годится.
+     */override fun `chunkBytes`(): kotlin.UInt {
+            return FfiConverterUInt.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ffifilereader_chunk_bytes(
+        it,
+        _status)
 }
     }
     )
@@ -4367,6 +5707,19 @@ public interface RatatoskClientInterface {
      * решил бы показать лицо несверенного, не смог бы — байтов не отдадут.
      */
     fun `avatarOf`(`peerIk`: kotlin.ByteArray): kotlin.ByteArray?
+    
+    /**
+     * Ручка эфира Bluetooth (0.4.7).
+     *
+     * Через неё платформа вручает своё радио и сообщает о нём. Отдельным
+     * объектом намеренно: эфиром занимается служба переднего плана
+     * с разрешениями, и давать ей весь клиент значило бы давать ей
+     * переписку.
+     *
+     * Ступень при этом включается **не здесь**, а настройками транспортов,
+     * как и все прочие: радио — это про «чем», а не про «включено ли».
+     */
+    fun `bluetooth`(): FfiBluetooth
     
     /**
      * Идентификатор чата 1:1 с контактом.
@@ -5601,6 +6954,30 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         it,
         
         FfiConverterByteArray.lower(`peerIk`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Ручка эфира Bluetooth (0.4.7).
+     *
+     * Через неё платформа вручает своё радио и сообщает о нём. Отдельным
+     * объектом намеренно: эфиром занимается служба переднего плана
+     * с разрешениями, и давать ей весь клиент значило бы давать ей
+     * переписку.
+     *
+     * Ступень при этом включается **не здесь**, а настройками транспортов,
+     * как и все прочие: радио — это про «чем», а не про «включено ли».
+     */override fun `bluetooth`(): FfiBluetooth {
+            return FfiConverterTypeFfiBluetooth.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_bluetooth(
+        it,
+        _status)
 }
     }
     )
@@ -10510,7 +11887,13 @@ data class FfiFile (
     , 
     /**
      * Сколько чанков уже принято — и сколько всего. Это и есть ход передачи;
-     * в байтах он получается умножением на [`chunk_bytes`].
+     * в байтах он получается умножением на [`FfiFile::chunk_bytes`].
+     *
+     * **Умножать на свободную функцию [`chunk_bytes`] нельзя**, и это
+     * не придирка: нарезка у файла своя (§10.2), у принятого по эфиру она
+     * в двести с лишним раз мельче, а у пересланного вообще выбрана чужим
+     * аппаратом. Общим числом ход такой передачи показался бы завершённым
+     * задолго до конца.
      */
     val `receivedChunks`: kotlin.ULong
     , 
@@ -10518,6 +11901,15 @@ data class FfiFile (
      * Сколько чанков всего.
      */
     val `chunkTotal`: kotlin.ULong
+    , 
+    /**
+     * Каким куском нарезан **этот** файл — размер всех, кроме последнего.
+     *
+     * Нужен ровно затем, чтобы показать ход передачи в байтах, и берётся
+     * из записи файла, а не из настроек: резал его тот, кто отправлял,
+     * и своей ступенью.
+     */
+    val `chunkBytes`: kotlin.UInt
     , 
     /**
      * Есть ли превью, которое можно показать (§10.3).
@@ -10547,6 +11939,7 @@ public object FfiConverterTypeFfiFile: FfiConverterRustBuffer<FfiFile> {
             FfiConverterBoolean.read(buf),
             FfiConverterULong.read(buf),
             FfiConverterULong.read(buf),
+            FfiConverterUInt.read(buf),
             FfiConverterBoolean.read(buf),
         )
     }
@@ -10560,6 +11953,7 @@ public object FfiConverterTypeFfiFile: FfiConverterRustBuffer<FfiFile> {
             FfiConverterBoolean.allocationSize(value.`complete`) +
             FfiConverterULong.allocationSize(value.`receivedChunks`) +
             FfiConverterULong.allocationSize(value.`chunkTotal`) +
+            FfiConverterUInt.allocationSize(value.`chunkBytes`) +
             FfiConverterBoolean.allocationSize(value.`hasPreview`)
     )
 
@@ -10572,6 +11966,7 @@ public object FfiConverterTypeFfiFile: FfiConverterRustBuffer<FfiFile> {
             FfiConverterBoolean.write(value.`complete`, buf)
             FfiConverterULong.write(value.`receivedChunks`, buf)
             FfiConverterULong.write(value.`chunkTotal`, buf)
+            FfiConverterUInt.write(value.`chunkBytes`, buf)
             FfiConverterBoolean.write(value.`hasPreview`, buf)
     }
 }
@@ -13700,6 +15095,39 @@ sealed class FfiEvent {
     }
     
     /**
+     * Ход передачи файла **у отправителя**.
+     *
+     * Числа тут значат другое, чем в [`FfiEvent::FileProgress`], и
+     * показывать их надо другими словами. «Принято» — это то, что
+     * собралось у получателя и сошлось суммой; «отдано» — то, что мы
+     * вручили транспорту. Второе доказывает отправку, а не доставку,
+     * и обещать по нему доставку значило бы врать (§14).
+     */
+    data class FileSending(
+        /**
+         * Какой файл.
+         */
+        val `fileId`: kotlin.ByteArray, 
+        /**
+         * Кому.
+         */
+        val `peerIk`: kotlin.ByteArray, 
+        /**
+         * Отдано транспорту чанков.
+         */
+        val `sent`: kotlin.ULong, 
+        /**
+         * Всего чанков.
+         */
+        val `total`: kotlin.ULong) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
      * Вложения больше нет: от него отказались, и всё убрано.
      *
      * Строку вложения надо **убрать**, а не обнулить в ней числа. Само
@@ -13993,39 +15421,45 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            18 -> FfiEvent.FileGone(
+            18 -> FfiEvent.FileSending(
+                FfiConverterByteArray.read(buf),
+                FfiConverterByteArray.read(buf),
+                FfiConverterULong.read(buf),
+                FfiConverterULong.read(buf),
+                )
+            19 -> FfiEvent.FileGone(
                 FfiConverterByteArray.read(buf),
                 )
-            19 -> FfiEvent.HonestNotice(
+            20 -> FfiEvent.HonestNotice(
                 FfiConverterString.read(buf),
                 )
-            20 -> FfiEvent.CommandRefused(
+            21 -> FfiEvent.CommandRefused(
                 FfiConverterString.read(buf),
                 )
-            21 -> FfiEvent.MailAccountReady(
+            22 -> FfiEvent.MailAccountReady(
                 FfiConverterString.read(buf),
                 )
-            22 -> FfiEvent.MailAccountFailed(
+            23 -> FfiEvent.MailAccountFailed(
                 FfiConverterString.read(buf),
                 )
-            23 -> FfiEvent.MailLoginFailed(
+            24 -> FfiEvent.MailLoginFailed(
                 FfiConverterString.read(buf),
                 )
-            24 -> FfiEvent.MailLimits(
+            25 -> FfiEvent.MailLimits(
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterBoolean.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            25 -> FfiEvent.PairingReady(
+            26 -> FfiEvent.PairingReady(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            26 -> FfiEvent.PairingRevoked(
+            27 -> FfiEvent.PairingRevoked(
                 FfiConverterByteArray.read(buf),
                 )
-            27 -> FfiEvent.DeviceLink(
+            28 -> FfiEvent.DeviceLink(
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
@@ -14164,6 +15598,16 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 4UL
                 + FfiConverterByteArray.allocationSize(value.`fileId`)
                 + FfiConverterULong.allocationSize(value.`received`)
+                + FfiConverterULong.allocationSize(value.`total`)
+            )
+        }
+        is FfiEvent.FileSending -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`fileId`)
+                + FfiConverterByteArray.allocationSize(value.`peerIk`)
+                + FfiConverterULong.allocationSize(value.`sent`)
                 + FfiConverterULong.allocationSize(value.`total`)
             )
         }
@@ -14346,38 +15790,46 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterULong.write(value.`total`, buf)
                 Unit
             }
-            is FfiEvent.FileGone -> {
+            is FfiEvent.FileSending -> {
                 buf.putInt(18)
+                FfiConverterByteArray.write(value.`fileId`, buf)
+                FfiConverterByteArray.write(value.`peerIk`, buf)
+                FfiConverterULong.write(value.`sent`, buf)
+                FfiConverterULong.write(value.`total`, buf)
+                Unit
+            }
+            is FfiEvent.FileGone -> {
+                buf.putInt(19)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 Unit
             }
             is FfiEvent.HonestNotice -> {
-                buf.putInt(19)
+                buf.putInt(20)
                 FfiConverterString.write(value.`text`, buf)
                 Unit
             }
             is FfiEvent.CommandRefused -> {
-                buf.putInt(20)
+                buf.putInt(21)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.MailAccountReady -> {
-                buf.putInt(21)
+                buf.putInt(22)
                 FfiConverterString.write(value.`address`, buf)
                 Unit
             }
             is FfiEvent.MailAccountFailed -> {
-                buf.putInt(22)
-                FfiConverterString.write(value.`reason`, buf)
-                Unit
-            }
-            is FfiEvent.MailLoginFailed -> {
                 buf.putInt(23)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
-            is FfiEvent.MailLimits -> {
+            is FfiEvent.MailLoginFailed -> {
                 buf.putInt(24)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is FfiEvent.MailLimits -> {
+                buf.putInt(25)
                 FfiConverterOptionalULong.write(value.`letterBytes`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxUsed`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxLimit`, buf)
@@ -14386,18 +15838,18 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.PairingReady -> {
-                buf.putInt(25)
+                buf.putInt(26)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterString.write(value.`uri`, buf)
                 Unit
             }
             is FfiEvent.PairingRevoked -> {
-                buf.putInt(26)
+                buf.putInt(27)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 Unit
             }
             is FfiEvent.DeviceLink -> {
-                buf.putInt(27)
+                buf.putInt(28)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterBoolean.write(value.`connected`, buf)
                 Unit
@@ -14467,7 +15919,7 @@ public object FfiConverterTypeFfiExportScope: FfiConverterRustBuffer<FfiExportSc
 /**
  * Почему передача файла стоит (§10.3).
  *
- * **Из пяти причин действия требует ровно одна.** Остальные четыре
+ * **Из шести причин действия требует ровно одна.** Остальные пять
  * означают «файл не потерян, поедет сам»; [`FfiFileWaitReason::
  * MailboxFull`] означает «освободите место, иначе не поедет». Показать
  * их одинаково — соврать человеку в единственном случае, когда он может
@@ -14498,7 +15950,15 @@ enum class FfiFileWaitReason {
     /**
      * Спросили — собеседник молчит.
      */
-    SILENT;
+    SILENT,
+    /**
+     * Ступень занята другими передачами, этот файл ждёт своей очереди.
+     *
+     * Очередь заведена нарочно: параллель на узком канале ничего
+     * не ускоряет. Показывать такой файл зависшим нельзя — он движется,
+     * просто не сейчас.
+     */
+    QUEUED;
 
     
 
@@ -14604,6 +16064,18 @@ enum class FfiTransport {
      * выдаёт присутствие устройства всем, кто слушает.
      */
     LAN,
+    /**
+     * Канал L2CAP поверх Bluetooth LE (0.4). По умолчанию **выключен**:
+     * объявлять себя и слушать эфир стоит батареи постоянно, а на Android
+     * сканирование вдобавок спрашивает отдельное разрешение. UI обязан
+     * сказать об этом рядом с переключателем.
+     *
+     * **В этой сборке ступень не поднимается ни при каких настройках.**
+     * Она заведена в лестнице §5.4 и честно отвечает «не поднята»:
+     * раннера ещё нет, написан только протокольный слой. Показывать её
+     * человеку как рабочую нельзя (§14).
+     */
+    BT,
     /**
      * Меш Yggdrasil (0.2). По умолчанию **выключен**: узел меша переносит
      * чужой трафик, то есть тратит батарею и трафик человека на чужие
@@ -15807,7 +17279,15 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     }
 }
         /**
-         * Размер куска файла в байтах — то, чем ходит [`FfiFileReader::chunk`].
+         * Размер куска файла в байтах — **умолчание провода**, а не правда
+         * о конкретном файле.
+         *
+         * Годится, чтобы прикинуть, на сколько кусков разойдётся файл, который
+         * мы собираемся отправить по обычной сети. Для показа хода **принятого**
+         * файла брать его нельзя: нарезку выбирает отправитель по своей ступени
+         * (§10.2), и у приехавшего по эфиру она мельче в двести с лишним раз.
+         * Своё число у файла отдают [`FfiFile::chunk_bytes`]
+         * и [`FfiFileReader::chunk_bytes`].
          */ fun `chunkBytes`(): kotlin.UInt {
             return FfiConverterUInt.lift(
     uniffiRustCall() { _status ->
@@ -15856,6 +17336,48 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
 }
     )
     }
+    
+
+        /**
+         * Заводит журнал ядра. Зовётся клиентом **до** открытия хранилища.
+         *
+         * # Почему это вообще нужна отдельная просьба
+         *
+         * Журнал ядра идёт через `tracing`, а `tracing` без подписчика — тишина
+         * по построению: макросы никуда не пишут, и стоит это ноль. На десктопе
+         * подписчика ставит стенд; на телефоне не ставил никто, и в `logcat`
+         * не было ни одной нашей строки. Разбор шестой ступени (0.4) с телефона
+         * из-за этого шёл вслепую: видно было только то, что печатает Kotlin.
+         *
+         * Поставить его молча при открытии хранилища нельзя: подписчик — вещь
+         * процесса, а не сессии, и ставится он один раз на всю жизнь процесса.
+         * Решать за приложение, писать ли его внутренности в системный журнал,
+         * — не наше дело.
+         *
+         * # Что попадёт в `logcat`
+         *
+         * Тег `ratatosk`, то есть `adb logcat -s ratatosk`. Уровень и отбор
+         * задаёт `filter` в синтаксисе `RUST_LOG`
+         * (`ratatosk_transport=debug,info`); пустая строка означает умолчание —
+         * наши крейты подробно, остальное по делу.
+         *
+         * # Второй вызов ничего не делает
+         *
+         * И не считается ошибкой: подписчик в процессе один, а клиент,
+         * открывающий второй аккаунт, позовёт эту функцию снова — отказывать
+         * ему не за что.
+         *
+         * Вне Android — пусто, и это не заглушка: там этот крейт линкуется
+         * в стенд, у которого подписчик свой.
+         */ fun `enableLogging`(`filter`: kotlin.String)
+        = 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_enable_logging(
+    
+        
+        FfiConverterString.lower(`filter`),_status)
+}
+    
     
 
         /**

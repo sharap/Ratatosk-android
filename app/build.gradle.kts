@@ -62,6 +62,9 @@ android {
     }
     buildFeatures {
         compose = true
+        // Нужен, чтобы отличать отладочную сборку от готовой: журнал ядра
+        // включается только в первой.
+        buildConfig = true
     }
 
     splits {

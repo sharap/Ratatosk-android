@@ -49,6 +49,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _fileProgress = MutableStateFlow<Map<String, Float>>(emptyMap())
     val fileProgress = _fileProgress.asStateFlow()
 
+
     private val _filePreviews = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
     val filePreviews = _filePreviews.asStateFlow()
 
@@ -238,6 +239,48 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     val yggEnabled = transportsEnabled.map { it[FfiTransport.YGG] ?: false }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val btEnabled = transportsEnabled.map { it[FfiTransport.BT] ?: false }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    // Вручено ли ядру радио. Отдельно от «включено»: ступень можно включить,
+    // не выдав разрешений, и тогда она не поднимется — экран обязан
+    // различать «выключено человеком» и «включено, а радио нет».
+    private val _btHasRadio = MutableStateFlow(false)
+    val btHasRadio = _btHasRadio.asStateFlow()
+
+    /**
+     * Пробует вручить радио — звать после выдачи разрешений.
+     *
+     * Разрешения спрашивает экран: из ViewModel системный запрос
+     * не показать, для него нужна Activity.
+     */
+    fun handBtRadio() {
+        viewModelScope.launch(Dispatchers.IO) {
+            RatatoskCore.ensureBtRadio(getApplication())
+            val has = RatatoskCore.hasBtRadio()
+            withContext(Dispatchers.Main) { _btHasRadio.value = has }
+        }
+    }
+
+    /**
+     * Включён ли сам адаптер Bluetooth.
+     *
+     * Нужно, чтобы отличить «радио есть, но эфир выключен человеком»
+     * от «радио есть, а ступень всё равно не поднялась». Причину ядро
+     * словами наружу не отдаёт — оно пишет её в журнал, — но обе
+     * возможные причины приложение знает про себя само.
+     */
+    fun btAdapterEnabled(): Boolean = try {
+        val manager = getApplication<Application>()
+            .getSystemService(android.content.Context.BLUETOOTH_SERVICE) as? android.bluetooth.BluetoothManager
+        manager?.adapter?.isEnabled == true
+    } catch (t: Throwable) {
+        false
+    }
+
+    fun btMissingPermissions(): List<String> =
+        org.ratatosk.bt.BtRadio.Permissions.missing(getApplication())
 
     val nostrEnabled = transportsEnabled.map { it[FfiTransport.NOSTR] ?: false }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -702,6 +745,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             complete = att.haveChunks == att.chunkTotal,
             receivedChunks = att.haveChunks,
             chunkTotal = att.chunkTotal,
+            // Компаньон нарезку не сообщает, а свободную chunk_bytes()
+            // сюда брать нельзя: она отвечает «каким куском режем мы
+            // сейчас», а этот файл нарезал чужой аппарат и, возможно,
+            // другой ступенью (FFI.md, §10.2). Ноль — «неизвестно»;
+            // ход передачи мы всё равно считаем чанками, не байтами.
+            chunkBytes = 0u,
             hasPreview = att.hasPreview
         )
     }
@@ -1622,6 +1671,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 val ya = if (ykBytes.isNotEmpty()) org.ratatosk.core.yggAddress(ykBytes) else null
                 val yp = client.yggPeers()
                 val ypa = try { client.yggPeersAlive() } catch (e: Exception) { null }
+                val btRadio = RatatoskCore.hasBtRadio()
                 val nr = try { client.nostrRelays() } catch (e: Exception) { emptyList() }
                 val nra = try { client.nostrRelaysAlive() } catch (e: Exception) { null }
                 val npub = try { client.nostrNpub() } catch (e: Exception) { "" }
@@ -1639,6 +1689,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     _yggAddress.value = ya
                     _yggPeers.value = yp
                     _yggPeersAlive.value = ypa
+                    _btHasRadio.value = btRadio
                     _nostrRelays.value = nr
                     _nostrRelaysAlive.value = nra
                     _nostrNpub.value = if (npub.isNotBlank()) npub else null

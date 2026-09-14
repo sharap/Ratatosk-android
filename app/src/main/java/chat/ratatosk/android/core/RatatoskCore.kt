@@ -11,6 +11,7 @@ import org.ratatosk.core.RatatoskException
 import org.ratatosk.core.AccountRegistry
 import org.ratatosk.core.FfiAccount
 import chat.ratatosk.android.util.toHexString
+import org.ratatosk.bt.BtRadio
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.channels.BufferOverflow
@@ -65,8 +66,54 @@ object RatatoskCore : EventObserver, CompanionObserver {
     )
     val companionEvents = _companionEvents.asSharedFlow()
 
+    /**
+     * Подробность журнала ядра. Синтаксис `RUST_LOG`.
+     *
+     * Пустая строка означала бы умолчание самого ядра — наши крейты
+     * подробно, чужие по делу. Здесь оно сужено под текущую задачу:
+     * эфир полностью, остальное как в умолчании. Разбираем сейчас именно
+     * его, а `trace` на всех ступнях сразу утопил бы нужное.
+     */
+    private const val LOG_FILTER =
+        "ratatosk_transport::bluetooth=trace,ratatosk_transport=debug," +
+            "ratatosk_core=debug,ratatosk_ffi=debug,info"
+
+    @Volatile
+    private var loggingStarted = false
+
+    /** Замок вручения радио: см. [ensureBtRadio]. */
+    private val btRadioLock = Any()
+
+    /**
+     * Просит ядро завести журнал — **только в отладочной сборке**.
+     *
+     * Без этой просьбы ядро молчит, и молчит по построению: `tracing`
+     * без подписчика никуда не пишет. Ставить подписчик само оно не вправе
+     * — решать, писать ли внутренности приложения в системный журнал,
+     * не дело библиотеки (`ANDROID.md`, «Журнал: одна строка в клиенте»).
+     *
+     * Зовётся из [initializeRegistry], то есть до открытия хранилища, как
+     * и требует ядро: подписчик — вещь процесса, а не сессии.
+     *
+     * Дальше читать так: `adb logcat -s ratatosk`.
+     */
+    fun startLoggingIfDebug() {
+        if (!chat.ratatosk.android.BuildConfig.DEBUG) return
+        synchronized(this) {
+            if (loggingStarted) return
+            loggingStarted = true
+        }
+        try {
+            org.ratatosk.core.enableLogging(LOG_FILTER)
+            android.util.Log.i("RatatoskCore", "core logging requested: $LOG_FILTER")
+        } catch (t: Throwable) {
+            android.util.Log.w("RatatoskCore", "core logging unavailable: ${t.message}")
+        }
+    }
+
     @Throws(RatatoskException::class)
     fun initializeRegistry(context: Context): AccountRegistry {
+        startLoggingIfDebug()
         synchronized(this) {
             registry?.let { return it }
             val root = File(context.filesDir, "ratatosk_root")
@@ -322,6 +369,58 @@ object RatatoskCore : EventObserver, CompanionObserver {
     private fun FfiEvent.eventName(): String = this::class.java.simpleName
 
     private fun FfiCompanionEvent.eventName(): String = this::class.java.simpleName
+
+    /**
+     * Вручает ядру радио Bluetooth, если есть чем и кому.
+     *
+     * На Linux ступень работает своим радио; на Android BlueZ нет, и
+     * объявление, обзор и канал живут в Java. Поэтому радио приходит
+     * в ядро **снаружи**, а формат объявления, опознание маяком
+     * и кадрирование остаются внутри.
+     *
+     * До этого вызова ступень не поднимается никак: включённая без радио,
+     * она честно объявляется потерянной, и §5.4 идёт дальше по лестнице.
+     *
+     * Разрешения проверяются **до** вручения, а не после: розданное без
+     * них радио уходит в `onLost` с текстом «нет разрешений», и человек
+     * видит сломанную ступень вместо запроса.
+     *
+     * @return вручено ли радио (уже стоявшее — тоже да).
+     */
+    fun ensureBtRadio(context: Context): Boolean {
+        val live = client ?: return false
+        return try {
+            val bridge = live.bluetooth()
+            // Проверка и вручение — под одним замком.
+            //
+            // Служба зовёт это из onCreate и из onStartCommand, и они
+            // приходят разными потоками почти одновременно. Проверка
+            // `hasRadio()` отдельно от `setRadio` их не разводила: оба
+            // видели «радио нет» и вручали своё. В журнале это было видно
+            // как два объявления с разными PSM на один ключ в одном слоте
+            // — то есть два серверных сокета и двойной расход эфира.
+            //
+            // Замок свой, а не общий монитор объекта: тот держат открытие
+            // и закрытие аккаунта, а здесь под ним поднимается сокет.
+            synchronized(btRadioLock) {
+                if (bridge.hasRadio()) return true
+                if (BtRadio.Permissions.missing(context).isNotEmpty()) return false
+                bridge.setRadio(BtRadio(context.applicationContext, bridge))
+            }
+            android.util.Log.i("RatatoskCore", "Bluetooth radio handed to the core")
+            true
+        } catch (t: Throwable) {
+            android.util.Log.e("RatatoskCore", "Failed to hand the Bluetooth radio", t)
+            false
+        }
+    }
+
+    /** Стоит ли у ядра радио. Экран настроек отличает этим «выключено» от «нечем». */
+    fun hasBtRadio(): Boolean = try {
+        client?.bluetooth()?.hasRadio() ?: false
+    } catch (t: Throwable) {
+        false
+    }
 
     fun getClient(): RatatoskClient {
         val error = nativeError

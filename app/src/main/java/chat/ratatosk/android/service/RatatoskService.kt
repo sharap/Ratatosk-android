@@ -318,9 +318,15 @@ class RatatoskService : Service() {
      */
     private fun recoverSessionIfNeeded() {
         serviceScope.launch {
-            if (RatatoskCore.isInitialized()) return@launch
+            if (RatatoskCore.isInitialized()) {
+                handBtRadio()
+                return@launch
+            }
             // Процесс жив, пересоздали только сервис — данные ещё в памяти.
-            if (RatatoskCore.tryAutoInitialize() != null) return@launch
+            if (RatatoskCore.tryAutoInitialize() != null) {
+                handBtRadio()
+                return@launch
+            }
 
             val settings = SettingsRepository(applicationContext)
             val lastId = settings.lastAccountId.firstOrNull() ?: return@launch
@@ -359,12 +365,26 @@ class RatatoskService : Service() {
             try {
                 RatatoskCore.initialize(accountId, null, null, name)
                 android.util.Log.i("RatatoskService", "Account session recovered")
+                handBtRadio()
             } catch (locked: RatatoskException.Locked) {
                 android.util.Log.i("RatatoskService", "Account needs a PIN — waiting for the user")
             } catch (t: Throwable) {
                 android.util.Log.e("RatatoskService", "Session recovery failed", t)
             }
         }
+    }
+
+    /**
+     * Вручает ядру радио Bluetooth.
+     *
+     * Именно из службы: обзор и объявление идут всё время, пока ступень
+     * включена, и обычная Activity этого не переживёт. Разрешений может
+     * не быть — тогда вручать нечего, и экран настроек покажет это
+     * отдельной строкой, а не сломанной ступенью.
+     */
+    private fun handBtRadio() {
+        if (RatatoskCore.ensureBtRadio(applicationContext)) return
+        android.util.Log.i("RatatoskService", "Bluetooth radio not handed: no permissions yet")
     }
 
     /**

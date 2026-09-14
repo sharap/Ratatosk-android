@@ -56,6 +56,43 @@ fun SettingsScreen(
     val yggPeers by viewModel.yggPeers.collectAsState()
     val yggPeersAlive by viewModel.yggPeersAlive.collectAsState()
     
+    val btHasRadio by viewModel.btHasRadio.collectAsState()
+    val btContext = LocalContext.current
+
+    // Запрос разрешений живёт здесь: из ViewModel системный диалог
+    // не показать. Радио вручается **после** выдачи — розданное без
+    // разрешений уходит в onLost, и человек видит сломанную ступень
+    // вместо запроса.
+    val btPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { granted ->
+        if (granted.values.all { it }) viewModel.handBtRadio()
+    }
+
+    val requestBtPermissions: () -> Unit = {
+        val missing = viewModel.btMissingPermissions()
+        if (missing.isEmpty()) viewModel.handBtRadio() else btPermissionLauncher.launch(missing.toTypedArray())
+    }
+
+    // Цена ступени называется **до** включения, как у локальной сети
+    // и меша (FFI.md: «сказать человеку надо два раза и до включения»).
+    // Своей функции §14 у эфира в ядре нет, поэтому текст наш — но говорит
+    // он ровно про то, о чём предупреждает документация: батарея и
+    // отдельное разрешение.
+    var showBtWarning by remember { mutableStateOf(false) }
+
+    // Причину считаем здесь: секция транспортов ViewModel не видит,
+    // а обе возможные причины знает приложение, а не ядро.
+    val btNotReadyReason = when {
+        !viewModel.btAdapterEnabled() -> stringResource(R.string.bt_adapter_off)
+        viewModel.btMissingPermissions().isNotEmpty() -> stringResource(R.string.bt_no_permissions)
+        else -> stringResource(R.string.bt_not_up)
+    }
+
+    val onToggleBt: (Boolean) -> Unit = { wanted ->
+        if (wanted) showBtWarning = true else viewModel.setTransportEnabled(FfiTransport.BT, false)
+    }
+
     val nostrEnabled by viewModel.nostrEnabled.collectAsState()
     val nostrRelays by viewModel.nostrRelays.collectAsState()
     val nostrRelaysAlive by viewModel.nostrRelaysAlive.collectAsState()
@@ -154,6 +191,10 @@ fun SettingsScreen(
                             nostrNpub = nostrNpub,
                             nostrDirect = nostrDirect,
                             onToggleLan = { if (it) showLanWarning = true else viewModel.setTransportEnabled(FfiTransport.LAN, false) },
+                            btHasRadio = btHasRadio,
+                            btNotReadyReason = btNotReadyReason,
+                            onToggleBt = onToggleBt,
+                            onGrantBtPermissions = requestBtPermissions,
                             onSelectYggMode = { mode ->
                                 if (mode == yggMode) return@SettingsTransportsSection
                                 if (mode == FfiYggMode.OFF) {
@@ -262,6 +303,10 @@ fun SettingsScreen(
                         nostrNpub = nostrNpub,
                         nostrDirect = nostrDirect,
                         onToggleLan = { if (it) showLanWarning = true else viewModel.setTransportEnabled(FfiTransport.LAN, false) },
+                        btHasRadio = btHasRadio,
+                        btNotReadyReason = btNotReadyReason,
+                        onToggleBt = onToggleBt,
+                        onGrantBtPermissions = requestBtPermissions,
                         onSelectYggMode = { mode ->
                             if (mode == yggMode) return@SettingsTransportsSection
                             if (mode == FfiYggMode.OFF) {
@@ -816,6 +861,28 @@ fun SettingsScreen(
         }
     }
 
+    if (showBtWarning) {
+        AlertDialog(
+            onDismissRequest = { showBtWarning = false },
+            title = { Text(stringResource(R.string.bt_transport)) },
+            text = { Text(stringResource(R.string.bt_warning)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showBtWarning = false
+                    // Разрешения — до включения: иначе ступень встанет
+                    // включённой и неработающей.
+                    requestBtPermissions()
+                    viewModel.setTransportEnabled(FfiTransport.BT, true)
+                }) { Text(stringResource(R.string.enable)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBtWarning = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
     if (showNostrWarning) {
         AlertDialog(
             onDismissRequest = { showNostrWarning = false },
@@ -1119,6 +1186,10 @@ fun SettingsTransportsSection(
     nostrNpub: String?,
     nostrDirect: Boolean,
     onToggleLan: (Boolean) -> Unit,
+    btHasRadio: Boolean,
+    btNotReadyReason: String,
+    onToggleBt: (Boolean) -> Unit,
+    onGrantBtPermissions: () -> Unit,
     onSelectYggMode: (FfiYggMode) -> Unit,
     onToggleTor: (Boolean) -> Unit,
     onToggleMail: (Boolean) -> Unit,
@@ -1141,6 +1212,50 @@ fun SettingsTransportsSection(
         enabled = transportsEnabled[FfiTransport.LAN] ?: false,
         ready = transportsReady[FfiTransport.LAN] ?: false,
         onToggle = onToggleLan
+    )
+
+    // Bluetooth
+    TransportItem(
+        title = stringResource(R.string.bt_transport),
+        description = stringResource(R.string.bt_desc),
+        enabled = transportsEnabled[FfiTransport.BT] ?: false,
+        ready = transportsReady[FfiTransport.BT] ?: false,
+        onToggle = onToggleBt,
+        statusContent = {
+            // Состояний три, а не два (FFI.md): выключено человеком;
+            // включено, но радио не вручено — беда приложения, не сети;
+            // включено, радио есть, а ступень не поднялась — и тогда надо
+            // назвать причину. Причину ядро словами наружу не отдаёт,
+            // но обе возможные приложение знает про себя само.
+            if (transportsEnabled[FfiTransport.BT] == true) {
+                val ready = transportsReady[FfiTransport.BT] ?: false
+                Column(modifier = Modifier.padding(top = 8.dp)) {
+                    when {
+                        !btHasRadio -> {
+                            Text(
+                                text = stringResource(R.string.bt_no_radio),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            OutlinedButton(
+                                onClick = onGrantBtPermissions,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(stringResource(R.string.bt_grant))
+                            }
+                        }
+                        !ready -> {
+                            Text(
+                                text = btNotReadyReason,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+        }
     )
 
     // Yggdrasil
