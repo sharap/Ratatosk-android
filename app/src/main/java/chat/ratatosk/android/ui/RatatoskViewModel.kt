@@ -1365,6 +1365,28 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /**
+     * Останавливает приём файла, **не отказываясь** от него.
+     *
+     * Приехавшее остаётся, предложение живёт, и [acceptFile] продолжит
+     * с того же места. Это не отмена: отказ (`declineFile`) выбрасывает
+     * принятое, а здесь человек говорит «не сейчас».
+     */
+    fun pauseFile(chatId: ByteArray, fileId: ByteArray) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                if (RatatoskCore.isCompanionMode()) {
+                    RatatoskCore.getCompanion().pauseFile(fileId)
+                } else {
+                    RatatoskCore.getClient().pauseFile(fileId)
+                    loadMessages(chatId)
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("RatatoskVM", "Failed to pause file", e)
+            }
+        }
+    }
+
     fun declineFile(chatId: ByteArray, fileId: ByteArray) {
         viewModelScope.launch(Dispatchers.IO) {
             try {

@@ -324,4 +324,7 @@
     <string name="bt_adapter_off">Включено, но Bluetooth на телефоне выключен.</string>
     <string name="bt_no_permissions">Включено, но нет разрешений на обзор эфира.</string>
     <string name="bt_not_up">Включено, но эфир не поднялся.</string>
+    <string name="file_paused">Остановлено</string>
+    <string name="file_pause">Остановить</string>
+    <string name="file_resume">Продолжить</string>
 </resources>

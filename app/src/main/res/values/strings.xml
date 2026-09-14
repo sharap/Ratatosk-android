@@ -322,4 +322,7 @@
     <string name="bt_adapter_off">Enabled, but Bluetooth is off on the phone.</string>
     <string name="bt_no_permissions">Enabled, but the permissions to scan the air are missing.</string>
     <string name="bt_not_up">Enabled, but the air has not come up.</string>
+    <string name="file_paused">Stopped</string>
+    <string name="file_pause">Stop</string>
+    <string name="file_resume">Continue</string>
 </resources>

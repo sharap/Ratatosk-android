@@ -1583,7 +1583,16 @@ fun FileAttachment(
                     val waitReason = if (file.complete) null else waiting[fileIdHex]
                     val waitText = waitReason?.let { viewModel.fileWaitingText(it) }
 
-                    if (waitText != null) {
+                    val pausedIncoming = file.incoming && !file.accepted &&
+                        !file.complete && file.receivedChunks > 0UL
+
+                    if (pausedIncoming) {
+                        Text(
+                            text = stringResource(R.string.file_paused),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = contentColor.copy(alpha = 0.6f)
+                        )
+                    } else if (waitText != null) {
                         Text(
                             text = waitText,
                             style = MaterialTheme.typography.labelSmall,
@@ -1611,9 +1620,29 @@ fun FileAttachment(
                     }
                 }
                 if (file.incoming && !file.accepted && !file.complete) {
-                    Row {
-                        IconButton(onClick = { viewModel.declineFile(chatId, file.fileId) }) { Icon(Icons.Default.Close, contentDescription = "Decline", tint = MaterialTheme.colorScheme.error) }
-                        IconButton(onClick = { viewModel.acceptFile(chatId, file.fileId) }) { Icon(Icons.Default.Download, contentDescription = "Accept", tint = linkColor) }
+                    // Остановленный файл отличается от нового предложения
+                    // тем, что часть уже приехала. Показать это надо
+                    // «остановлено, продолжить», а не «принять»: человеку
+                    // не предлагают начать заново, приём пойдёт с того же
+                    // места. Отказаться он по-прежнему может.
+                    val paused = file.receivedChunks > 0UL
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { viewModel.declineFile(chatId, file.fileId) }) {
+                            Icon(
+                                Icons.Default.Close,
+                                contentDescription = stringResource(R.string.decline),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        IconButton(onClick = { viewModel.acceptFile(chatId, file.fileId) }) {
+                            Icon(
+                                if (paused) Icons.Default.PlayArrow else Icons.Default.Download,
+                                contentDescription = stringResource(
+                                    if (paused) R.string.file_resume else R.string.accept
+                                ),
+                                tint = linkColor
+                            )
+                        }
                     }
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1623,7 +1652,52 @@ fun FileAttachment(
                                 IconButton(onClick = { viewModel.cancelFileJob(file.fileId) }, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Close, contentDescription = "Cancel", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp)) }
                             }
                         } else {
-                            if (!file.complete) { CircularProgressIndicator(progress = { currentProgress }, modifier = Modifier.size(24.dp).padding(4.dp), strokeWidth = 2.dp, color = linkColor) }
+                            if (!file.complete) {
+                                if (file.incoming) {
+                                    // Кнопка в середине индикатора — как
+                                    // у отмены выгрузки выше. Раньше на
+                                    // качающемся файле стояла голая крутилка,
+                                    // и остановить приём было нечем.
+                                    //
+                                    // Именно **остановить**, а не отказаться:
+                                    // приехавшее остаётся, предложение живёт,
+                                    // и приём продолжится с того же места.
+                                    // Отказ (declineFile) выбрасывает
+                                    // принятое — это другое действие, и ядро
+                                    // прямо просит их не путать: прочитавший
+                                    // «отменено» не станет продолжать то,
+                                    // что считает потерянным.
+                                    Box(contentAlignment = Alignment.Center) {
+                                        CircularProgressIndicator(
+                                            progress = { currentProgress },
+                                            modifier = Modifier.size(32.dp),
+                                            strokeWidth = 2.dp,
+                                            color = linkColor
+                                        )
+                                        IconButton(
+                                            onClick = { viewModel.pauseFile(chatId, file.fileId) },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Pause,
+                                                contentDescription = stringResource(R.string.file_pause),
+                                                tint = linkColor,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    // У исходящего отменять нечем: отказа
+                                    // от своей отправки на границе ядра нет,
+                                    // а cancelSend — это про компаньона.
+                                    CircularProgressIndicator(
+                                        progress = { currentProgress },
+                                        modifier = Modifier.size(24.dp).padding(4.dp),
+                                        strokeWidth = 2.dp,
+                                        color = linkColor
+                                    )
+                                }
+                            }
                             if (file.complete || !file.incoming) {
                                 IconButton(onClick = {
                                     val tempDir = java.io.File(context.cacheDir, "temp_open"); tempDir.mkdirs()
