@@ -49,6 +49,28 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _fileProgress = MutableStateFlow<Map<String, Float>>(emptyMap())
     val fileProgress = _fileProgress.asStateFlow()
 
+    // Полоса **у отправителя**: сколько чанков отдано транспорту.
+    //
+    // Отдельно от fileProgress, и это не дубль: то — ход приёма у нас,
+    // это — ход отдачи наружу. Раньше исходящий файл питался чужим
+    // событием и потому не двигался вовсе.
+    private val _fileSending = MutableStateFlow<Map<String, Float>>(emptyMap())
+    val fileSending = _fileSending.asStateFlow()
+
+    // Почему передача файла стоит (§10.3). Состояние, а не происшествие:
+    // показывать его надо на самом файле, пока оно держится, а не
+    // всплывающей подсказкой — ждать файл может столько, сколько
+    // собеседник вне сети.
+    private val _fileWaiting = MutableStateFlow<Map<String, FfiFileWaitReason>>(emptyMap())
+    val fileWaiting = _fileWaiting.asStateFlow()
+
+    /**
+     * Текст для стоящей передачи. Берётся у ядра и переписыванию
+     * не подлежит: он обещает ровно то, что протокол делает. «Ошибка
+     * отправки» и «загрузка…» здесь одинаково неправда.
+     */
+    fun fileWaitingText(reason: FfiFileWaitReason): String =
+        try { org.ratatosk.core.fileWaitingText(reason) } catch (e: Exception) { "" }
 
     private val _filePreviews = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
     val filePreviews = _filePreviews.asStateFlow()
@@ -1142,6 +1164,8 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         _messageStatuses.value = emptyMap()
         _unreadCounts.value = emptyMap()
         _fileProgress.value = emptyMap()
+        _fileSending.value = emptyMap()
+        _fileWaiting.value = emptyMap()
         _filePreviews.value = emptyMap()
         previewRequests.clear()
         // Расшифрованные копии вложений в кэше — вместе с сессией. Они
@@ -2623,8 +2647,39 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
             }
+            is FfiEvent.FileWaitsForChannel -> {
+                _fileWaiting.update { it + (event.fileId.toHexString() to event.reason) }
+            }
+            is FfiEvent.FileGone -> {
+                val hex = event.fileId.toHexString()
+                // Вложения больше нет — и ожидания вместе с ним.
+                _fileWaiting.update { it - hex }
+                _fileProgress.update { it - hex }
+                _fileSending.update { it - hex }
+                // Строку вложения надо **убрать**, а не обнулить в ней
+                // числа: само сообщение остаётся, текст к отвергнутой
+                // картинке никуда не делся. Список сообщений об этом
+                // не знает, поэтому перечитываем открытый чат.
+                activeChatId?.let { loadMessages(it.hexToByteArray()) }
+            }
+            is FfiEvent.FileSending -> {
+                // «Отдано транспорту», а не «доставлено»: говорить про
+                // доставку этими числами нельзя (§14, FFI.md).
+                val hex = event.fileId.toHexString()
+                val progress = if (event.total > 0UL) {
+                    event.sent.toFloat() / event.total.toFloat()
+                } else 0f
+                _fileSending.update { it + (hex to progress) }
+                // Ядро называет снимающим ожидание только FileProgress,
+                // но он про приём. У отдачи движение видно отсюда, и
+                // держать «стоит» поверх идущей отправки было бы враньём.
+                _fileWaiting.update { it - hex }
+            }
             is FfiEvent.FileProgress -> {
                 val hex = event.fileId.toHexString()
+                // Ход передачи и означает, что она пошла: ядро прямо
+                // говорит, что это событие снимает ожидание.
+                _fileWaiting.update { it - hex }
                 val progress = if (event.total > 0UL) event.received.toFloat() / event.total.toFloat() else 0f
                 _fileProgress.update { it + (hex to progress) }
                 

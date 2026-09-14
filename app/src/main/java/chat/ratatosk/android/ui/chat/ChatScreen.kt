@@ -1539,6 +1539,8 @@ fun FileAttachment(
 ) {
     files.forEach { file ->
         val progress by viewModel.fileProgress.collectAsState()
+        val sending by viewModel.fileSending.collectAsState()
+        val waiting by viewModel.fileWaiting.collectAsState()
         val activeJobs by viewModel.activeJobsFlow.collectAsState()
         val fileIdHex = file.fileId.toHexString()
         val isExportingActive = activeJobs.contains(fileIdHex)
@@ -1573,8 +1575,39 @@ fun FileAttachment(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = file.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, color = contentColor)
                     Text(text = formatFileSize(file.sizeBytes), style = MaterialTheme.typography.labelSmall, color = contentColor.copy(alpha = 0.6f))
-                    if (!file.incoming && !file.complete) {
-                        Text(text = if (currentProgress > 0) stringResource(R.string.peer_downloading, (currentProgress * 100).toInt()) else stringResource(R.string.waiting_for_peer), style = MaterialTheme.typography.labelSmall, color = linkColor)
+                    // Почему передача стоит — словами ядра (§10.3).
+                    // Текст его, не наш: «ошибка отправки» и «загрузка…»
+                    // здесь одинаково неправда. Из шести причин пять
+                    // означают «поедет само», и только переполненный
+                    // ящик требует действия — его и выделяем.
+                    val waitReason = if (file.complete) null else waiting[fileIdHex]
+                    val waitText = waitReason?.let { viewModel.fileWaitingText(it) }
+
+                    if (waitText != null) {
+                        Text(
+                            text = waitText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (waitReason == org.ratatosk.core.FfiFileWaitReason.MAILBOX_FULL) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                contentColor.copy(alpha = 0.6f)
+                            }
+                        )
+                    } else if (!file.incoming && !file.complete) {
+                        // Своя полоса отдачи, а не чужая полоса приёма.
+                        // И формулировка честная: ядро говорит «отдано
+                        // транспорту», про доставку этим числом заявлять
+                        // нельзя (§14).
+                        val outgoing = sending[fileIdHex] ?: 0f
+                        Text(
+                            text = if (outgoing > 0f) {
+                                stringResource(R.string.file_sending, (outgoing * 100).toInt())
+                            } else {
+                                stringResource(R.string.waiting_for_peer)
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = linkColor
+                        )
                     }
                 }
                 if (file.incoming && !file.accepted && !file.complete) {

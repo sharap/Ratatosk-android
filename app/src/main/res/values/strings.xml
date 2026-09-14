@@ -317,6 +317,7 @@
     <string name="bt_desc">Finds people nearby over the air, without any network at all.</string>
     <string name="bt_no_radio">Enabled, but the radio is not running: permissions are missing.</string>
     <string name="bt_grant">Grant permissions</string>
+    <string name="file_sending">Sending: %1$d%%</string>
     <string name="bt_warning">Bluetooth keeps working all the time: to be found and to find others, the phone advertises itself and listens to the air continuously — that costs battery even when nobody writes. Android will also ask for a separate permission to scan; on older versions it asks for location, because the system treats nearby beacons as a hint about where you are.</string>
     <string name="bt_adapter_off">Enabled, but Bluetooth is off on the phone.</string>
     <string name="bt_no_permissions">Enabled, but the permissions to scan the air are missing.</string>
