@@ -606,6 +606,27 @@ fun ChatScreen(
             }
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                // Фон переписки. Настройка и хранение были на месте давно —
+                // и выбор картинки, и ползунок прозрачности, — а рисовать
+                // её было некому: экран брал из темы только цвет пузырей.
+                //
+                // Первым слоем и `matchParentSize`, а не `fillMaxSize`:
+                // фон не должен участвовать в измерении содержимого,
+                // иначе он бы растягивал контейнер под свой размер.
+                //
+                // Закрывает он область сообщений, но не панели: у шапки
+                // и у поля ввода свои поверхности, и картинка под ними
+                // мешала бы читать.
+                chatTheme.backgroundImageUri?.let { uri ->
+                    Image(
+                        painter = rememberAsyncImagePainter(uri),
+                        contentDescription = null,
+                        modifier = Modifier.matchParentSize(),
+                        contentScale = ContentScale.Crop,
+                        alpha = chatTheme.backgroundOpacity
+                    )
+                }
+
                 if (isSearchMode && searchQuery.isNotEmpty()) {
                     if (isSearching) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
