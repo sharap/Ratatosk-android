@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import chat.ratatosk.android.util.nearby
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.components.AddContactDialog
@@ -98,7 +99,7 @@ fun ContactsScreen(
                                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                                     val name = contact.localName ?: contact.displayName
                                     Text(name, modifier = Modifier.weight(1f))
-                                    if (contact.seenOnLan) {
+                                    if (contact.nearby) {
                                         Surface(
                                             modifier = Modifier.size(8.dp),
                                             shape = androidx.compose.foundation.shape.CircleShape,

@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import chat.ratatosk.android.util.nearby
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.components.AddContactDialog
@@ -193,7 +194,7 @@ fun ChatListScreen(
                             headlineContent = { 
                                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                                     Text(chatItem.title, modifier = Modifier.weight(1f))
-                                    if (chatItem is ChatItem.Contact && chatItem.contact.seenOnLan) {
+                                    if (chatItem is ChatItem.Contact && chatItem.contact.nearby) {
                                         Surface(
                                             modifier = Modifier.size(8.dp),
                                             shape = androidx.compose.foundation.shape.CircleShape,

@@ -59,6 +59,7 @@ import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.luminance
+import chat.ratatosk.android.util.nearby
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.components.Avatar
@@ -325,7 +326,7 @@ fun ChatScreen(
                                         }
                                         Column {
                                             Text(contact?.let { it.localName ?: it.displayName } ?: stringResource(R.string.chat))
-                                            if (contact?.seenOnLan == true) {
+                                            if (contact?.nearby == true) {
                                                 Text(
                                                     text = stringResource(R.string.online_lan),
                                                     style = MaterialTheme.typography.labelSmall,

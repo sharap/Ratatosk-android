@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import chat.ratatosk.android.util.nearby
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.components.Avatar
@@ -135,7 +136,7 @@ fun ContactDetailsScreen(
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (contact.seenOnLan) {
+                            if (contact.nearby) {
                                 Surface(
                                     modifier = Modifier.size(8.dp),
                                     shape = androidx.compose.foundation.shape.CircleShape,
