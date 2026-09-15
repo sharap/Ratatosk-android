@@ -85,27 +85,50 @@ object RatatoskCore : EventObserver, CompanionObserver {
     private val btRadioLock = Any()
 
     /**
-     * Просит ядро завести журнал — **только в отладочной сборке**.
+     * Файл журнала ядра. Один на приложение, лежит в приватном каталоге.
      *
-     * Без этой просьбы ядро молчит, и молчит по построению: `tracing`
-     * без подписчика никуда не пишет. Ставить подписчик само оно не вправе
-     * — решать, писать ли внутренности приложения в системный журнал,
-     * не дело библиотеки (`ANDROID.md`, «Журнал: одна строка в клиенте»).
-     *
-     * Зовётся из [initializeRegistry], то есть до открытия хранилища, как
-     * и требует ядро: подписчик — вещь процесса, а не сессии.
-     *
-     * Дальше читать так: `adb logcat -s ratatosk`.
+     * Не в кэше: кэш система вправе вычистить когда угодно, в том числе
+     * ровно между поломкой и попыткой её показать.
      */
-    fun startLoggingIfDebug() {
-        if (!chat.ratatosk.android.BuildConfig.DEBUG) return
+    fun coreLogFile(context: Context): java.io.File =
+        java.io.File(java.io.File(context.filesDir, "logs"), "core.log")
+
+    /**
+     * Просит ядро завести журнал.
+     *
+     * Без просьбы ядро молчит по построению: `tracing` без подписчика
+     * никуда не пишет. Ставить его само оно не вправе — решать, писать ли
+     * внутренности приложения в журнал, не дело библиотеки.
+     *
+     * Два вида, и они взаимоисключающие (так устроено ядро):
+     *
+     * * **в файл** — когда человек включил сбор. Работает в любой сборке,
+     *   и только отсюда журнал можно достать и прислать: у упакованного
+     *   приложения потока ошибок нет, а `logcat` с чужого телефона
+     *   не снимешь;
+     * * **в logcat** — иначе и только в отладочной сборке.
+     *
+     * Подписчик ставится один раз на процесс, поэтому переключение
+     * применяется со следующего запуска — это надо сказать человеку.
+     *
+     * Файл ядро перезаписывает на каждом запуске и каталог не создаёт:
+     * создаём мы.
+     */
+    fun startLogging(context: Context, toFile: Boolean) {
         synchronized(this) {
             if (loggingStarted) return
             loggingStarted = true
         }
         try {
-            org.ratatosk.core.enableLogging(LOG_FILTER)
-            android.util.Log.i("RatatoskCore", "core logging requested: $LOG_FILTER")
+            if (toFile) {
+                val file = coreLogFile(context)
+                file.parentFile?.mkdirs()
+                org.ratatosk.core.enableFileLogging(LOG_FILTER, file.absolutePath)
+                android.util.Log.i("RatatoskCore", "core logging to file: ${file.absolutePath}")
+            } else if (chat.ratatosk.android.BuildConfig.DEBUG) {
+                org.ratatosk.core.enableLogging(LOG_FILTER)
+                android.util.Log.i("RatatoskCore", "core logging to logcat")
+            }
         } catch (t: Throwable) {
             android.util.Log.w("RatatoskCore", "core logging unavailable: ${t.message}")
         }
@@ -113,7 +136,6 @@ object RatatoskCore : EventObserver, CompanionObserver {
 
     @Throws(RatatoskException::class)
     fun initializeRegistry(context: Context): AccountRegistry {
-        startLoggingIfDebug()
         synchronized(this) {
             registry?.let { return it }
             val root = File(context.filesDir, "ratatosk_root")

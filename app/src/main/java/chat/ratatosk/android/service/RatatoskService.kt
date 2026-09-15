@@ -318,6 +318,15 @@ class RatatoskService : Service() {
      */
     private fun recoverSessionIfNeeded() {
         serviceScope.launch {
+            // Журнал раньше всего: служба может подняться без окна,
+            // и тогда это единственное место, где его успеют завести.
+            val toFile = try {
+                SettingsRepository(applicationContext).coreFileLog.first()
+            } catch (e: Exception) {
+                false
+            }
+            RatatoskCore.startLogging(applicationContext, toFile)
+
             if (RatatoskCore.isInitialized()) {
                 handBtRadio()
                 return@launch

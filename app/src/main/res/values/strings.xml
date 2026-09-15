@@ -325,4 +325,12 @@
     <string name="file_paused">Stopped</string>
     <string name="file_pause">Stop</string>
     <string name="file_resume">Continue</string>
+    <string name="diagnostics">Diagnostics</string>
+    <string name="core_log">Core log to a file</string>
+    <string name="core_log_desc">For sorting out a problem. The log describes the transports and may mention who you talk to, so keep it off unless it is needed, and think before sharing.</string>
+    <string name="core_log_restart">Takes effect after the app restarts. The file is overwritten on every start.</string>
+    <string name="core_log_size">Log collected: %1$s</string>
+    <string name="core_log_share">Share the log</string>
+    <string name="core_log_empty">No log yet.</string>
+    <string name="core_log_no_app">There is no app to share the file with.</string>
 </resources>

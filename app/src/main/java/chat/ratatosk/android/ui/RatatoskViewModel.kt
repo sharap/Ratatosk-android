@@ -14,6 +14,7 @@ import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
@@ -301,6 +302,17 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         false
     }
 
+    // Журнал ядра в файл: собирать или нет. Общий на приложение.
+    val coreFileLog = settingsRepository.coreFileLog
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun setCoreFileLog(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setCoreFileLog(enabled) }
+    }
+
+    /** Файл журнала — чтобы экран мог показать размер и отдать его наружу. */
+    fun coreLogFile(): java.io.File = RatatoskCore.coreLogFile(getApplication())
+
     fun btMissingPermissions(): List<String> =
         org.ratatosk.bt.BtRadio.Permissions.missing(getApplication())
 
@@ -344,6 +356,19 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     val cardVersion = _cardVersion.asStateFlow()
 
     init {
+        // Журнал ядра — первым делом, раньше всего остального: подписчик
+        // ставится один раз на процесс, и всё, что ядро скажет до этого,
+        // пропадёт. Читать настройку приходится здесь, а не внутри ядра:
+        // она в DataStore, то есть достаётся корутиной.
+        viewModelScope.launch(Dispatchers.IO) {
+            val toFile = try {
+                settingsRepository.coreFileLog.first()
+            } catch (e: Exception) {
+                false
+            }
+            RatatoskCore.startLogging(application, toFile)
+        }
+
         // Расшифрованные копии, пережившие прошлый запуск (приложение
         // могли убить, не дав выйти из аккаунта). Сутки — чтобы не тронуть
         // то, с чем человек работает прямо сейчас, но и не копить вечно.

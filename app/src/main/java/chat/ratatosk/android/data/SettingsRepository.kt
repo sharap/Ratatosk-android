@@ -35,9 +35,20 @@ class SettingsRepository(private val context: Context) {
         val ACCOUNTS_MAP = stringPreferencesKey("accounts_map")
         val COMPANION_LINKS = stringPreferencesKey("companion_links")
         val LAST_ACCOUNT_ID = stringPreferencesKey("last_account_id")
+
+        // Журнал ядра в файл. Общий на приложение, а не на аккаунт:
+        // подписчик у tracing один на процесс.
+        val CORE_FILE_LOG = booleanPreferencesKey("core_file_log")
     }
 
     val lastAccountId: Flow<String?> = context.dataStore.data.map { it[Keys.LAST_ACCOUNT_ID] }
+
+    /** Собирать ли журнал ядра в файл. По умолчанию — нет. */
+    val coreFileLog: Flow<Boolean> = context.dataStore.data.map { it[Keys.CORE_FILE_LOG] ?: false }
+
+    suspend fun setCoreFileLog(enabled: Boolean) {
+        context.dataStore.edit { it[Keys.CORE_FILE_LOG] = enabled }
+    }
 
     suspend fun setLastAccountId(id: String?) {
         context.dataStore.edit { preferences ->

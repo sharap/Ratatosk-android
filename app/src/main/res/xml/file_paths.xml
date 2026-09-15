@@ -13,4 +13,8 @@
 <paths>
     <cache-path name="temp_open" path="temp_open/" />
     <cache-path name="media_viewer" path="media_viewer/" />
+    <!-- Журнал ядра: его отдают наружу кнопкой «поделиться». Лежит
+         не в кэше — систему нельзя просить не вычищать кэш ровно между
+         поломкой и попыткой её показать. -->
+    <files-path name="core_logs" path="logs/" />
 </paths>

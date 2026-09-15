@@ -327,4 +327,12 @@
     <string name="file_paused">Остановлено</string>
     <string name="file_pause">Остановить</string>
     <string name="file_resume">Продолжить</string>
+    <string name="diagnostics">Диагностика</string>
+    <string name="core_log">Журнал ядра в файл</string>
+    <string name="core_log_desc">Нужен, чтобы разобрать поломку. В журнале описана работа транспортов, и по нему видно, с кем вы связываетесь, — держите его выключенным без надобности и подумайте, кому отправляете.</string>
+    <string name="core_log_restart">Применится после перезапуска приложения. Файл перезаписывается при каждом запуске.</string>
+    <string name="core_log_size">Собрано: %1$s</string>
+    <string name="core_log_share">Отправить журнал</string>
+    <string name="core_log_empty">Журнала пока нет.</string>
+    <string name="core_log_no_app">Нечем отправить файл.</string>
 </resources>

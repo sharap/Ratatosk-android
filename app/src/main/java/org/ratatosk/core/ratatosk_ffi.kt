@@ -777,6 +777,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_edit_notice(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_enable_file_logging(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_enable_logging(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_eviction_notice(
@@ -1514,6 +1516,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_edit_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_enable_file_logging(`filter`: RustBuffer.ByValue,`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_func_enable_logging(`filter`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_func_eviction_notice(uniffi_out_err: UniffiRustCallStatus, 
@@ -1715,7 +1719,10 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_edit_notice() != 60333) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_func_enable_logging() != 13479) {
+    if (lib.uniffi_ratatosk_ffi_checksum_func_enable_file_logging() != 36494) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_enable_logging() != 33554) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_eviction_notice() != 35024) {
@@ -17339,36 +17346,82 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     
 
         /**
+         * Заводит журнал ядра **в файл**. Зовётся вместо [`enable_logging`].
+         *
+         * # Зачем отдельно от потока ошибок
+         *
+         * Потому что у упакованного приложения его нет. Компаньон на десктопе
+         * запускают ярлыком, а не из терминала; на Android поток ошибок уходит
+         * в никуда всегда. В обоих случаях файл — единственное место, откуда
+         * журнал можно **достать и прислать**, а именно это и нужно, когда
+         * разбирают поломку на чужом устройстве.
+         *
+         * # Файл переписывается на каждом запуске
+         *
+         * Не дописывается, и это осознанный выбор. Дописывание требует уборки:
+         * журнал ступеней растёт мегабайтами в час, и без присмотра он однажды
+         * займёт весь диск телефона. Один запуск — один файл: разбирают всегда
+         * последний прогон, а сохранить предыдущий человек успеет сам.
+         *
+         * Путь клиент выбирает свой — каталог приложения, кэш, что угодно, куда
+         * ему разрешено писать. Ядро его не проверяет и не создаёт: не открылся
+         * — сказано в поток ошибок, и журнала просто нет.
+         *
+         * Остальное — как у [`enable_logging`]: тот же отбор, то же умолчание,
+         * второй вызов так же ничего не делает.
+         */ fun `enableFileLogging`(`filter`: kotlin.String, `path`: kotlin.String)
+        = 
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_enable_file_logging(
+    
+        
+        FfiConverterString.lower(`filter`),
+        FfiConverterString.lower(`path`),_status)
+}
+    
+    
+
+        /**
          * Заводит журнал ядра. Зовётся клиентом **до** открытия хранилища.
          *
          * # Почему это вообще нужна отдельная просьба
          *
          * Журнал ядра идёт через `tracing`, а `tracing` без подписчика — тишина
-         * по построению: макросы никуда не пишут, и стоит это ноль. На десктопе
-         * подписчика ставит стенд; на телефоне не ставил никто, и в `logcat`
-         * не было ни одной нашей строки. Разбор шестой ступени (0.4) с телефона
-         * из-за этого шёл вслепую: видно было только то, что печатает Kotlin.
+         * по построению: макросы никуда не пишут, и стоит это ноль. Поставить
+         * его молча при открытии хранилища нельзя: подписчик — вещь процесса,
+         * а не сессии, и ставится он один раз на всю жизнь процесса. Решать
+         * за приложение, писать ли его внутренности в системный журнал, —
+         * не наше дело.
          *
-         * Поставить его молча при открытии хранилища нельзя: подписчик — вещь
-         * процесса, а не сессии, и ставится он один раз на всю жизнь процесса.
-         * Решать за приложение, писать ли его внутренности в системный журнал,
-         * — не наше дело.
+         * # Куда попадут строки
          *
-         * # Что попадёт в `logcat`
+         * На Android — в `logcat` под тегом `ratatosk` (`adb logcat -s ratatosk`).
+         * На десктопе — в **поток ошибок** процесса: там это обычное место
+         * журнала, и клиент, запущенный из терминала, видит его сразу.
          *
-         * Тег `ratatosk`, то есть `adb logcat -s ratatosk`. Уровень и отбор
-         * задаёт `filter` в синтаксисе `RUST_LOG`
-         * (`ratatosk_transport=debug,info`); пустая строка означает умолчание —
-         * наши крейты подробно, остальное по делу.
+         * **Десктоп сюда добавлен, и это не мелочь.** Прежде вне Android функция
+         * не делала ничего вовсе: полагались на то, что подписчика ставит стенд.
+         * Но стенд — не единственный десктопный клиент: компаньон на Compose
+         * грузит библиотеку через JNA и своего подписчика не имеет ниоткуда.
+         * Для него ядро молчало так же, как молчало на телефоне до 0.4, —
+         * и разбирать что-либо на десктопе приходилось по одному Kotlin.
+         *
+         * Клиенту без видимого потока ошибок (упакованное приложение) нужен
+         * [`enable_file_logging`].
+         *
+         * # Отбор
+         *
+         * `filter` в синтаксисе `RUST_LOG` (`ratatosk_transport=debug,info`);
+         * пустая строка означает умолчание — наши крейты подробно, остальное
+         * по делу. Непонятный отбор не отказ: журнал заведётся обычным, а о
+         * подмене будет сказано в нём же.
          *
          * # Второй вызов ничего не делает
          *
          * И не считается ошибкой: подписчик в процессе один, а клиент,
          * открывающий второй аккаунт, позовёт эту функцию снова — отказывать
-         * ему не за что.
-         *
-         * Вне Android — пусто, и это не заглушка: там этот крейт линкуется
-         * в стенд, у которого подписчик свой.
+         * ему не за что. По той же причине ничего не ломает вызов из стенда,
+         * у которого подписчик свой: чей встал первым, тот и остаётся.
          */ fun `enableLogging`(`filter`: kotlin.String)
         = 
     uniffiRustCall() { _status ->

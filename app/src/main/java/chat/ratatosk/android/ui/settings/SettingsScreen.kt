@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import chat.ratatosk.android.util.FileUtils
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
 import kotlinx.coroutines.launch
@@ -257,6 +258,11 @@ fun SettingsScreen(
                             snackbarHostState = snackbarHostState,
                             scope = scope
                         )
+                        SettingsDiagnosticsSection(
+                            viewModel = viewModel,
+                            snackbarHostState = snackbarHostState,
+                            scope = scope
+                        )
 
                         Spacer(modifier = Modifier.height(24.dp))
                         HorizontalDivider()
@@ -358,6 +364,11 @@ fun SettingsScreen(
 
                 if (!isCompanionMode) {
                     SettingsStorageSection(
+                        viewModel = viewModel,
+                        snackbarHostState = snackbarHostState,
+                        scope = scope
+                    )
+                    SettingsDiagnosticsSection(
                         viewModel = viewModel,
                         snackbarHostState = snackbarHostState,
                         scope = scope
@@ -1804,6 +1815,95 @@ fun NostrTransportPreview() {
             )
         }
     }
+}
+
+@Composable
+fun SettingsDiagnosticsSection(
+    viewModel: RatatoskViewModel,
+    snackbarHostState: SnackbarHostState,
+    scope: kotlinx.coroutines.CoroutineScope
+) {
+    val context = LocalContext.current
+    val enabled by viewModel.coreFileLog.collectAsState()
+
+    // Размер перечитываем на каждое появление экрана: файл растёт в фоне,
+    // а подписываться на файловую систему ради строки в настройках незачем.
+    val logFile = remember { viewModel.coreLogFile() }
+    var sizeBytes by remember { mutableStateOf(0L) }
+    LaunchedEffect(enabled) {
+        sizeBytes = if (logFile.exists()) logFile.length() else 0L
+    }
+
+    Text(text = stringResource(R.string.diagnostics), style = MaterialTheme.typography.titleMedium)
+    Spacer(modifier = Modifier.height(16.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(stringResource(R.string.core_log), style = MaterialTheme.typography.bodyLarge)
+            Text(
+                stringResource(R.string.core_log_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = enabled, onCheckedChange = { viewModel.setCoreFileLog(it) })
+    }
+
+    // Подписчик ставится один раз на процесс, поэтому переключение
+    // применится со следующего запуска. Сказать об этом обязательно:
+    // иначе человек включит, не увидит журнала и решит, что сломано.
+    Text(
+        text = stringResource(R.string.core_log_restart),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 4.dp)
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    if (sizeBytes > 0L) {
+        Text(
+            text = stringResource(R.string.core_log_size, FileUtils.formatFileSize(sizeBytes.toULong())),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        val noAppMsg = stringResource(R.string.core_log_no_app)
+        OutlinedButton(
+            onClick = {
+                try {
+                    val uri = androidx.core.content.FileProvider.getUriForFile(
+                        context, "${context.packageName}.provider", logFile
+                    )
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    context.startActivity(
+                        Intent.createChooser(send, null).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                } catch (t: Throwable) {
+                    scope.launch { snackbarHostState.showSnackbar(noAppMsg) }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.core_log_share))
+        }
+    } else {
+        Text(
+            text = stringResource(R.string.core_log_empty),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+
+    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 }
 
 @Composable
