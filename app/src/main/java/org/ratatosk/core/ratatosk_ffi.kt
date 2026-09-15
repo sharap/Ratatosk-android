@@ -2109,7 +2109,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers_alive() != 8974) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_has_radio() != 29089) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_has_radio() != 31258) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_bytes() != 53349) {
@@ -2136,7 +2136,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_on_ready() != 48613) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_set_radio() != 50725) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ffibluetooth_set_radio() != 58506) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ffibtradio_start() != 63564) {
@@ -4114,11 +4114,18 @@ public object FfiConverterTypeEventObserver: FfiConverter<EventObserver, Long> {
 public interface FfiBluetoothInterface {
     
     /**
-     * Есть ли у ядра радио.
+     * Есть ли чем поднимать эфир.
      *
      * Нужно экрану настроек: «ступень включена, но радио не вручено» —
      * это состояние приложения, а не сети, и показывать его надо словами,
      * а не тишиной.
+     *
+     * # Вопрос именно «есть ли чем», а не «вручили ли нам»
+     *
+     * Разница видна ровно в одной сборке — Linux с признаком `bt`, —
+     * и там она решающая: радио есть, вручать его не надо, а буквальный
+     * ответ «нам ничего не вручали» был бы неправдой о работоспособности.
+     * Клиент показал бы «эфир недоступен» над живой ступенью.
      */
     fun `hasRadio`(): kotlin.Boolean
     
@@ -4194,6 +4201,15 @@ public interface FfiBluetoothInterface {
      * нечем, и молчаливое согласие было бы обманом — §5.4 считал бы
      * ступень живой и жёг бы на ней попытки. Включённая без радио,
      * она честно объявляется потерянной.
+     *
+     * # В сборке со своим радио вызов не делает ничего
+     *
+     * На Linux с признаком `bt` эфиром правит `bluer`, и вручать нечего:
+     * радио уже есть, оно наше. Отказывать за такой вызов не за что —
+     * клиент мог быть написан на оба случая, — но и делать вид, что мы
+     * приняли чужое радио, нельзя: ступень его не спросит ни разу,
+     * и человек искал бы потом, почему «вручили, а не работает».
+     * Поэтому вызов записывается в журнал и кончается ничем.
      */
     fun `setRadio`(`radio`: FfiBtRadio)
     
@@ -4310,11 +4326,18 @@ open class FfiBluetooth: Disposable, AutoCloseable, FfiBluetoothInterface
 
     
     /**
-     * Есть ли у ядра радио.
+     * Есть ли чем поднимать эфир.
      *
      * Нужно экрану настроек: «ступень включена, но радио не вручено» —
      * это состояние приложения, а не сети, и показывать его надо словами,
      * а не тишиной.
+     *
+     * # Вопрос именно «есть ли чем», а не «вручили ли нам»
+     *
+     * Разница видна ровно в одной сборке — Linux с признаком `bt`, —
+     * и там она решающая: радио есть, вручать его не надо, а буквальный
+     * ответ «нам ничего не вручали» был бы неправдой о работоспособности.
+     * Клиент показал бы «эфир недоступен» над живой ступенью.
      */override fun `hasRadio`(): kotlin.Boolean {
             return FfiConverterBoolean.lift(
     callWithHandle {
@@ -4493,6 +4516,15 @@ open class FfiBluetooth: Disposable, AutoCloseable, FfiBluetoothInterface
      * нечем, и молчаливое согласие было бы обманом — §5.4 считал бы
      * ступень живой и жёг бы на ней попытки. Включённая без радио,
      * она честно объявляется потерянной.
+     *
+     * # В сборке со своим радио вызов не делает ничего
+     *
+     * На Linux с признаком `bt` эфиром правит `bluer`, и вручать нечего:
+     * радио уже есть, оно наше. Отказывать за такой вызов не за что —
+     * клиент мог быть написан на оба случая, — но и делать вид, что мы
+     * приняли чужое радио, нельзя: ступень его не спросит ни разу,
+     * и человек искал бы потом, почему «вручили, а не работает».
+     * Поэтому вызов записывается в журнал и кончается ничем.
      */override fun `setRadio`(`radio`: FfiBtRadio)
         = 
     callWithHandle {
