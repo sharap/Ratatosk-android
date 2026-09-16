@@ -337,4 +337,5 @@
     <string name="core_log_no_app">Нечем отправить файл.</string>
     <string name="online_bt">В сети (Bluetooth)</string>
     <string name="online_lan_bt">В сети (LAN, Bluetooth)</string>
+    <string name="file_unavailable">Вложение не удалось прочитать.</string>
 </resources>

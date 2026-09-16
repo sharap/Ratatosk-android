@@ -181,6 +181,19 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _accountExists = MutableStateFlow(false)
     val accountExists: StateFlow<Boolean> = _accountExists.asStateFlow()
     
+    /**
+     * Исходник вложения не читается. `own` — наше отправленное: у него
+     * байты берутся из файла по пути, и путь мог протухнуть.
+     */
+    private class FileSourceGone(val own: Boolean) : Exception()
+
+    private fun fileFailureText(e: Throwable): String = when {
+        // Формулировку последствий даёт ядро (§14) — там она честная и
+        // переведённая, а мы бы сочинили своё.
+        e is FileSourceGone && e.own -> org.ratatosk.core.fileSourceGoneNotice()
+        else -> getApplication<Application>().getString(R.string.file_unavailable)
+    }
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
@@ -1510,7 +1523,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 destination.parentFile?.mkdirs()
                 
                 reader = RatatoskCore.getClient().openFile(file.fileId)
-                if (reader == null) return@launch
+                if (reader == null) {
+                    withContext(Dispatchers.Main) {
+                        _error.value = getApplication<Application>().getString(R.string.file_unavailable)
+                    }
+                    return@launch
+                }
 
                 destination.outputStream().use { output ->
                     val total = reader.chunkTotal()
@@ -1522,7 +1540,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                             output.flush()
                             _fileProgress.update { it + (fileIdHex to (i.toFloat() / total.toFloat())) }
                         } else {
-                            throw Exception("Chunk $i missing")
+                            // Своё вложение ядро читает из исходника по
+                            // пути, а не из принятого: отправитель ничего
+                            // у себя не запечатывал. Человек удалил или
+                            // перенёс файл — и это не обрыв загрузки,
+                            // а исчезнувший исходник.
+                            throw FileSourceGone(reader.own())
                         }
                     }
                 }
@@ -1531,6 +1554,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             } catch (e: Exception) {
                 if (e !is kotlinx.coroutines.CancellationException) {
                     android.util.Log.e("RatatoskVM", "Failed to save file ${file.name}", e)
+                    withContext(Dispatchers.Main) { _error.value = fileFailureText(e) }
                 }
             } finally {
                 reader?.destroy()
@@ -1612,7 +1636,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             var reader: FfiFileReader? = null
             try {
                 reader = RatatoskCore.getClient().openFile(file.fileId)
-                if (reader == null) return@launch
+                if (reader == null) {
+                    withContext(Dispatchers.Main) {
+                        _error.value = getApplication<Application>().getString(R.string.file_unavailable)
+                    }
+                    return@launch
+                }
 
                 val dirUriString = downloadDirUri.value
                 val dirUri = dirUriString?.let { android.net.Uri.parse(it) }
@@ -1627,11 +1656,13 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                                 for (i in 0UL until total) {
                                     ensureActive()
                                     val chunk = reader.chunk(i)
-                                    if (chunk != null) {
-                                        output.write(chunk)
-                                        output.flush()
-                                        _fileProgress.update { it + (fileIdHex to (i.toFloat() / total.toFloat())) }
-                                    }
+                                    // Пропустить кусок молча значило бы
+                                    // записать в «Загрузки» обрезанный файл
+                                    // и назвать это успехом.
+                                    if (chunk == null) throw FileSourceGone(reader.own())
+                                    output.write(chunk)
+                                    output.flush()
+                                    _fileProgress.update { it + (fileIdHex to (i.toFloat() / total.toFloat())) }
                                 }
                             }
                             _fileProgress.update { it + (fileIdHex to 1f) }
@@ -1655,11 +1686,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     for (i in 0UL until total) {
                         ensureActive()
                         val chunk = reader.chunk(i)
-                        if (chunk != null) {
-                            output.write(chunk)
-                            output.flush()
-                            _fileProgress.update { it + (fileIdHex to (i.toFloat() / total.toFloat())) }
-                        }
+                        if (chunk == null) throw FileSourceGone(reader.own())
+                        output.write(chunk)
+                        output.flush()
+                        _fileProgress.update { it + (fileIdHex to (i.toFloat() / total.toFloat())) }
                     }
                 }
                 _fileProgress.update { it + (fileIdHex to 1f) }
@@ -1667,6 +1697,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             } catch (e: Exception) {
                 if (e !is kotlinx.coroutines.CancellationException) {
                     android.util.Log.e("RatatoskVM", "Failed to download file", e)
+                    withContext(Dispatchers.Main) { _error.value = fileFailureText(e) }
                 }
             } finally {
                 reader?.destroy()
