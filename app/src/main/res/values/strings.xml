@@ -333,4 +333,6 @@
     <string name="core_log_share">Share the log</string>
     <string name="core_log_empty">No log yet.</string>
     <string name="core_log_no_app">There is no app to share the file with.</string>
+    <string name="online_bt">Online (Bluetooth)</string>
+    <string name="online_lan_bt">Online (LAN, Bluetooth)</string>
 </resources>

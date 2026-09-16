@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import chat.ratatosk.android.util.nearbyLabelRes
 import chat.ratatosk.android.util.nearby
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
@@ -144,7 +145,7 @@ fun ContactDetailsScreen(
                                 ) {}
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = stringResource(R.string.online_lan),
+                                    text = stringResource(contact.nearbyLabelRes),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )

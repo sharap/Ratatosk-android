@@ -335,4 +335,6 @@
     <string name="core_log_share">Отправить журнал</string>
     <string name="core_log_empty">Журнала пока нет.</string>
     <string name="core_log_no_app">Нечем отправить файл.</string>
+    <string name="online_bt">В сети (Bluetooth)</string>
+    <string name="online_lan_bt">В сети (LAN, Bluetooth)</string>
 </resources>

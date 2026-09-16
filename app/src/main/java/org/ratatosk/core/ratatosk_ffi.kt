@@ -11637,6 +11637,29 @@ data class FfiContact (
     val `seenOnLan`: kotlin.Boolean
     , 
     /**
+     * Слышен ли контакт в эфире Bluetooth прямо сейчас (0.4).
+     *
+     * Пара к [`FfiContact::seen_on_lan`], и заведена отдельным полем,
+     * а не слита с ним в «рядом где-нибудь», по той же причине, по какой
+     * они раздельны в ядре: это **два разных эфира**. Устройство бывает
+     * слышно в Bluetooth и невидимо в локальной сети — разные Wi-Fi,
+     * гостевая сеть с изоляцией клиентов — и наоборот.
+     *
+     * Показывать их человеку одним значком при этом можно и правильно:
+     * ему важно «рядом», а не «каким радио». Сливать их стоит **в UI**,
+     * где эту мысль видно, а не на границе, где потерялась бы разница,
+     * нужная §5.4.
+     *
+     * # У этого признака есть срок
+     *
+     * «Рядом» — знание о сейчас, и держится оно полторы минуты с
+     * последнего свидетельства (объявления или пришедшего кадра). Ушедший
+     * собеседник гаснет сам, и ядро сообщает об этом
+     * `ContactChanged` — перечитайте список.
+     */
+    val `seenOnBt`: kotlin.Boolean
+    , 
+    /**
      * Есть ли аватарка, которую **можно показать**.
      *
      * Учитывает §4.2: у несверенного контакта картинка может лежать
@@ -11742,6 +11765,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalString.read(buf),
             FfiConverterOptionalByteArray.read(buf),
@@ -11762,6 +11786,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterOptionalString.allocationSize(value.`localName`) +
             FfiConverterBoolean.allocationSize(value.`verified`) +
             FfiConverterBoolean.allocationSize(value.`seenOnLan`) +
+            FfiConverterBoolean.allocationSize(value.`seenOnBt`) +
             FfiConverterBoolean.allocationSize(value.`hasAvatar`) +
             FfiConverterOptionalString.allocationSize(value.`onion`) +
             FfiConverterOptionalString.allocationSize(value.`chatmail`) +
@@ -11782,6 +11807,7 @@ public object FfiConverterTypeFfiContact: FfiConverterRustBuffer<FfiContact> {
             FfiConverterOptionalString.write(value.`localName`, buf)
             FfiConverterBoolean.write(value.`verified`, buf)
             FfiConverterBoolean.write(value.`seenOnLan`, buf)
+            FfiConverterBoolean.write(value.`seenOnBt`, buf)
             FfiConverterBoolean.write(value.`hasAvatar`, buf)
             FfiConverterOptionalString.write(value.`onion`, buf)
             FfiConverterOptionalString.write(value.`chatmail`, buf)

@@ -538,7 +538,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                         displayName = member.name,
                         localName = null,
                         verified = false,
+                        // Присутствие у компаньона не спрашивают: эфиры
+                        // слушает телефон, а не пара. Оба признака ложны,
+                        // и это правда, а не заглушка.
                         seenOnLan = false,
+                        seenOnBt = false,
                         hasAvatar = false,
                         onion = null,
                         chatmail = null,
@@ -723,6 +727,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             localName = null,
             verified = chat.verified,
             seenOnLan = false,
+            seenOnBt = false,
             hasAvatar = chat.avatarMs != 0UL,
             onion = null,
             chatmail = null,
