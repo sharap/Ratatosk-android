@@ -810,12 +810,15 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             complete = att.haveChunks == att.chunkTotal,
             receivedChunks = att.haveChunks,
             chunkTotal = att.chunkTotal,
-            // Компаньон нарезку не сообщает, а свободную chunk_bytes()
-            // сюда брать нельзя: она отвечает «каким куском режем мы
-            // сейчас», а этот файл нарезал чужой аппарат и, возможно,
-            // другой ступенью (FFI.md, §10.2). Ноль — «неизвестно»;
-            // ход передачи мы всё равно считаем чанками, не байтами.
-            chunkBytes = 0u,
+            // Нарезку компаньон теперь сообщает, и её обязательно вернуть
+            // в save_file: у каждого файла она своя — эфирный кусок это
+            // четыре килобайта, сетевой мебибайт (FFI.md, §10.2). Раньше
+            // тут стоял ноль («неизвестно»), потому что взять было негде.
+            //
+            // u64 -> u32 здесь ничего не теряет: в FfiFile ядро объявляет
+            // то же самое число как u32, то есть само ручается, что оно
+            // туда влезает.
+            chunkBytes = att.chunkBytes.toUInt(),
             hasPreview = att.hasPreview
         )
     }
@@ -1493,6 +1496,16 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 cancelFileJob(currentCompanionSaveFileId!!.hexToByteArray())
             }
 
+            // Без нарезки куски лягут врастопырку, и это не отказ:
+            // файл сохранится, будет выглядеть сохранённым и окажется
+            // битым, раздувшись в сотни раз (FFI.md к save_file). Лучше
+            // честно не начать, чем отдать человеку такое.
+            if (file.chunkBytes == 0u) {
+                android.util.Log.e("RatatoskVM", "No chunk_bytes for $fileIdHex, refusing save")
+                _error.value = getApplication<Application>().getString(R.string.file_unavailable)
+                return
+            }
+
             currentCompanionSaveFileId = fileIdHex
             pendingCompanionSaves[fileIdHex] = onComplete
             pendingCompanionPaths[fileIdHex] = destination.absolutePath
@@ -1501,7 +1514,12 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     destination.parentFile?.mkdirs()
-                    RatatoskCore.getCompanion().saveFile(file.fileId, file.chunkTotal, destination.absolutePath)
+                    RatatoskCore.getCompanion().saveFile(
+                        file.fileId,
+                        file.chunkTotal,
+                        file.chunkBytes.toULong(),
+                        destination.absolutePath
+                    )
                 } catch (e: Exception) {
                     android.util.Log.e("RatatoskVM", "Failed companion save", e)
                     pendingCompanionSaves.remove(fileIdHex)
