@@ -1488,7 +1488,7 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_retract_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
-    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_save_file(`ptr`: Long,`fileId`: RustBuffer.ByValue,`chunkTotal`: Long,`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_save_file(`ptr`: Long,`fileId`: RustBuffer.ByValue,`chunkTotal`: Long,`chunkBytes`: Long,`path`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_send_files(`ptr`: Long,`chatId`: RustBuffer.ByValue,`files`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -2238,7 +2238,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_retract_messages() != 50304) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_save_file() != 51999) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_save_file() != 61401) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_send_files() != 61201) {
@@ -9423,9 +9423,10 @@ public interface RatatoskCompanionInterface {
     /**
      * Забирает вложение с телефона в файл по этому пути.
      *
-     * Байты пишет ядро: путь, а не поток. `chunk_total` берётся
-     * из [`FfiCompanionAttachment::chunk_total`] — своей разбивки у десктопа
-     * нет и быть не должно, она обязана совпадать с §10.2.
+     * Байты пишет ядро: путь, а не поток. `chunk_total` и `chunk_bytes`
+     * берутся из [`FfiCompanionAttachment`] — **из той же записи, оба**.
+     * Своей разбивки у десктопа нет и быть не должно: она обязана
+     * совпадать с §10.2, а у каждого файла она своя.
      *
      * Забирать имеет смысл то, что телефон уже собрал целиком
      * (`have_chunks == chunk_total`); начатое раньше остановится на первой
@@ -9438,7 +9439,7 @@ public interface RatatoskCompanionInterface {
      *
      * Негодный идентификатор или остановленный компаньон.
      */
-    fun `saveFile`(`fileId`: kotlin.ByteArray, `chunkTotal`: kotlin.ULong, `path`: kotlin.String)
+    fun `saveFile`(`fileId`: kotlin.ByteArray, `chunkTotal`: kotlin.ULong, `chunkBytes`: kotlin.ULong, `path`: kotlin.String)
     
     /**
      * Отправляет файлы с этого компьютера **одним сообщением**.
@@ -10366,9 +10367,10 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
     /**
      * Забирает вложение с телефона в файл по этому пути.
      *
-     * Байты пишет ядро: путь, а не поток. `chunk_total` берётся
-     * из [`FfiCompanionAttachment::chunk_total`] — своей разбивки у десктопа
-     * нет и быть не должно, она обязана совпадать с §10.2.
+     * Байты пишет ядро: путь, а не поток. `chunk_total` и `chunk_bytes`
+     * берутся из [`FfiCompanionAttachment`] — **из той же записи, оба**.
+     * Своей разбивки у десктопа нет и быть не должно: она обязана
+     * совпадать с §10.2, а у каждого файла она своя.
      *
      * Забирать имеет смысл то, что телефон уже собрал целиком
      * (`have_chunks == chunk_total`); начатое раньше остановится на первой
@@ -10381,7 +10383,7 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
      *
      * Негодный идентификатор или остановленный компаньон.
      */
-    @Throws(RatatoskException::class)override fun `saveFile`(`fileId`: kotlin.ByteArray, `chunkTotal`: kotlin.ULong, `path`: kotlin.String)
+    @Throws(RatatoskException::class)override fun `saveFile`(`fileId`: kotlin.ByteArray, `chunkTotal`: kotlin.ULong, `chunkBytes`: kotlin.ULong, `path`: kotlin.String)
         = 
     callWithHandle {
     uniffiRustCallWithError(RatatoskException) { _status ->
@@ -10390,6 +10392,7 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
         
         FfiConverterByteArray.lower(`fileId`),
         FfiConverterULong.lower(`chunkTotal`),
+        FfiConverterULong.lower(`chunkBytes`),
         FfiConverterString.lower(`path`),_status)
 }
     }
@@ -10978,6 +10981,19 @@ data class FfiCompanionAttachment (
     val `chunkTotal`: kotlin.ULong
     , 
     /**
+     * Нарезка этого вложения — сколько байт в куске (§10.2).
+     *
+     * **Отдавать её обратно в [`RatatoskCompanion::save_file`]
+     * обязательно.** Нарезка у файла своя: у приехавшего эфиром кусок
+     * четыре килобайта, у приехавшего по сети — мебибайт. Без неё куски
+     * не сложить, и складывались они врастопырку — файл на диске
+     * выходил битым и во много раз больше исходного.
+     *
+     * Показывать человеку её не надо: это число для вызова, а не для глаз.
+     */
+    val `chunkBytes`: kotlin.ULong
+    , 
+    /**
      * Сколько кусков уже у телефона.
      */
     val `haveChunks`: kotlin.ULong
@@ -11025,6 +11041,7 @@ public object FfiConverterTypeFfiCompanionAttachment: FfiConverterRustBuffer<Ffi
             FfiConverterULong.read(buf),
             FfiConverterULong.read(buf),
             FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
         )
@@ -11035,6 +11052,7 @@ public object FfiConverterTypeFfiCompanionAttachment: FfiConverterRustBuffer<Ffi
             FfiConverterString.allocationSize(value.`name`) +
             FfiConverterULong.allocationSize(value.`sizeBytes`) +
             FfiConverterULong.allocationSize(value.`chunkTotal`) +
+            FfiConverterULong.allocationSize(value.`chunkBytes`) +
             FfiConverterULong.allocationSize(value.`haveChunks`) +
             FfiConverterBoolean.allocationSize(value.`accepted`) +
             FfiConverterBoolean.allocationSize(value.`hasPreview`)
@@ -11045,6 +11063,7 @@ public object FfiConverterTypeFfiCompanionAttachment: FfiConverterRustBuffer<Ffi
             FfiConverterString.write(value.`name`, buf)
             FfiConverterULong.write(value.`sizeBytes`, buf)
             FfiConverterULong.write(value.`chunkTotal`, buf)
+            FfiConverterULong.write(value.`chunkBytes`, buf)
             FfiConverterULong.write(value.`haveChunks`, buf)
             FfiConverterBoolean.write(value.`accepted`, buf)
             FfiConverterBoolean.write(value.`hasPreview`, buf)
