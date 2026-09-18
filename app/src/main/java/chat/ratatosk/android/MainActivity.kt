@@ -47,6 +47,11 @@ class MainActivity : ComponentActivity() {
     // ведёт не просто в чат, а на то место, где её поставили.
     private var pendingMsgId by mutableStateOf<String?>(null)
 
+    // «Поделиться» и ссылка ratatosk: приходят снаружи и могут застать
+    // приложение запертым. Держим намерение, пока человек не откроет
+    // аккаунт: выбросить его молча — значит съесть чужое действие.
+    private var incoming by mutableStateOf<chat.ratatosk.android.util.Incoming?>(null)
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -54,6 +59,12 @@ class MainActivity : ComponentActivity() {
             pendingChatId = it
             pendingMsgId = intent.getStringExtra("msgId")
         }
+        chat.ratatosk.android.util.IncomingIntents.parse(intent)?.let { incoming = it }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        chat.ratatosk.android.util.IncomingIntents.save(outState, incoming)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +73,13 @@ class MainActivity : ComponentActivity() {
         
         pendingChatId = intent.getStringExtra("chatId")
         pendingMsgId = intent.getStringExtra("msgId")
+        // После поворота берём то, что осталось необработанным, а не
+        // разбираем прежний Intent заново.
+        incoming = if (savedInstanceState != null) {
+            chat.ratatosk.android.util.IncomingIntents.restore(savedInstanceState)
+        } else {
+            chat.ratatosk.android.util.IncomingIntents.parse(intent)
+        }
 
         setContent {
             val appViewModel: RatatoskViewModel = viewModel()
@@ -132,6 +150,19 @@ class MainActivity : ComponentActivity() {
                         pendingChatId = null
                         pendingMsgId = null
                     }
+                }
+            }
+
+            // Ссылка сопряжения имеет смысл только там, где своего
+            // аккаунта не открыто: терминалом становятся вместо него,
+            // а не вдобавок. Пока ядро не поднято — ведём прямо на экран
+            // связывания, он же и спросит подтверждение.
+            LaunchedEffect(incoming, isCoreReady) {
+                val link = incoming
+                if (link is chat.ratatosk.android.util.Incoming.PairDevice && !isCoreReady) {
+                    companionScanUri = link.uri
+                    isLinkingCompanion = true
+                    incoming = null
                 }
             }
 
@@ -270,6 +301,44 @@ class MainActivity : ComponentActivity() {
                                     onClose = { appViewModel.closeMedia() }
                                 )
                             }
+                        }
+                    }
+
+                    // Пришедшее снаружи: показываем, когда аккаунт открыт.
+                    // Раньше нельзя — ни чатов, ни ядра ещё нет.
+                    if (isCoreReady) {
+                        when (val inc = incoming) {
+                            is chat.ratatosk.android.util.Incoming.Share -> {
+                                chat.ratatosk.android.ui.components.ChatPickerDialog(
+                                    viewModel = appViewModel,
+                                    title = stringResource(R.string.share_into_chat),
+                                    onPick = { chatId ->
+                                        appViewModel.shareInto(chatId, inc.text, inc.uris)
+                                        appViewModel.setActiveChat(chatId)
+                                        // Могли стоять на сканере или кропе —
+                                        // черновик ляжет в чат, а человек его
+                                        // не увидит.
+                                        navController.popBackStack("main", false)
+                                        incoming = null
+                                    },
+                                    onDismiss = { incoming = null }
+                                )
+                            }
+                            is chat.ratatosk.android.util.Incoming.AddContact -> {
+                                chat.ratatosk.android.ui.components.AddContactByLinkDialog(
+                                    onAdd = { metInPerson ->
+                                        appViewModel.addContact(inc.uri, metInPerson)
+                                        incoming = null
+                                    },
+                                    onDismiss = { incoming = null }
+                                )
+                            }
+                            is chat.ratatosk.android.util.Incoming.PairDevice -> {
+                                chat.ratatosk.android.ui.components.PairLinkBusyDialog(
+                                    onDismiss = { incoming = null }
+                                )
+                            }
+                            null -> {}
                         }
                     }
 

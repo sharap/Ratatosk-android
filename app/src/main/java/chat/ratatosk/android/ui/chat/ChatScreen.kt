@@ -150,6 +150,20 @@ fun ChatScreen(
         }
     }
 
+    // То, чем с нами поделились из другого приложения. Кладём в черновик,
+    // а не отправляем: человек выбирал получателя в чужом окне и текст
+    // сообщения там не писал.
+    val sharedDraft by viewModel.sharedDraft.collectAsState()
+    LaunchedEffect(sharedDraft, chatIdHex) {
+        val draft = sharedDraft ?: return@LaunchedEffect
+        if (draft.chatIdHex != chatIdHex) return@LaunchedEffect
+        if (draft.text.isNotBlank()) {
+            text = if (text.isBlank()) draft.text else "$text\n${draft.text}"
+        }
+        attachedFiles = attachedFiles + draft.files
+        viewModel.clearSharedDraft()
+    }
+
     var previousIndex by remember { mutableIntStateOf(0) }
     var previousOffset by remember { mutableStateOf(0) }
     var lastDirectionIsUp by remember { mutableStateOf(false) }
@@ -782,72 +796,14 @@ fun ChatScreen(
     }
 
     if (showForwardDialog != null) {
-        val allContacts by viewModel.contacts.collectAsState()
-        val allGroups by viewModel.groups.collectAsState()
-        val contactAvatars by viewModel.contactAvatars.collectAsState()
-
-        AlertDialog(
-            onDismissRequest = { showForwardDialog = null },
-            title = { Text(stringResource(R.string.forward_to)) },
-            text = {
-                LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                    if (allGroups.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = stringResource(R.string.groups),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        }
-                        items(allGroups) { group ->
-                            ListItem(
-                                headlineContent = { Text(group.title) },
-                                leadingContent = {
-                                    Avatar(
-                                        avatarBytes = contactAvatars[group.chatId.toHexString()] ?: viewModel.getGroupAvatar(group.chatId),
-                                        name = group.title
-                                    )
-                                },
-                                modifier = Modifier.clickable {
-                                    viewModel.forwardMessages(group.chatId, showForwardDialog!!)
-                                    showForwardDialog = null
-                                }
-                            )
-                        }
-                    }
-
-                    if (allContacts.isNotEmpty()) {
-                        item {
-                            Text(
-                                text = stringResource(R.string.contacts),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(vertical = 8.dp)
-                            )
-                        }
-                        items(allContacts) { contact ->
-                            ListItem(
-                                headlineContent = { Text(contact.localName ?: contact.displayName) },
-                                leadingContent = {
-                                    Avatar(
-                                        avatarBytes = contactAvatars[contact.peerIk.toHexString()] ?: viewModel.getAvatarOf(contact.peerIk),
-                                        name = contact.localName ?: contact.displayName
-                                    )
-                                },
-                                modifier = Modifier.clickable {
-                                    viewModel.forwardMessages(contact.chatId, showForwardDialog!!)
-                                    showForwardDialog = null
-                                }
-                            )
-                        }
-                    }
-                }
+        chat.ratatosk.android.ui.components.ChatPickerDialog(
+            viewModel = viewModel,
+            title = stringResource(R.string.forward_to),
+            onPick = { target ->
+                viewModel.forwardMessages(target, showForwardDialog!!)
+                showForwardDialog = null
             },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(onClick = { showForwardDialog = null }) { Text(stringResource(R.string.cancel)) }
-            }
+            onDismiss = { showForwardDialog = null }
         )
     }
 

@@ -72,16 +72,54 @@
             android:name=".service.ServiceWatchdogReceiver"
             android:exported="false" />
 
+        <!-- singleTask, потому что окон у нас одно на процесс. Ядро тоже
+             одно, и второй экземпляр активности завёл бы вторую модель
+             поверх того же ядра. «Поделиться» и ссылки приходят снаружи,
+             из чужой задачи, — без этого каждая такая отправка порождала
+             бы отдельную копию приложения. Уведомления это не задевает:
+             они уже шлют NEW_TASK|SINGLE_TOP. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.Ratatosk"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Ссылки ratatosk: — приглашение в контакты и сопряжение
+                 терминала. Различает их не система, а мы: префиксы
+                 отличаются хвостом, а не схемой. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="ratatosk" />
+            </intent-filter>
+
+            <!-- «Поделиться» из чужих приложений. `*/*` берёт и текст,
+                 и любые вложения: разбираемся с ними мы сами, а сузить
+                 список типов значило бы пропасть из меню там, где
+                 отправитель не потрудился назвать тип точно. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="*/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
 

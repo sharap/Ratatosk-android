@@ -336,4 +336,16 @@
     <string name="online_bt">Online (Bluetooth)</string>
     <string name="online_lan_bt">Online (LAN, Bluetooth)</string>
     <string name="file_unavailable">The attachment could not be read.</string>
+    <string name="ok">OK</string>
+    <string name="share_into_chat">Send to…</string>
+    <string name="share_no_chats">No one to send to yet — add a contact first.</string>
+    <plurals name="share_files_dropped">
+        <item quantity="one">%d file could not be read and was left out.</item>
+        <item quantity="other">%d files could not be read and were left out.</item>
+    </plurals>
+    <string name="link_add_contact_title">Add this contact?</string>
+    <string name="link_add_contact_body">This link invites you to add a contact. You will still need to check the fingerprint by voice: until you do, the contact counts as unverified.</string>
+    <string name="link_pair_title">Pairing link</string>
+    <string name="link_pair_busy_body">This link makes a device a terminal of another phone. Only a device with no account open can accept it: close the account and open the link again.</string>
+    <string name="link_pair_not_contact">This is a pairing link, not a contact invitation.</string>
 </resources>

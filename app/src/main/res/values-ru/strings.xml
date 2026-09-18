@@ -338,4 +338,18 @@
     <string name="online_bt">В сети (Bluetooth)</string>
     <string name="online_lan_bt">В сети (LAN, Bluetooth)</string>
     <string name="file_unavailable">Вложение не удалось прочитать.</string>
+    <string name="ok">Понятно</string>
+    <string name="share_into_chat">Отправить в…</string>
+    <string name="share_no_chats">Отправлять пока некому — сначала добавьте контакт.</string>
+    <plurals name="share_files_dropped">
+        <item quantity="one">%d файл не удалось прочитать, он не вложен.</item>
+        <item quantity="few">%d файла не удалось прочитать, они не вложены.</item>
+        <item quantity="many">%d файлов не удалось прочитать, они не вложены.</item>
+        <item quantity="other">%d файла не удалось прочитать, они не вложены.</item>
+    </plurals>
+    <string name="link_add_contact_title">Добавить контакт?</string>
+    <string name="link_add_contact_body">Ссылка предлагает добавить контакт. Отпечаток всё равно придётся сверить голосом: пока этого нет, контакт считается непроверенным.</string>
+    <string name="link_pair_title">Ссылка сопряжения</string>
+    <string name="link_pair_busy_body">По этой ссылке устройство становится терминалом другого телефона. Принять её может только устройство, на котором не открыт аккаунт: закройте аккаунт и откройте ссылку снова.</string>
+    <string name="link_pair_not_contact">Это ссылка сопряжения, а не приглашение в контакты.</string>
 </resources>

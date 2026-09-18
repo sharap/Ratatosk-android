@@ -6,6 +6,30 @@ import android.provider.OpenableColumns
 import java.io.File
 
 object FileUtils {
+    /**
+     * Годится ли ссылка на вложение, пришедшая из чужого приложения.
+     *
+     * `content://` — обычный случай: читаем через провайдера, чужими
+     * правами, и дальше своего доступа не уйдём.
+     *
+     * `file://` шлют редко и в основном по небрежности, а принять его
+     * как есть нельзя. Отправитель называет **путь**, а открываем мы его
+     * своими правами — значит, назвав `file:///data/data/<нас>/databases/…`,
+     * чужое приложение получит нашу же базу отправленной в чат. Поэтому
+     * файловые ссылки внутрь нашего каталога отбрасываем, а всё, что не
+     * `content:` и не `file:`, не принимаем вовсе.
+     */
+    fun isSafeIncomingUri(context: Context, uri: Uri): Boolean =
+        when (uri.scheme?.lowercase()) {
+            "content" -> true
+            "file" -> {
+                val path = uri.path?.let { runCatching { File(it).canonicalPath }.getOrNull() }
+                val own = runCatching { File(context.applicationInfo.dataDir).canonicalPath }.getOrNull()
+                path != null && own != null && path != own && !path.startsWith("$own/")
+            }
+            else -> false
+        }
+
     fun copyUriToInternalStorage(context: Context, uri: Uri): File? {
         return try {
             val contentResolver = context.contentResolver

@@ -194,6 +194,23 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         else -> getApplication<Application>().getString(R.string.file_unavailable)
     }
 
+    /**
+     * То, чем с нами поделились из другого приложения, уже сложенное
+     * в файлы и ждущее своего чата.
+     *
+     * Черновиком, а не отправкой: человек выбрал получателя в чужом
+     * окне «поделиться», и показать ему, что и куда уходит, надо до
+     * отправки, а не после. Заодно он успеет добавить подпись.
+     */
+    data class SharedDraft(
+        val chatIdHex: String,
+        val text: String,
+        val files: List<java.io.File>
+    )
+
+    private val _sharedDraft = MutableStateFlow<SharedDraft?>(null)
+    val sharedDraft: StateFlow<SharedDraft?> = _sharedDraft.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
@@ -1375,6 +1392,39 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 }
             }
         }
+    }
+
+    /**
+     * Принимает «поделиться» в выбранный чат: копирует вложения к себе
+     * и кладёт их черновиком.
+     *
+     * Копировать надо здесь и сразу: право на чужой `content:`-адрес
+     * живёт, пока жива наша задача, и к моменту отправки может кончиться.
+     */
+    fun shareInto(chatId: ByteArray, text: String, uris: List<android.net.Uri>) {
+        val hex = chatId.toHexString()
+        viewModelScope.launch(Dispatchers.IO) {
+            val app = getApplication<Application>()
+            val accepted = uris.filter { FileUtils.isSafeIncomingUri(app, it) }
+            val files = accepted.mapNotNull { FileUtils.copyUriToInternalStorage(app, it) }
+            val lost = uris.size - files.size
+            withContext(Dispatchers.Main) {
+                if (lost > 0) {
+                    // Молчать нельзя: иначе человек отправит три файла
+                    // из пяти и узнает об этом от собеседника.
+                    _error.value = app.resources.getQuantityString(
+                        R.plurals.share_files_dropped, lost, lost
+                    )
+                }
+                if (text.isNotBlank() || files.isNotEmpty()) {
+                    _sharedDraft.value = SharedDraft(hex, text, files)
+                }
+            }
+        }
+    }
+
+    fun clearSharedDraft() {
+        _sharedDraft.value = null
     }
 
     private fun generatePreview(file: java.io.File): ByteArray? {
