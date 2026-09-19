@@ -34,6 +34,16 @@ class AppModels(application: Application) {
     var onContactsChanged: () -> Unit = {}
 
     val groups: GroupsModel = GroupsModel(session) { onContactsChanged() }
+    /** Историю чата и карточку человека держит `RatatoskViewModel` — пока. */
+    var onLoadMessages: (ByteArray) -> Unit = {}
+    var onOpenContact: (ByteArray) -> Unit = {}
+
+    val contacts: ContactsModel = ContactsModel(
+        session = session,
+        groups = groups,
+        loadMessages = { onLoadMessages(it) },
+        openContact = { onOpenContact(it) },
+    )
 
     fun close() {
         modelScope.cancel()

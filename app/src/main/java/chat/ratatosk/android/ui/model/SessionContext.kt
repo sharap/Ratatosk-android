@@ -32,6 +32,17 @@ class SessionContext(
     /** Второй экран телефона, а не полный клиент. */
     val isCompanion: Boolean get() = RatatoskCore.isCompanionMode()
 
+    /**
+     * Есть ли связь с телефоном (у компаньона). Нужен нескольким моделям:
+     * без связи команды уходят в пустоту, и звать их незачем.
+     */
+    /** Какой аккаунт открыт; `null` — никакой. Настройки у каждого свои. */
+    internal val _activeAccountId = MutableStateFlow(RatatoskCore.getActiveAccountId())
+    val activeAccountId: StateFlow<String?> = _activeAccountId.asStateFlow()
+
+    internal val _isCompanionLinked = MutableStateFlow(false)
+    val isCompanionLinked: StateFlow<Boolean> = _isCompanionLinked.asStateFlow()
+
     fun string(@StringRes id: Int): String = app.getString(id)
 
     fun clearError() {

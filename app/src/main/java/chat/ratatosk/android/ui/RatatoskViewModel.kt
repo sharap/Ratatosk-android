@@ -33,13 +33,16 @@ class RatatoskViewModel private constructor(
     chat.ratatosk.android.ui.model.BackupApi by models.backup,
     chat.ratatosk.android.ui.model.PairingApi by models.pairing,
     chat.ratatosk.android.ui.model.TransportsApi by models.transports,
-    chat.ratatosk.android.ui.model.GroupsApi by models.groups {
+    chat.ratatosk.android.ui.model.GroupsApi by models.groups,
+    chat.ratatosk.android.ui.model.ContactsApi by models.contacts {
 
     constructor(application: Application) : this(application, chat.ratatosk.android.ui.model.AppModels(application))
 
     init {
         models.onAccountsChanged = { refreshAccounts() }
         models.onContactsChanged = { refreshContacts() }
+        models.onLoadMessages = { loadMessages(it) }
+        models.onOpenContact = { setActiveContact(it) }
     }
 
     override fun onCleared() {
@@ -52,8 +55,6 @@ class RatatoskViewModel private constructor(
     private val _events = MutableStateFlow<List<FfiEvent>>(emptyList())
     val events = _events.asStateFlow()
 
-    private val _contacts = MutableStateFlow<List<FfiContact>>(emptyList())
-    val contacts = _contacts.asStateFlow()
 
 
     private val _messages = MutableStateFlow<Map<String, List<FfiMessage>>>(emptyMap())
@@ -146,8 +147,7 @@ class RatatoskViewModel private constructor(
     private val _isFindingHidden = MutableStateFlow(false)
     val isFindingHidden = _isFindingHidden.asStateFlow()
 
-    private val _activeAccountId = MutableStateFlow<String?>(RatatoskCore.getActiveAccountId())
-    val activeAccountId = _activeAccountId.asStateFlow()
+    val activeAccountId = models.session.activeAccountId
 
     private val _availableAccounts = MutableStateFlow<List<FfiAccount>>(emptyList())
     val availableAccounts = _availableAccounts.asStateFlow()
@@ -161,8 +161,7 @@ class RatatoskViewModel private constructor(
     private val _isCompanionMode = MutableStateFlow<Boolean>(RatatoskCore.isCompanionMode())
     val isCompanionMode: StateFlow<Boolean> = _isCompanionMode.asStateFlow()
 
-    private val _isCompanionLinked = MutableStateFlow(false)
-    val isCompanionLinked = _isCompanionLinked.asStateFlow()
+    val isCompanionLinked = models.session.isCompanionLinked
 
     val companionLinks: StateFlow<List<chat.ratatosk.android.data.CompanionLink>> = settingsRepository.companionLinks.stateIn(
         scope = viewModelScope,
@@ -207,7 +206,6 @@ class RatatoskViewModel private constructor(
     private val pendingCompanionSaves = ConcurrentHashMap<String, (java.io.File) -> Unit>()
     private val pendingCompanionPaths = ConcurrentHashMap<String, String>()
     private var currentCompanionSaveFileId: String? = null
-    private val companionAvatarMs = ConcurrentHashMap<String, ULong>()
 
     private var activeChatId: String? = null
     private var currentCompanionLabel: String? = null
@@ -254,11 +252,7 @@ class RatatoskViewModel private constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val _fingerprint = MutableStateFlow<String?>(null)
-    val fingerprint = _fingerprint.asStateFlow()
 
-    private val _maxAvatarBytes = MutableStateFlow<Int>(128 * 1024)
-    val maxAvatarBytes = _maxAvatarBytes.asStateFlow()
 
     val userName = activeAccountId.flatMapLatest { id ->
         when {
@@ -268,11 +262,7 @@ class RatatoskViewModel private constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    private val _myAvatar = MutableStateFlow<ByteArray?>(null)
-    val myAvatar = _myAvatar.asStateFlow()
 
-    private val _contactAvatars = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
-    val contactAvatars = _contactAvatars.asStateFlow()
 
     // К какому сообщению просят перейти при открытии чата.
     //
@@ -443,7 +433,7 @@ class RatatoskViewModel private constructor(
                 if (!_isInitialized.value && RatatoskCore.isInitialized()) {
                     android.util.Log.i("RatatoskVM", "Core initialized externally, setting up engine")
                     _isInitialized.value = true
-                    _activeAccountId.value = RatatoskCore.getActiveAccountId()
+                    models.session._activeAccountId.value = RatatoskCore.getActiveAccountId()
                     setupEngine()
                 }
                 kotlinx.coroutines.delay(1000)
@@ -504,10 +494,10 @@ class RatatoskViewModel private constructor(
                 val phoneName = try { companion.phoneName() } catch (e: Exception) { "Companion" }
                 
                 withContext(Dispatchers.Main) {
-                    _fingerprint.value = fingerprint
+                    models.contacts.setFingerprint(fingerprint)
                     if (currentCompanionLabel == null) currentCompanionLabel = phoneName
                     _isInitialized.value = true
-                    _isCompanionLinked.value = false
+                    models.session._isCompanionLinked.value = false
                 }
 
                 android.util.Log.d("RatatoskVM", "Initial companion chats() call for cache")
@@ -529,7 +519,7 @@ class RatatoskViewModel private constructor(
                 val (groupChats, contactChats) = event.chats.partition { it.isGroup }
 
                 val mappedContacts = contactChats.map { mapCompanionChat(it) }
-                _contacts.value = mappedContacts
+                models.contacts.setContacts(mappedContacts)
 
                 val existingGroupsMap = models.groups.currentGroups().associateBy { it.chatId.toHexString() }
                 val mappedGroups = groupChats.map { chat ->
@@ -539,7 +529,7 @@ class RatatoskViewModel private constructor(
 
                 event.chats.forEach { chat ->
                     val hex = chat.chatId.toHexString()
-                    if (chat.isGroup && _isCompanionLinked.value) {
+                    if (chat.isGroup && models.session._isCompanionLinked.value) {
                         viewModelScope.launch(Dispatchers.IO) {
                             try {
                                 RatatoskCore.getCompanion().members(chat.chatId)
@@ -573,7 +563,7 @@ class RatatoskViewModel private constructor(
                 }
 
                 val memberContacts = event.members.filter { member ->
-                    !member.mine && _contacts.value.none { it.chatId.contentEquals(member.chatId) }
+                    !member.mine && models.contacts.currentContacts().none { it.chatId.contentEquals(member.chatId) }
                 }.map { member ->
                     FfiContact(
                         peerIk = member.chatId,
@@ -600,7 +590,7 @@ class RatatoskViewModel private constructor(
                     )
                 }
                 if (memberContacts.isNotEmpty()) {
-                    _contacts.update { currentContacts ->
+                    models.contacts.updateContacts { currentContacts ->
                         val existingHexes = currentContacts.map { it.chatId.toHexString() }.toSet()
                         currentContacts + memberContacts.filter { !existingHexes.contains(it.chatId.toHexString()) }
                     }
@@ -634,16 +624,16 @@ class RatatoskViewModel private constructor(
             is FfiCompanionEvent.AvatarChanged -> {
                 val hex = event.chatId?.toHexString() ?: "mine"
                 if (event.avatarMs != 0UL) {
-                    companionAvatarMs[hex] = event.avatarMs
+                    models.contacts.setAvatarStamp(hex, event.avatarMs)
                     viewModelScope.launch(Dispatchers.IO) {
                         try {
                             RatatoskCore.getCompanion().avatar(event.chatId)
                         } catch (e: Exception) { /* ignore */ }
                     }
                 } else {
-                    companionAvatarMs.remove(hex)
-                    if (hex == "mine") _myAvatar.value = null
-                    else _contactAvatars.update { it - hex }
+                    models.contacts.removeAvatarStamp(hex)
+                    if (hex == "mine") models.contacts.onOwnAvatar(null)
+                    else models.contacts.removeAvatar(hex)
                 }
             }
             is FfiCompanionEvent.History -> {
@@ -658,7 +648,7 @@ class RatatoskViewModel private constructor(
             }
             is FfiCompanionEvent.Linked -> {
                 android.util.Log.i("RatatoskVM", "Companion LINKED")
-                _isCompanionLinked.value = true
+                models.session._isCompanionLinked.value = true
                 RatatoskCore.getCompanion().chats()
                 // Телефон на линии — самое время спросить своё лицо: метки для
                 // сравнения у него нет, поэтому спрашиваем раз за подключение.
@@ -668,7 +658,7 @@ class RatatoskViewModel private constructor(
             }
             is FfiCompanionEvent.Unlinked -> {
                 android.util.Log.w("RatatoskVM", "Companion UNLINKED")
-                _isCompanionLinked.value = false
+                models.session._isCompanionLinked.value = false
                 // Телефон ушёл со связи — `FileSaved` уже не придёт.
                 failPendingCompanionSaves(getApplication<Application>().getString(R.string.companion_offline))
             }
@@ -676,7 +666,7 @@ class RatatoskViewModel private constructor(
                 // Сопряжение отозвано: объект жив, но на любую команду отвечает
                 // отказом. Молчать об этом нельзя — окно иначе вечно «подключается».
                 android.util.Log.w("RatatoskVM", "Companion REVOKED")
-                _isCompanionLinked.value = false
+                models.session._isCompanionLinked.value = false
                 failPendingCompanionSaves(getApplication<Application>().getString(R.string.companion_revoked))
             }
             is FfiCompanionEvent.FileSaved -> {
@@ -718,13 +708,13 @@ class RatatoskViewModel private constructor(
                 val hex = event.chatId?.toHexString() ?: "mine"
                 if (event.bytes != null) {
                     if (hex == "mine") {
-                        _myAvatar.value = event.bytes
+                        models.contacts.onOwnAvatar(event.bytes)
                     } else {
-                        _contactAvatars.update { it + (hex to event.bytes) }
+                        models.contacts.putAvatar(hex, event.bytes)
                     }
                 } else {
-                    if (hex == "mine") _myAvatar.value = null
-                    else _contactAvatars.update { it - hex }
+                    if (hex == "mine") models.contacts.onOwnAvatar(null)
+                    else models.contacts.removeAvatar(hex)
                 }
             }
             is FfiCompanionEvent.FileGone -> {
@@ -765,9 +755,9 @@ class RatatoskViewModel private constructor(
 
     private fun mapCompanionGroup(chat: FfiCompanionChat, existingGroup: FfiGroup?): FfiGroup {
         val chatIdHex = chat.chatId.toHexString()
-        val oldMs = companionAvatarMs[chatIdHex] ?: 0UL
+        val oldMs = models.contacts.avatarStamp(chatIdHex) ?: 0UL
         if (chat.avatarMs != 0UL && chat.avatarMs != oldMs) {
-            companionAvatarMs[chatIdHex] = chat.avatarMs
+            models.contacts.setAvatarStamp(chatIdHex, chat.avatarMs)
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     RatatoskCore.getCompanion().avatar(chat.chatId)
@@ -788,9 +778,9 @@ class RatatoskViewModel private constructor(
 
     private fun mapCompanionChat(chat: FfiCompanionChat): FfiContact {
         val chatIdHex = chat.chatId.toHexString()
-        val oldMs = companionAvatarMs[chatIdHex] ?: 0UL
+        val oldMs = models.contacts.avatarStamp(chatIdHex) ?: 0UL
         if (chat.avatarMs != 0UL && chat.avatarMs != oldMs) {
-            companionAvatarMs[chatIdHex] = chat.avatarMs
+            models.contacts.setAvatarStamp(chatIdHex, chat.avatarMs)
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     RatatoskCore.getCompanion().avatar(chat.chatId)
@@ -825,13 +815,13 @@ class RatatoskViewModel private constructor(
         val member = if (grp != null && !msg.author.isNullOrBlank()) {
             grp.members.find { m ->
                 m.name == msg.author ||
-                _contacts.value.find { c -> c.peerIk.contentEquals(m.ik) }?.let { (it.localName ?: it.displayName) == msg.author } == true
+                models.contacts.currentContacts().find { c -> c.peerIk.contentEquals(m.ik) }?.let { (it.localName ?: it.displayName) == msg.author } == true
             }
         } else null
 
         val authorIk = member?.ik
 
-        if (authorIk != null && _contactAvatars.value[authorIk.toHexString()] == null && RatatoskCore.isCompanionMode()) {
+        if (authorIk != null && models.contacts.contactAvatars.value[authorIk.toHexString()] == null && RatatoskCore.isCompanionMode()) {
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     RatatoskCore.getCompanion().avatar(authorIk)
@@ -864,7 +854,7 @@ class RatatoskViewModel private constructor(
             status = msg.status,
             editedAtMs = msg.editedAtMs,
             forwarded = msg.forwarded,
-            reactions = msg.reactions.map { FfiReaction(it.emoji, if (it.mine) _fingerprint.value?.hexToByteArray() ?: ByteArray(0) else ByteArray(0), it.mine) },
+            reactions = msg.reactions.map { FfiReaction(it.emoji, if (it.mine) models.contacts.fingerprint.value?.hexToByteArray() ?: ByteArray(0) else ByteArray(0), it.mine) },
             files = msg.files.map { mapCompanionAttachment(it, msg.mine) },
             replyTo = msg.replyTo,
             sharedContact = mappedSharedContact
@@ -928,8 +918,8 @@ class RatatoskViewModel private constructor(
                 val maxAvatar = try { maxAvatarBytes().toInt() } catch (e: Exception) { 32768 }
                 
                 withContext(Dispatchers.Main) {
-                    _fingerprint.value = fingerprint
-                    _maxAvatarBytes.value = maxAvatar
+                    models.contacts.setFingerprint(fingerprint)
+                    models.contacts.setMaxAvatarBytes(maxAvatar)
                 }
 
                 // Collect events from core
@@ -947,7 +937,7 @@ class RatatoskViewModel private constructor(
                     try {
                         android.util.Log.d("RatatoskVM", "Engine setup: loading own avatar")
                         val avatar = client.myAvatar()
-                        withContext(Dispatchers.Main) { _myAvatar.value = avatar }
+                        withContext(Dispatchers.Main) { models.contacts.onOwnAvatar(avatar) }
                     } catch (e: Exception) {
                         android.util.Log.e("RatatoskVM", "Failed to load my avatar", e)
                     }
@@ -971,7 +961,7 @@ class RatatoskViewModel private constructor(
                         val currentContacts = client.contacts()
                         val currentGroups = client.groups()
                         withContext(Dispatchers.Main) {
-                            _contacts.value = currentContacts
+                            models.contacts.setContacts(currentContacts)
                             models.groups.setGroups(currentGroups)
                         }
                         
@@ -1004,33 +994,6 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    fun refreshContacts() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().chats()
-                } else {
-                    val contactList = RatatoskCore.getClient().contacts()
-                    val groupList = RatatoskCore.getClient().groups()
-                    withContext(Dispatchers.Main) {
-                        _contacts.value = contactList
-                        models.groups.setGroups(groupList)
-                    }
-                    (contactList.map { it.chatId } + groupList.map { it.chatId }).forEach { chatId ->
-                        launch(Dispatchers.IO) {
-                            loadMessages(chatId)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to refresh contacts", e)
-                viewModelScope.launch {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_contacts_refresh_failed)
-                }
-            }
-        }
-    }
 
     fun loadMessages(chatId: ByteArray, limit: Int? = null) {
         if (RatatoskCore.isCompanionMode()) {
@@ -1139,7 +1102,7 @@ class RatatoskViewModel private constructor(
                 
                 withContext(Dispatchers.Main) {
                     _isInitialized.value = true
-                    _activeAccountId.value = idHex
+                    models.session._activeAccountId.value = idHex
                     _isCompanionMode.value = false
                     settingsRepository.setLastAccountId(idHex)
                     setupEngine()
@@ -1232,7 +1195,7 @@ class RatatoskViewModel private constructor(
                     _isInitialized.value = true
                     _isCompanionMode.value = true
                     val id = "companion:${inviteUri.hashCode()}"
-                    _activeAccountId.value = id
+                    models.session._activeAccountId.value = id
                     settingsRepository.setLastAccountId(id)
                     setupEngine()
                     _error.value = null
@@ -1257,7 +1220,7 @@ class RatatoskViewModel private constructor(
                 settingsRepository.setNeedsPinHint(idHex, pin != null)
                 withContext(Dispatchers.Main) {
                     _isInitialized.value = true
-                    _activeAccountId.value = idHex
+                    models.session._activeAccountId.value = idHex
                     _isCompanionMode.value = false
                     _pinRequired.value = false
                     setupEngine()
@@ -1303,11 +1266,11 @@ class RatatoskViewModel private constructor(
         companionEventsJob = null
         
         _isInitialized.value = false
-        _isCompanionLinked.value = false
+        models.session._isCompanionLinked.value = false
         _companionCacheEnabled.value = false
         resetCompanionFreshness()
         currentCompanionLabel = null
-        _activeAccountId.value = null
+        models.session._activeAccountId.value = null
         _selectedAccount.value = null
         _isCreatingNewAccount.value = false
         
@@ -1315,7 +1278,7 @@ class RatatoskViewModel private constructor(
         _activeChatIdFlow.value = null
         chat.ratatosk.android.util.VisibleChat.clear()
         _activeContactIdFlow.value = null
-        _contacts.value = emptyList()
+        models.contacts.reset()
         _messages.value = emptyMap()
         _messageStatuses.value = emptyMap()
         _unreadCounts.value = emptyMap()
@@ -1338,8 +1301,6 @@ class RatatoskViewModel private constructor(
         _activeJobsFlow.value = emptySet()
         _searchResults.value = emptyList()
         models.pairing.reset()
-        _myAvatar.value = null
-        _contactAvatars.value = emptyMap()
         models.transports.reset()
         
         // Остальное состояние прошлого аккаунта: оно принадлежит человеку,
@@ -1349,17 +1310,16 @@ class RatatoskViewModel private constructor(
         _activeMediaFile.value = null
         _mediaExportedPath.value = null
         _sharedDraft.value = null
-        _fingerprint.value = null
+        models.contacts.setFingerprint(null)
         _pendingScrollToMsgId.value = null
         _pendingAvatarUri.value = null
         _pendingAvatarChatId.value = null
         _autoAcceptLimit.value = null
-        _myContactUri.value = null
         _honestNotices.value = emptyList()
         _cardVersion.value = null
         _error.value = null
 
-        companionAvatarMs.clear()
+        
         pendingCompanionSaves.clear()
         pendingCompanionPaths.clear()
         currentCompanionSaveFileId = null
@@ -1432,7 +1392,7 @@ class RatatoskViewModel private constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (RatatoskCore.isCompanionMode()) {
-                    if (!_isCompanionLinked.value) {
+                    if (!models.session._isCompanionLinked.value) {
                         withContext(Dispatchers.Main) {
                             _error.value = getApplication<Application>().getString(R.string.connecting_to_phone_cached)
                         }
@@ -1464,7 +1424,7 @@ class RatatoskViewModel private constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (RatatoskCore.isCompanionMode()) {
-                    if (!_isCompanionLinked.value) {
+                    if (!models.session._isCompanionLinked.value) {
                         withContext(Dispatchers.Main) {
                             _error.value = getApplication<Application>().getString(R.string.connecting_to_phone_cached)
                         }
@@ -2024,50 +1984,6 @@ class RatatoskViewModel private constructor(
 
 
 
-    fun addContact(uri: String, metInPerson: Boolean) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val oldContacts = RatatoskCore.getClient().contacts()
-                RatatoskCore.getClient().addContact(uri, metInPerson)
-                val contactList = RatatoskCore.getClient().contacts()
-                val groupList = RatatoskCore.getClient().groups()
-
-                val addedContact = contactList.find { newC ->
-                    oldContacts.none { oldC -> oldC.chatId.contentEquals(newC.chatId) }
-                } ?: contactList.find { c ->
-                    val ikHex = c.peerIk.toHexString()
-                    val chatIdHex = c.chatId.toHexString()
-                    val base64Ik = android.util.Base64.encodeToString(c.peerIk, android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE).trimEnd('=')
-                    val base64ChatId = android.util.Base64.encodeToString(c.chatId, android.util.Base64.NO_WRAP or android.util.Base64.URL_SAFE).trimEnd('=')
-                    uri.contains(ikHex, ignoreCase = true) ||
-                            uri.contains(chatIdHex, ignoreCase = true) ||
-                            (base64Ik.length > 4 && uri.contains(base64Ik)) ||
-                            (base64ChatId.length > 4 && uri.contains(base64ChatId))
-                }
-
-                withContext(Dispatchers.Main) {
-                    _contacts.value = contactList
-                    models.groups.setGroups(groupList)
-                    if (addedContact != null) {
-                        setActiveContact(addedContact.chatId)
-                    }
-                }
-
-                (contactList.map { it.chatId } + groupList.map { it.chatId }).forEach { chatId ->
-                    launch(Dispatchers.IO) {
-                        loadMessages(chatId)
-                    }
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to add contact", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_add_contact_failed)
-                }
-            }
-        }
-    }
 
 
 
@@ -2104,110 +2020,13 @@ class RatatoskViewModel private constructor(
 
 
 
-    fun addSharedContact(msgId: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    if (!_isCompanionLinked.value) return@launch
-                    RatatoskCore.getCompanion().addSharedContact(msgId)
-                    refreshContacts()
-                } else {
-                    RatatoskCore.getClient().addSharedContact(msgId)
-                    refreshContacts()
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to add shared contact", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_add_contact_failed)
-                }
-            }
-        }
-    }
 
-    fun shareContact(chatId: ByteArray, peerIk: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    if (!_isCompanionLinked.value) {
-                        withContext(Dispatchers.Main) {
-                            _error.value = getApplication<Application>().getString(R.string.connecting_to_phone_cached)
-                        }
-                        return@launch
-                    }
-                    val targetContact = _contacts.value.find { it.peerIk.contentEquals(peerIk) || it.chatId.contentEquals(peerIk) }
-                    val whoChatId = targetContact?.chatId ?: peerIk
-                    RatatoskCore.getCompanion().shareContact(chatId, whoChatId)
-                    loadMessages(chatId)
-                } else {
-                    RatatoskCore.getClient().shareContact(chatId, peerIk)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to share contact", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_share_contact_failed)
-                }
-            }
-        }
-    }
 
-    private val _myContactUri = MutableStateFlow<String?>(null)
-    val myContactUri = _myContactUri.asStateFlow()
 
-    fun getMyContactUri() {
-        if (RatatoskCore.isCompanionMode()) {
-            _myContactUri.value = null
-            return
-        }
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val uri = RatatoskCore.getClient().myContactUri()
-                withContext(Dispatchers.Main) {
-                    _myContactUri.value = uri
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to get my URI", e)
-            }
-        }
-    }
 
-    fun setDisplayName(name: String) {
-        val id = activeAccountId.value ?: return
-        viewModelScope.launch {
-            settingsRepository.setDisplayName(id, name)
-            android.util.Log.d("RatatoskVM", "Display name updated to: $name. Will be applied to core on next restart.")
-        }
-    }
 
-    fun setLocalName(peerIk: ByteArray, name: String?) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                RatatoskCore.getClient().setLocalName(peerIk, name)
-                refreshContacts()
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to set local name", e)
-            }
-        }
-    }
 
-    fun deleteContact(peerIk: ByteArray, purgeHistory: Boolean) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                RatatoskCore.getClient().deleteContact(peerIk, purgeHistory)
-                refreshContacts()
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to delete contact", e)
-            }
-        }
-    }
 
-    fun getContactByChatId(chatId: ByteArray): FfiContact? {
-        return _contacts.value.find { it.chatId.contentEquals(chatId) }
-    }
 
     fun clearChat(chatId: ByteArray) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -2273,7 +2092,7 @@ class RatatoskViewModel private constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (RatatoskCore.isCompanionMode()) {
-                    if (!_isCompanionLinked.value) {
+                    if (!models.session._isCompanionLinked.value) {
                         withContext(Dispatchers.Main) {
                             _error.value = getApplication<Application>().getString(R.string.connecting_to_phone_cached)
                         }
@@ -2295,7 +2114,7 @@ class RatatoskViewModel private constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (RatatoskCore.isCompanionMode()) {
-                    if (!_isCompanionLinked.value) {
+                    if (!models.session._isCompanionLinked.value) {
                         withContext(Dispatchers.Main) {
                             _error.value = getApplication<Application>().getString(R.string.connecting_to_phone_cached)
                         }
@@ -2332,37 +2151,7 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    fun markVerified(peerIk: ByteArray) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                RatatoskCore.getClient().markVerified(peerIk)
-                refreshContacts()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to mark as verified", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_verification_change_failed)
-                }
-            }
-        }
-    }
 
-    fun revokeVerification(peerIk: ByteArray) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                RatatoskCore.getClient().revokeVerification(peerIk)
-                refreshContacts()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to revoke verification", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_verification_change_failed)
-                }
-            }
-        }
-    }
 
     fun setReaction(chatId: ByteArray, msgId: ByteArray, emoji: String?) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -2379,95 +2168,10 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    fun getAvatarOf(peerIk: ByteArray): ByteArray? {
-        val hex = peerIk.toHexString()
-        _contactAvatars.value[hex]?.let { return it }
 
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().avatar(peerIk)
-                } else {
-                    val bytes = RatatoskCore.getClient().avatarOf(peerIk)
-                    withContext(Dispatchers.Main) {
-                        if (bytes != null) {
-                            _contactAvatars.update { it + (hex to bytes) }
-                        }
-                    }
-                }
-            } catch (t: Throwable) {
-                android.util.Log.w("RatatoskVM", "Failed to get avatar for ${peerIk.toHexString()}: ${t.message}")
-            }
-        }
-        return null
-    }
 
-    fun setMyAvatar(bytes: ByteArray?) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().setAvatar(bytes)
-                } else {
-                    RatatoskCore.getClient().setAvatar(bytes)
-                }
-                _myAvatar.value = bytes
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to set avatar", e)
-            }
-        }
-    }
 
-    fun setAvatar(bytes: ByteArray?) {
-        setMyAvatar(bytes)
-    }
 
-    fun getGroupAvatar(chatId: ByteArray): ByteArray? {
-        val hex = chatId.toHexString()
-        _contactAvatars.value[hex]?.let { return it }
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().avatar(chatId)
-                } else {
-                    val bytes = RatatoskCore.getClient().groupAvatar(chatId)
-                    withContext(Dispatchers.Main) {
-                        if (bytes != null) {
-                            _contactAvatars.update { it + (hex to bytes) }
-                        }
-                    }
-                }
-            } catch (t: Throwable) {
-                android.util.Log.w("RatatoskVM", "Failed to get group avatar for ${chatId.toHexString()}: ${t.message}")
-            }
-        }
-        return null
-    }
-
-    fun setGroupAvatar(chatId: ByteArray, bytes: ByteArray?) {
-        val hex = chatId.toHexString()
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().setGroupAvatar(chatId, bytes)
-                } else {
-                    RatatoskCore.getClient().setGroupAvatar(chatId, bytes)
-                }
-                withContext(Dispatchers.Main) {
-                    if (bytes != null) {
-                        _contactAvatars.update { it + (hex to bytes) }
-                    } else {
-                        _contactAvatars.update { it - hex }
-                    }
-                    if (!RatatoskCore.isCompanionMode()) {
-                        refreshContacts()
-                    }
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to set group avatar", e)
-            }
-        }
-    }
 
     fun setPendingAvatarUri(uri: android.net.Uri?, chatId: ByteArray? = null) {
         _pendingAvatarUri.value = uri
@@ -2624,9 +2328,9 @@ class RatatoskViewModel private constructor(
                         val bytes = RatatoskCore.getClient().avatarOf(event.peerIk)
                         withContext(Dispatchers.Main) {
                             if (bytes != null) {
-                                _contactAvatars.update { it + (hex to bytes) }
+                                models.contacts.putAvatar(hex, bytes)
                             } else {
-                                _contactAvatars.update { it - hex }
+                                models.contacts.removeAvatar(hex)
                             }
                         }
                     } catch (t: Throwable) {
@@ -2783,9 +2487,9 @@ class RatatoskViewModel private constructor(
                         val bytes = RatatoskCore.getClient().groupAvatar(event.chatId)
                         withContext(Dispatchers.Main) {
                             if (bytes != null) {
-                                _contactAvatars.update { it + (hex to bytes) }
+                                models.contacts.putAvatar(hex, bytes)
                             } else {
-                                _contactAvatars.update { it - hex }
+                                models.contacts.removeAvatar(hex)
                             }
                         }
                     } catch (t: Throwable) {
