@@ -7,7 +7,10 @@ import chat.ratatosk.android.util.toHexString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.ratatosk.core.FfiMailAccount
@@ -42,7 +45,21 @@ interface TransportsApi {
     val nostrDirect: StateFlow<Boolean>
     val nostrAdvertisedRelays: StateFlow<List<String>>
 
+    /** Включена ли ступень — отдельными признаками, как их спрашивают экраны. */
+    val lanEnabled: StateFlow<Boolean>
+    val torEnabled: StateFlow<Boolean>
+    val mailEnabled: StateFlow<Boolean>
+    val yggEnabled: StateFlow<Boolean>
+    val btEnabled: StateFlow<Boolean>
+    val nostrEnabled: StateFlow<Boolean>
+
     fun refreshTransportStatus()
+    /** Пробует вручить ядру радио — звать после выдачи разрешений. */
+    fun handBtRadio()
+    /** Включён ли сам адаптер Bluetooth. */
+    fun btAdapterEnabled(): Boolean
+    /** Каких разрешений не хватает Bluetooth. */
+    fun btMissingPermissions(): List<String>
     fun setTransportEnabled(transport: FfiTransport, enabled: Boolean)
     fun setMailAccount(address: String, password: String, imapHost: String, imapPort: Int, smtpHost: String, smtpPort: Int, viaTor: Boolean)
     fun createMailAccount(serverUrl: String, viaTor: Boolean)
@@ -94,6 +111,47 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
     override val nostrDirect = _nostrDirect.asStateFlow()
     private val _nostrAdvertisedRelays = MutableStateFlow<List<String>>(emptyList())
     override val nostrAdvertisedRelays = _nostrAdvertisedRelays.asStateFlow()
+
+    private fun enabledFlow(transport: FfiTransport): StateFlow<Boolean> =
+        _transportsEnabled
+            .map { it[transport] ?: false }
+            .stateIn(session.scope, SharingStarted.WhileSubscribed(5000), false)
+
+    override val lanEnabled = enabledFlow(FfiTransport.LAN)
+    override val torEnabled = enabledFlow(FfiTransport.ONION)
+    override val mailEnabled = enabledFlow(FfiTransport.MAIL)
+    override val yggEnabled = enabledFlow(FfiTransport.YGG)
+    override val btEnabled = enabledFlow(FfiTransport.BT)
+    override val nostrEnabled = enabledFlow(FfiTransport.NOSTR)
+
+    /**
+     * Разрешения спрашивает экран: из модели системный запрос не показать,
+     * для него нужна Activity.
+     */
+    override fun handBtRadio() {
+        session.scope.launch(Dispatchers.IO) {
+            RatatoskCore.ensureBtRadio(session.app)
+            val has = RatatoskCore.hasBtRadio()
+            withContext(Dispatchers.Main) { onBtRadio(has) }
+        }
+    }
+
+    /**
+     * Нужно, чтобы отличить «радио есть, но эфир выключен человеком»
+     * от «радио есть, а ступень всё равно не поднялась». Причину ядро
+     * словами наружу не отдаёт — оно пишет её в журнал, — но обе
+     * возможные причины приложение знает про себя само.
+     */
+    override fun btAdapterEnabled(): Boolean = try {
+        val manager = session.app
+            .getSystemService(android.content.Context.BLUETOOTH_SERVICE) as? android.bluetooth.BluetoothManager
+        manager?.adapter?.isEnabled == true
+    } catch (t: Throwable) {
+        false
+    }
+
+    override fun btMissingPermissions(): List<String> =
+        org.ratatosk.bt.BtRadio.Permissions.missing(session.app)
 
     override fun refreshTransportStatus() {
         if (session.isCompanion) return

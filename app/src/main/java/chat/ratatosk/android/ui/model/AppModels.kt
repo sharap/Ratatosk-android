@@ -37,15 +37,14 @@ class AppModels(application: Application) {
     var onOpenContact: (ByteArray) -> Unit = {}
 
     val groups: GroupsModel = GroupsModel(session) { onContactsChanged() }
-    /** Превью исходящей картинки; ставит `RatatoskViewModel`. */
-    var onPreviewFor: (java.io.File) -> ByteArray? = { null }
-
     /** Карточку человека закрывает `RatatoskViewModel` — она ещё у него. */
     var onChatOpened: () -> Unit = {}
 
+    val share: ShareModel = ShareModel(session)
+
     val chats: ChatsModel = ChatsModel(
         session = session,
-        previewFor = { onPreviewFor(it) },
+        previewFor = { share.previewFor(it) },
         onChatOpened = { onChatOpened() },
     )
     val files: FilesModel = FilesModel(session) { chats.loadMessages(it) }
@@ -102,9 +101,12 @@ class AppModels(application: Application) {
         onCompanionMode = { onCompanionMode(it) },
     )
 
+    val prefs: PrefsModel = PrefsModel(session) { companion.currentCompanionLabel }
+
     fun resetAll() {
         accounts.reset()
         client.reset()
+        share.reset()
         companion.reset()
         chats.reset()
         contacts.reset()
