@@ -74,8 +74,25 @@ class AppModels(application: Application) {
         startSession = { onStartSession() },
     )
 
+    /** Компаньон открыт; сессию поднимает `RatatoskViewModel`. */
+    var onCompanionOpened: () -> Unit = {}
+
+    /** Поток событий ядра пока поднимает `RatatoskViewModel`. */
+    var onStartClientEvents: () -> Unit = {}
+
+    val companion: CompanionModel = CompanionModel(
+        session = session,
+        chats = chats,
+        contacts = contacts,
+        groups = groups,
+        files = files,
+        onCompanionOpened = { onCompanionOpened() },
+        startClientEvents = { onStartClientEvents() },
+    )
+
     fun resetAll() {
         accounts.reset()
+        companion.reset()
         chats.reset()
         contacts.reset()
         files.reset()

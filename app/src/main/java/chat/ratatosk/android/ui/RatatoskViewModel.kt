@@ -37,7 +37,8 @@ class RatatoskViewModel private constructor(
     chat.ratatosk.android.ui.model.ContactsApi by models.contacts,
     chat.ratatosk.android.ui.model.FilesApi by models.files,
     chat.ratatosk.android.ui.model.ChatsApi by models.chats,
-    chat.ratatosk.android.ui.model.AccountsApi by models.accounts {
+    chat.ratatosk.android.ui.model.AccountsApi by models.accounts,
+    chat.ratatosk.android.ui.model.CompanionApi by models.companion {
 
     constructor(application: Application) : this(application, chat.ratatosk.android.ui.model.AppModels(application))
 
@@ -49,6 +50,11 @@ class RatatoskViewModel private constructor(
         models.onChatOpened = { _activeContactIdFlow.value = null }
         models.onAccountOpened = { opened -> _isInitialized.value = opened; _isCompanionMode.value = false }
         models.onStartSession = { setupEngine() }
+        models.onStartClientEvents = { ensureClientEvents() }
+        models.onCompanionOpened = {
+            _isInitialized.value = true
+            _isCompanionMode.value = true
+        }
     }
 
     override fun onCleared() {
@@ -138,18 +144,6 @@ class RatatoskViewModel private constructor(
 
 
 
-    /**
-     * Показанное приехало с телефона (`true`) или поднято из кэша (`false`).
-     *
-     * Это не то же, что «есть связь»: связь может быть, а список ещё из кэша.
-     */
-    private val _isCompanionFresh = MutableStateFlow(false)
-    val isCompanionFresh: StateFlow<Boolean> = _isCompanionFresh.asStateFlow()
-
-    /** Наблюдатели за растущими файлами: по одному на сохранение. */
-
-
-    private var currentCompanionLabel: String? = null
 
     private val _honestNotices = MutableStateFlow<List<String>>(emptyList())
     val honestNotices = _honestNotices.asStateFlow()
@@ -185,7 +179,7 @@ class RatatoskViewModel private constructor(
     val userName = activeAccountId.flatMapLatest { id ->
         when {
             id == null -> flowOf(null)
-            id.startsWith("companion:") -> flowOf(currentCompanionLabel)
+            id.startsWith("companion:") -> flowOf(models.companion.currentCompanionLabel)
             else -> settingsRepository.getDisplayName(id)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -380,404 +374,22 @@ class RatatoskViewModel private constructor(
     }
 
     private var eventsJob: kotlinx.coroutines.Job? = null
-    private var companionEventsJob: kotlinx.coroutines.Job? = null
 
-    private fun setupCompanionEngine() {
-        android.util.Log.d("RatatoskVM", "Setting up companion engine...")
-        
-        // Start collecting events BEFORE making calls
-        if (companionEventsJob == null) {
-            companionEventsJob = viewModelScope.launch(Dispatchers.IO) {
-                RatatoskCore.companionEvents.collect { event ->
-                    handleCompanionEvent(event)
-                }
+
+
+
+
+
+
+    /** Поднимает поток событий ядра — он нужен и полному клиенту, и второму экрану. */
+    private fun ensureClientEvents() {
+        if (eventsJob != null) return
+        android.util.Log.d("RatatoskVM", "Starting event collection job")
+        eventsJob = viewModelScope.launch(Dispatchers.IO) {
+            RatatoskCore.events.collect { event ->
+                handleEvent(event)
             }
         }
-
-        if (eventsJob == null) {
-            eventsJob = viewModelScope.launch(Dispatchers.IO) {
-                RatatoskCore.events.collect { event ->
-                    handleEvent(event)
-                }
-            }
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val companion = RatatoskCore.getCompanion()
-                val fingerprint = companion.deviceId().toHexString()
-                val phoneName = try { companion.phoneName() } catch (e: Exception) { "Companion" }
-                
-                withContext(Dispatchers.Main) {
-                    models.contacts.setFingerprint(fingerprint)
-                    if (currentCompanionLabel == null) currentCompanionLabel = phoneName
-                    _isInitialized.value = true
-                    models.session._isCompanionLinked.value = false
-                }
-
-                android.util.Log.d("RatatoskVM", "Initial companion chats() call for cache")
-                companion.chats()
-                // Своё лицо здесь не спрашиваем: телефона на линии ещё нет,
-                // и запрос уходит в пустоту. Его место — в ветке `Linked`
-                // («Свою — раз за подключение», FFI о `avatar`).
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to setup companion engine", e)
-            }
-        }
-    }
-
-    private fun handleCompanionEvent(event: FfiCompanionEvent) {
-        when (event) {
-            is FfiCompanionEvent.Chats -> {
-                android.util.Log.d("RatatoskVM", "Companion received ${event.chats.size} chats, fresh=${event.fresh}")
-                _isCompanionFresh.value = event.fresh
-                val (groupChats, contactChats) = event.chats.partition { it.isGroup }
-
-                val mappedContacts = contactChats.map { mapCompanionChat(it) }
-                models.contacts.setContacts(mappedContacts)
-
-                val existingGroupsMap = models.groups.currentGroups().associateBy { it.chatId.toHexString() }
-                val mappedGroups = groupChats.map { chat ->
-                    mapCompanionGroup(chat, existingGroupsMap[chat.chatId.toHexString()])
-                }
-                models.groups.setGroups(mappedGroups)
-
-                event.chats.forEach { chat ->
-                    val hex = chat.chatId.toHexString()
-                    if (chat.isGroup && models.session._isCompanionLinked.value) {
-                        viewModelScope.launch(Dispatchers.IO) {
-                            try {
-                                RatatoskCore.getCompanion().members(chat.chatId)
-                            } catch (e: Exception) { /* ignore */ }
-                        }
-                    }
-                    if (models.chats.currentMessages(hex).isNullOrEmpty() || hex == models.chats.activeChatIdHex) {
-                        loadMessages(chat.chatId)
-                    }
-                }
-            }
-            is FfiCompanionEvent.Members -> {
-                val hex = event.chatId.toHexString()
-                val groupMembers = event.members.map { member ->
-                    FfiGroupMember(
-                        ik = member.chatId,
-                        name = member.name,
-                        mine = member.mine
-                    )
-                }
-                val isOwnerMine = event.members.any { it.mine && it.owner }
-                models.groups.updateGroups { currentGroups ->
-                    currentGroups.map { grp ->
-                        if (grp.chatId.toHexString() == hex) {
-                            grp.copy(
-                                members = groupMembers,
-                                mine = isOwnerMine
-                            )
-                        } else grp
-                    }
-                }
-
-                val memberContacts = event.members.filter { member ->
-                    !member.mine && models.contacts.currentContacts().none { it.chatId.contentEquals(member.chatId) }
-                }.map { member ->
-                    FfiContact(
-                        peerIk = member.chatId,
-                        chatId = member.chatId,
-                        fingerprint = "",
-                        displayName = member.name,
-                        localName = null,
-                        verified = false,
-                        // Присутствие у компаньона не спрашивают: эфиры
-                        // слушает телефон, а не пара. Оба признака ложны,
-                        // и это правда, а не заглушка.
-                        seenOnLan = false,
-                        seenOnBt = false,
-                        hasAvatar = false,
-                        onion = null,
-                        chatmail = null,
-                        ygg = null,
-                        nostrRelays = emptyList(),
-                        cardVersion = 0UL,
-                        addedMs = 0UL,
-                        reachability = FfiReachability(emptyList(), null, null),
-                        directChannel = null,
-                        anomalies = FfiAnomalies(0UL, 0UL, 0UL, 0UL, 0UL)
-                    )
-                }
-                if (memberContacts.isNotEmpty()) {
-                    models.contacts.updateContacts { currentContacts ->
-                        val existingHexes = currentContacts.map { it.chatId.toHexString() }.toSet()
-                        currentContacts + memberContacts.filter { !existingHexes.contains(it.chatId.toHexString()) }
-                    }
-                }
-                event.members.forEach { member ->
-                    if (!member.mine) {
-                        viewModelScope.launch(Dispatchers.IO) {
-                            try {
-                                RatatoskCore.getCompanion().avatar(member.chatId)
-                            } catch (e: Exception) { /* ignore */ }
-                        }
-                    }
-                }
-            }
-            is FfiCompanionEvent.GroupCreated -> {
-                android.util.Log.i("RatatoskVM", "Companion group created: ${event.chatId.toHexString()}")
-                viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        RatatoskCore.getCompanion().chats()
-                        RatatoskCore.getCompanion().members(event.chatId)
-                    } catch (e: Exception) { /* ignore */ }
-                }
-            }
-            is FfiCompanionEvent.ChatsChanged -> {
-                viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        RatatoskCore.getCompanion().chats()
-                    } catch (e: Exception) { /* ignore */ }
-                }
-            }
-            is FfiCompanionEvent.AvatarChanged -> {
-                val hex = event.chatId?.toHexString() ?: "mine"
-                if (event.avatarMs != 0UL) {
-                    models.contacts.setAvatarStamp(hex, event.avatarMs)
-                    viewModelScope.launch(Dispatchers.IO) {
-                        try {
-                            RatatoskCore.getCompanion().avatar(event.chatId)
-                        } catch (e: Exception) { /* ignore */ }
-                    }
-                } else {
-                    models.contacts.removeAvatarStamp(hex)
-                    if (hex == "mine") models.contacts.onOwnAvatar(null)
-                    else models.contacts.removeAvatar(hex)
-                }
-            }
-            is FfiCompanionEvent.History -> {
-                android.util.Log.d("RatatoskVM", "Companion received ${event.page.size} messages for chat ${event.chatId.toHexString()}, fresh=${event.fresh}")
-                _isCompanionFresh.value = event.fresh
-                val mappedMessages = event.page.map { mapCompanionMessage(it) }
-                val chatIdHex = event.chatId.toHexString()
-                models.chats.setMessages(chatIdHex, mappedMessages)
-            }
-            is FfiCompanionEvent.Arrived -> {
-                loadMessages(event.message.chatId)
-            }
-            is FfiCompanionEvent.Linked -> {
-                android.util.Log.i("RatatoskVM", "Companion LINKED")
-                models.session._isCompanionLinked.value = true
-                RatatoskCore.getCompanion().chats()
-                // Телефон на линии — самое время спросить своё лицо: метки для
-                // сравнения у него нет, поэтому спрашиваем раз за подключение.
-                try {
-                    RatatoskCore.getCompanion().avatar(null)
-                } catch (e: Exception) { /* ignore */ }
-            }
-            is FfiCompanionEvent.Unlinked -> {
-                android.util.Log.w("RatatoskVM", "Companion UNLINKED")
-                models.session._isCompanionLinked.value = false
-                // Телефон ушёл со связи — `FileSaved` уже не придёт.
-                models.files.failPendingSaves(getApplication<Application>().getString(R.string.companion_offline))
-            }
-            is FfiCompanionEvent.Revoked -> {
-                // Сопряжение отозвано: объект жив, но на любую команду отвечает
-                // отказом. Молчать об этом нельзя — окно иначе вечно «подключается».
-                android.util.Log.w("RatatoskVM", "Companion REVOKED")
-                models.session._isCompanionLinked.value = false
-                models.files.failPendingSaves(getApplication<Application>().getString(R.string.companion_revoked))
-            }
-            is FfiCompanionEvent.FileSaved -> {
-                models.files.finishSave(event.fileId.toHexString(), event.path, deliver = true)
-            }
-            // Приём сюда не сорвался, а ждёт: записанное лежит на диске
-            // и допишется с того же места (FFI, FetchPaused).
-            is FfiCompanionEvent.FetchPaused -> {
-                android.util.Log.i("RatatoskVM", "Companion fetch paused")
-                models.files.setFetchPaused(true)
-            }
-            is FfiCompanionEvent.FetchResumed -> {
-                models.files.setFetchPaused(false)
-                val hex = models.files.currentSaveFileId()
-                if (hex != null && event.total > 0uL) {
-                    val done = (event.done.toFloat() / event.total.toFloat()).coerceIn(0f, 1f)
-                    models.files.onSaveProgress(hex, done)
-                }
-            }
-            is FfiCompanionEvent.FilePreview -> {
-                val hex = event.fileId.toHexString()
-                models.files.onFilePreview(hex, event.bytes)
-            }
-            is FfiCompanionEvent.Avatar -> {
-                val hex = event.chatId?.toHexString() ?: "mine"
-                if (event.bytes != null) {
-                    if (hex == "mine") {
-                        models.contacts.onOwnAvatar(event.bytes)
-                    } else {
-                        models.contacts.putAvatar(hex, event.bytes)
-                    }
-                } else {
-                    if (hex == "mine") models.contacts.onOwnAvatar(null)
-                    else models.contacts.removeAvatar(hex)
-                }
-            }
-            is FfiCompanionEvent.FileGone -> {
-                models.files.forgetSave(event.fileId.toHexString())
-            }
-            is FfiCompanionEvent.FileProgress -> {
-                val hex = event.fileId.toHexString()
-                val progress = if (event.chunkTotal > 0uL) {
-                    event.haveChunks.toFloat() / event.chunkTotal.toFloat()
-                } else 0f
-                models.files.onFileProgress(hex, progress)
-            }
-            is FfiCompanionEvent.FilesSent -> {
-                android.util.Log.i("RatatoskVM", "Companion files sent: ${event.fileIds.size} files")
-                val activeId = models.chats.activeChatIdHex
-                if (activeId != null) {
-                    loadMessages(activeId.hexToByteArray())
-                }
-                RatatoskCore.getCompanion().chats()
-            }
-            is FfiCompanionEvent.Refused -> {
-                android.util.Log.w("RatatoskVM", "Companion refused command: ${event.reason}")
-                if (!event.reason.contains("прежние просьбы") && !event.reason.contains("не отвечает на прежние")) {
-                    _error.value = event.reason
-                }
-                // Отказ мог прийти и на просьбу забрать вложение: тогда ждать
-                // `FileSaved` больше нечего.
-                models.files.failPendingSaves(event.reason)
-            }
-            else -> {}
-        }
-    }
-
-    private fun mapCompanionGroup(chat: FfiCompanionChat, existingGroup: FfiGroup?): FfiGroup {
-        val chatIdHex = chat.chatId.toHexString()
-        val oldMs = models.contacts.avatarStamp(chatIdHex) ?: 0UL
-        if (chat.avatarMs != 0UL && chat.avatarMs != oldMs) {
-            models.contacts.setAvatarStamp(chatIdHex, chat.avatarMs)
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    RatatoskCore.getCompanion().avatar(chat.chatId)
-                } catch (e: Exception) { /* ignore */ }
-            }
-        }
-
-        return FfiGroup(
-            chatId = chat.chatId,
-            title = chat.title,
-            createdMs = existingGroup?.createdMs ?: chat.lastMs,
-            members = existingGroup?.members ?: emptyList(),
-            mine = existingGroup?.mine ?: false,
-            joined = chat.joined,
-            avatarMs = chat.avatarMs
-        )
-    }
-
-    private fun mapCompanionChat(chat: FfiCompanionChat): FfiContact {
-        val chatIdHex = chat.chatId.toHexString()
-        val oldMs = models.contacts.avatarStamp(chatIdHex) ?: 0UL
-        if (chat.avatarMs != 0UL && chat.avatarMs != oldMs) {
-            models.contacts.setAvatarStamp(chatIdHex, chat.avatarMs)
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    RatatoskCore.getCompanion().avatar(chat.chatId)
-                } catch (e: Exception) { /* ignore */ }
-            }
-        }
-
-        return FfiContact(
-            peerIk = chat.chatId,
-            chatId = chat.chatId,
-            fingerprint = "",
-            displayName = chat.title,
-            localName = null,
-            verified = chat.verified,
-            seenOnLan = false,
-            seenOnBt = false,
-            hasAvatar = chat.avatarMs != 0UL,
-            onion = null,
-            chatmail = null,
-            ygg = null,
-            nostrRelays = emptyList(),
-            cardVersion = 0UL,
-            addedMs = 0UL,
-            reachability = FfiReachability(emptyList(), null, null),
-            directChannel = null,
-            anomalies = FfiAnomalies(0UL, 0UL, 0UL, 0UL, 0UL)
-        )
-    }
-
-    private fun mapCompanionMessage(msg: FfiCompanionMessage): FfiMessage {
-        val grp = models.groups.currentGroups().find { it.chatId.contentEquals(msg.chatId) }
-        val member = if (grp != null && !msg.author.isNullOrBlank()) {
-            grp.members.find { m ->
-                m.name == msg.author ||
-                models.contacts.currentContacts().find { c -> c.peerIk.contentEquals(m.ik) }?.let { (it.localName ?: it.displayName) == msg.author } == true
-            }
-        } else null
-
-        val authorIk = member?.ik
-
-        if (authorIk != null && models.contacts.contactAvatars.value[authorIk.toHexString()] == null && RatatoskCore.isCompanionMode()) {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    RatatoskCore.getCompanion().avatar(authorIk)
-                } catch (e: Exception) { /* ignore */ }
-            }
-        }
-
-        // Ключа в карточке компаньона нет вовсе (§13.4 не пускает `IK` через
-        // границу устройства), поэтому на его месте — известный `chatId`,
-        // а отпечатка нет: показывать пустую строку вместо него нельзя.
-        val mappedSharedContact = msg.shared?.let { shared ->
-            FfiSharedContact(
-                peerIk = shared.chatId ?: ByteArray(0),
-                displayName = shared.name,
-                fingerprint = "",
-                alreadyKnown = shared.chatId != null,
-                // Своя карточка, вернувшаяся из чата, — это «это вы»,
-                // а не предложение добавить себя в контакты.
-                mine = msg.mine
-            )
-        }
-
-        return FfiMessage(
-            msgId = msg.msgId,
-            body = msg.body,
-            mine = msg.mine,
-            author = msg.author,
-            authorIk = authorIk,
-            wallMs = msg.wallMs,
-            status = msg.status,
-            editedAtMs = msg.editedAtMs,
-            forwarded = msg.forwarded,
-            reactions = msg.reactions.map { FfiReaction(it.emoji, if (it.mine) models.contacts.fingerprint.value?.hexToByteArray() ?: ByteArray(0) else ByteArray(0), it.mine) },
-            files = msg.files.map { mapCompanionAttachment(it, msg.mine) },
-            replyTo = msg.replyTo,
-            sharedContact = mappedSharedContact
-        )
-    }
-
-    private fun mapCompanionAttachment(att: FfiCompanionAttachment, mine: Boolean): FfiFile {
-        return FfiFile(
-            fileId = att.fileId,
-            name = att.name,
-            sizeBytes = att.sizeBytes,
-            incoming = !mine,
-            accepted = att.accepted,
-            complete = att.haveChunks == att.chunkTotal,
-            receivedChunks = att.haveChunks,
-            chunkTotal = att.chunkTotal,
-            // Нарезку компаньон теперь сообщает, и её обязательно вернуть
-            // в save_file: у каждого файла она своя — эфирный кусок это
-            // четыре килобайта, сетевой мебибайт (FFI.md, §10.2). Раньше
-            // тут стоял ноль («неизвестно»), потому что взять было негде.
-            //
-            // u64 -> u32 здесь ничего не теряет: в FfiFile ядро объявляет
-            // то же самое число как u32, то есть само ручается, что оно
-            // туда влезает.
-            chunkBytes = att.chunkBytes.toUInt(),
-            hasPreview = att.hasPreview
-        )
     }
 
     private fun setupEngine() {
@@ -787,7 +399,7 @@ class RatatoskViewModel private constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 if (RatatoskCore.isCompanionMode()) {
-                    setupCompanionEngine()
+                    models.companion.setupCompanionEngine()
                     return@launch
                 }
 
@@ -818,15 +430,7 @@ class RatatoskViewModel private constructor(
                     models.contacts.setMaxAvatarBytes(maxAvatar)
                 }
 
-                // Collect events from core
-                if (eventsJob == null) {
-                    android.util.Log.d("RatatoskVM", "Starting event collection job")
-                    eventsJob = viewModelScope.launch(Dispatchers.IO) {
-                        RatatoskCore.events.collect { event ->
-                            handleEvent(event)
-                        }
-                    }
-                }
+                ensureClientEvents()
 
                 // Load own avatar (non-critical, separate launch)
                 launch(Dispatchers.IO) {
@@ -894,118 +498,15 @@ class RatatoskViewModel private constructor(
 
 
 
-    /**
-     * Выгружает архив.
-     *
-     * Ответ приходит и при неудаче: раньше при ошибке колбэк не звали вовсе,
-     * и диалог оставался «в работе» навсегда — ни закрыть, ни отменить.
-     */
 
 
 
 
 
-    /**
-     * Порт и ключ этого устройства — их вводят на телефоне руками, когда
-     * он не находит второй экран сам (гостевой Wi-Fi, VPN, изоляция клиентов).
-     * `null` — не компаньон или связи ещё нет.
-     */
-    fun companionEndpoint(): Pair<Int, String>? = try {
-        if (!RatatoskCore.isCompanionMode()) null
-        else {
-            val companion = RatatoskCore.getCompanion()
-            companion.port().toInt() to companion.desktopIk().toHexString()
-        }
-    } catch (e: Exception) {
-        null
-    }
-
-    /** Хранится ли снимок переписки этого второго экрана на диске. */
-    private val _companionCacheEnabled = MutableStateFlow(false)
-    val companionCacheEnabled: StateFlow<Boolean> = _companionCacheEnabled.asStateFlow()
-
-    /**
-     * Включает или выключает снимок переписки.
-     *
-     * Выключение зовёт `set_cache_path(null)` — файл стирает само ядро.
-     * Включить можно только когда ссылка сопряжения сохранена: без неё
-     * снимок было бы нечем открыть в следующий раз.
-     */
-    fun setCompanionCache(enabled: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val link = settingsRepository.companionLinks.first()
-                    .firstOrNull { it.label == currentCompanionLabel }
-                if (!enabled) {
-                    RatatoskCore.getCompanion().setCachePath(null)
-                    if (link != null) {
-                        settingsRepository.saveCompanionLink(link.copy(cachePath = null))
-                    }
-                    withContext(Dispatchers.Main) { _companionCacheEnabled.value = false }
-                    return@launch
-                }
-                if (link == null) {
-                    _error.value = getApplication<Application>().getString(R.string.companion_cache_needs_link)
-                    return@launch
-                }
-                val path = java.io.File(
-                    getApplication<Application>().filesDir,
-                    "companion_cache_${link.inviteUri.hashCode()}"
-                ).absolutePath
-                RatatoskCore.getCompanion().setCachePath(path)
-                settingsRepository.saveCompanionLink(link.copy(cachePath = path))
-                withContext(Dispatchers.Main) { _companionCacheEnabled.value = true }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to switch companion cache", e)
-                _error.value = e.message?.takeIf { it.isNotBlank() }
-                    ?: getApplication<Application>().getString(R.string.companion_cache_failed)
-            }
-        }
-    }
-
-    fun initializeCompanion(inviteUri: String, port: Int, peerAddr: String?, cachePath: String?, label: String, torDir: String? = null) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val resolvedCachePath = if (!cachePath.isNullOrBlank()) {
-                    if (cachePath.startsWith("/")) cachePath
-                    else java.io.File(getApplication<Application>().filesDir, cachePath).absolutePath
-                } else null
-
-                RatatoskCore.initializeCompanion(inviteUri, port.toUShort(), peerAddr, resolvedCachePath, torDir)
-                currentCompanionLabel = label
-                _companionCacheEnabled.value = resolvedCachePath != null
-                if (resolvedCachePath != null) {
-                    settingsRepository.saveCompanionLink(
-                        chat.ratatosk.android.data.CompanionLink(label, inviteUri, port, peerAddr, resolvedCachePath, torDir)
-                    )
-                }
-                withContext(Dispatchers.Main) {
-                    _isInitialized.value = true
-                    _isCompanionMode.value = true
-                    val id = "companion:${inviteUri.hashCode()}"
-                    models.session._activeAccountId.value = id
-                    settingsRepository.setLastAccountId(id)
-                    setupEngine()
-                    _error.value = null
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to link companion", e)
-                _error.value = e.message?.takeIf { it.isNotBlank() }
-                    ?: getApplication<Application>().getString(R.string.error_pairing_failed)
-            }
-        }
-    }
 
 
-    fun unlockCompanion(link: chat.ratatosk.android.data.CompanionLink) {
-        initializeCompanion(link.inviteUri, link.port, link.peerAddr, link.cachePath, link.label, link.torDir)
-    }
 
-    fun removeCompanionLink(inviteUri: String) {
-        viewModelScope.launch {
-            settingsRepository.removeCompanionLink(inviteUri)
-        }
-    }
+
 
     fun logout() {
         RatatoskCore.logout()
@@ -1015,13 +516,8 @@ class RatatoskViewModel private constructor(
         
         eventsJob?.cancel()
         eventsJob = null
-        companionEventsJob?.cancel()
-        companionEventsJob = null
-        
+
         _isInitialized.value = false
-        _companionCacheEnabled.value = false
-        resetCompanionFreshness()
-        currentCompanionLabel = null
 
         // Состояние прошлого аккаунта забывают все модели разом.
         models.resetAll()
@@ -1141,9 +637,6 @@ class RatatoskViewModel private constructor(
      */
 
 
-    private fun resetCompanionFreshness() {
-        _isCompanionFresh.value = false
-    }
 
 
 
