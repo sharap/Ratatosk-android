@@ -58,48 +58,20 @@ class SettingsRepository(private val context: Context) {
     }
 
     val companionLinks: Flow<List<CompanionLink>> = context.dataStore.data.map { preferences ->
-        val raw = preferences[Keys.COMPANION_LINKS] ?: ""
-        if (raw.isEmpty()) emptyList()
-        else {
-            raw.split(";;").filter { it.isNotBlank() }.mapNotNull { entry ->
-                val parts = entry.split("|")
-                if (parts.size >= 5) {
-                    CompanionLink(
-                        label = parts[0],
-                        inviteUri = parts[1],
-                        port = parts[2].toIntOrNull() ?: 0,
-                        peerAddr = parts[3].takeIf { it != "null" },
-                        cachePath = parts[4].takeIf { it != "null" },
-                        torDir = parts.getOrNull(5)?.takeIf { it != "null" }
-                    )
-                } else null
-            }
-        }
+        CompanionLinks.parse(preferences[Keys.COMPANION_LINKS] ?: "")
     }
 
     suspend fun saveCompanionLink(link: CompanionLink) {
         context.dataStore.edit { preferences ->
-            val current = preferences[Keys.COMPANION_LINKS] ?: ""
-            val links = current.split(";;").filter { it.isNotBlank() }.toMutableList()
-            val entry = "${link.label}|${link.inviteUri}|${link.port}|${link.peerAddr ?: "null"}|${link.cachePath ?: "null"}|${link.torDir ?: "null"}"
-            
-            // Avoid duplicates by inviteUri
-            val index = links.indexOfFirst { it.contains("|${link.inviteUri}|") }
-            if (index != -1) {
-                links[index] = entry
-            } else {
-                links.add(entry)
-            }
-            preferences[Keys.COMPANION_LINKS] = links.joinToString(";;")
+            preferences[Keys.COMPANION_LINKS] =
+                CompanionLinks.upsert(preferences[Keys.COMPANION_LINKS] ?: "", link)
         }
     }
 
     suspend fun removeCompanionLink(inviteUri: String) {
         context.dataStore.edit { preferences ->
-            val current = preferences[Keys.COMPANION_LINKS] ?: ""
-            val links = current.split(";;").filter { it.isNotBlank() }.toMutableList()
-            links.removeAll { it.contains("|${inviteUri}|") }
-            preferences[Keys.COMPANION_LINKS] = links.joinToString(";;")
+            preferences[Keys.COMPANION_LINKS] =
+                CompanionLinks.remove(preferences[Keys.COMPANION_LINKS] ?: "", inviteUri)
         }
     }
 
