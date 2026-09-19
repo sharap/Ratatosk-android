@@ -10,6 +10,7 @@ import org.ratatosk.core.FfiArchiveUnlock
 import org.ratatosk.core.FfiExportScope
 import org.ratatosk.core.FfiExported
 import org.ratatosk.core.FfiImported
+import org.ratatosk.core.FfiMerged
 
 /** Что окно умеет делать с резервной копией. */
 interface BackupApi {
@@ -17,6 +18,15 @@ interface BackupApi {
     fun exportHistory(scope: FfiExportScope, phrase: String?, onResult: (Result<FfiExported>) -> Unit)
     fun importArchive(path: String, unlock: FfiArchiveUnlock, label: String, onResult: (Result<FfiImported>) -> Unit)
     fun peekArchive(path: String, onResult: (FfiArchivePeek?) -> Unit)
+
+    /**
+     * Контакты из архива — в **открытый** аккаунт, поверх живой переписки.
+     *
+     * Не то же, что ввоз: тот заводит новый аккаунт и годится только до
+     * открытия какого-либо. Здесь же человек берёт знакомства со старого
+     * телефона, не теряя нынешних.
+     */
+    fun mergeContacts(path: String, unlock: FfiArchiveUnlock, onResult: (Result<FfiMerged>) -> Unit)
 }
 
 /**
@@ -27,6 +37,8 @@ interface BackupApi {
 class BackupModel(
     private val session: SessionContext,
     private val onImported: () -> Unit,
+    /** Слияние добавило знакомых — список контактов надо перечитать. */
+    private val onContactsMerged: () -> Unit = {},
 ) : BackupApi {
 
     override fun exportHistory(scope: FfiExportScope, phrase: String?, onResult: (Result<FfiExported>) -> Unit) {
@@ -95,6 +107,26 @@ class BackupModel(
                         ?: session.string(R.string.error_archive_read_failed)
                     onResult(null)
                 }
+            }
+        }
+    }
+
+    override fun mergeContacts(path: String, unlock: FfiArchiveUnlock, onResult: (Result<FfiMerged>) -> Unit) {
+        session.scope.launch(Dispatchers.IO) {
+            // Черновик — расшифрованная копия чужой базы: только в своём
+            // каталоге и только на время слияния.
+            val scratch = java.io.File(session.app.cacheDir, "merge-${System.nanoTime()}").apply { mkdirs() }
+            try {
+                val merged = session.core.client().mergeContacts(path, unlock, scratch.absolutePath)
+                withContext(Dispatchers.Main) {
+                    onContactsMerged()
+                    onResult(Result.success(merged))
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Merge failed", e)
+                withContext(Dispatchers.Main) { onResult(Result.failure(e)) }
+            } finally {
+                scratch.deleteRecursively()
             }
         }
     }

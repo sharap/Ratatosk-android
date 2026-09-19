@@ -1752,7 +1752,20 @@ fun SettingsBackupSection(
     snackbarHostState: SnackbarHostState
 ) {
     var showExportDialog by remember { mutableStateOf(false) }
+    var mergeArchivePath by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val isCompanionMode by viewModel.isCompanionMode.collectAsState()
+
+    val mergePicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            // Ядру нужен настоящий путь, а не `content:` — копируем к себе.
+            val file = chat.ratatosk.android.util.FileUtils.copyUriToInternalStorage(context, it)
+            if (file != null) mergeArchivePath = file.absolutePath
+        }
+    }
 
     Text(text = stringResource(R.string.backup_recovery), style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(16.dp))
@@ -1766,6 +1779,32 @@ fun SettingsBackupSection(
         Text(stringResource(R.string.create_backup_archive))
     }
 
+    // Слияние знакомств — дело полного клиента: у второго экрана своей базы нет.
+    if (!isCompanionMode) {
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = { mergePicker.launch("*/*") },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.PersonAdd, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.merge_contacts))
+        }
+        Text(
+            text = stringResource(R.string.merge_contacts_desc),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
+    }
+
+    mergeArchivePath?.let { path ->
+        MergeContactsDialog(
+            path = path,
+            viewModel = viewModel,
+            onDismiss = { mergeArchivePath = null },
+        )
+    }
+
     if (showExportDialog) {
         ExportArchiveDialog(
             viewModel = viewModel,
@@ -1777,6 +1816,128 @@ fun SettingsBackupSection(
             }
         )
     }
+}
+
+/**
+ * Контакты из архива в открытый аккаунт.
+ *
+ * Сначала архив «просматривается» (`peekArchive`): по нему видно, чем он
+ * открывается — фразой или ключом, — и это спрашивается ровно один раз.
+ */
+@Composable
+private fun MergeContactsDialog(
+    path: String,
+    viewModel: RatatoskViewModel,
+    onDismiss: () -> Unit,
+) {
+    var peek by remember { mutableStateOf<org.ratatosk.core.FfiArchivePeek?>(null) }
+    var isPeeking by remember { mutableStateOf(true) }
+    var isMerging by remember { mutableStateOf(false) }
+    var usePassphrase by remember { mutableStateOf(false) }
+    var passphrase by remember { mutableStateOf("") }
+    var keyText by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var done by remember { mutableStateOf<org.ratatosk.core.FfiMerged?>(null) }
+
+    LaunchedEffect(path) {
+        viewModel.peekArchive(path) { result ->
+            if (result != null) {
+                peek = result
+                usePassphrase = result.takesPassphrase
+            } else {
+                error = null // о неудаче уже сказано общей ошибкой
+            }
+            isPeeking = false
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = { if (!isMerging) onDismiss() },
+        title = { Text(stringResource(if (done != null) R.string.merge_done else R.string.merge_contacts)) },
+        text = {
+            Column {
+                val result = done
+                if (result != null) {
+                    Text(stringResource(R.string.merge_added, result.added.toLong(), result.known.toLong()))
+                    if (!result.ownGraph) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(stringResource(R.string.merge_foreign), style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (result.refused > 0UL) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.merge_refused, result.refused.toLong()),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                } else if (isPeeking) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                } else {
+                    Text(stringResource(R.string.merge_contacts_desc), style = MaterialTheme.typography.bodySmall)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (usePassphrase) {
+                        OutlinedTextField(
+                            value = passphrase,
+                            onValueChange = { passphrase = it; error = null },
+                            label = { Text(stringResource(R.string.passphrase)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            enabled = !isMerging,
+                        )
+                    } else {
+                        OutlinedTextField(
+                            value = keyText,
+                            onValueChange = { keyText = it; error = null },
+                            label = { Text(stringResource(R.string.recovery_key)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            enabled = !isMerging,
+                        )
+                    }
+                    if (isMerging) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                    }
+                    error?.let {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (done != null) {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.close)) }
+            } else {
+                Button(
+                    onClick = {
+                        isMerging = true
+                        error = null
+                        val unlock = if (usePassphrase) {
+                            org.ratatosk.core.FfiArchiveUnlock.Passphrase(passphrase)
+                        } else {
+                            org.ratatosk.core.FfiArchiveUnlock.Key(keyText)
+                        }
+                        viewModel.mergeContacts(path, unlock) { result ->
+                            isMerging = false
+                            result.onSuccess { done = it }
+                                .onFailure { e -> error = e.message?.takeIf { it.isNotBlank() } }
+                        }
+                    },
+                    enabled = !isPeeking && !isMerging && peek != null &&
+                        (if (usePassphrase) passphrase.isNotEmpty() else keyText.isNotEmpty()),
+                ) {
+                    Text(stringResource(R.string.merge_button))
+                }
+            }
+        },
+        dismissButton = {
+            if (done == null) {
+                TextButton(onClick = onDismiss, enabled = !isMerging) { Text(stringResource(R.string.cancel)) }
+            }
+        },
+    )
 }
 
 @Composable

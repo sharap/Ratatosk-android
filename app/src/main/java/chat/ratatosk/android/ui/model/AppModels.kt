@@ -39,7 +39,11 @@ class AppModels(
     /** Перечитать список аккаунтов после ввоза архива; ставит `RatatoskViewModel`. */
     var onAccountsChanged: () -> Unit = {}
 
-    val backup: BackupModel = BackupModel(session) { onAccountsChanged() }
+    val backup: BackupModel = BackupModel(
+        session = session,
+        onImported = { onAccountsChanged() },
+        onContactsMerged = { onContactsChanged() },
+    )
     val pairing: PairingModel = PairingModel(session)
     val transports: TransportsModel = TransportsModel(session)
     /** Перечитать контакты и группы; ставит `RatatoskViewModel`. */

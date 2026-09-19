@@ -413,4 +413,12 @@
     <string name="bind_to_device_desc">The database is opened with a key kept in this phone\'s secure hardware: it cannot be opened anywhere else — with or without a PIN. Lose the phone and the history is gone with it; export an archive while you still can.</string>
     <string name="keystore_unavailable">This phone has no working key storage — the account cannot be bound to it</string>
     <string name="device_secret_lost">This account is bound to this phone, but its key is gone. It happens after a factory reset or a change of the screen lock; the history cannot be opened.</string>
+    <string name="merge_contacts">Add contacts from an archive</string>
+    <string name="merge_contacts_desc">Takes acquaintances from a backup into the account that is open now. The conversations stay as they are.</string>
+    <string name="merge_button">Add</string>
+    <string name="merge_done">Contacts added</string>
+    <string name="merge_added">Added: %1$d. Already there: %2$d (left untouched).</string>
+    <string name="merge_refused">Bad entries: %1$d — worth checking where this archive came from.</string>
+    <string name="merge_foreign">The list belongs to someone else: none of the added contacts are verified, and local names were not carried over.</string>
+    <string name="merge_failed">Could not add the contacts</string>
 </resources>

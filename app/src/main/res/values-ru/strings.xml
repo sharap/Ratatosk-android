@@ -417,4 +417,12 @@
     <string name="bind_to_device_desc">База открывается ключом из защищённой памяти телефона: больше нигде её не открыть — ни с PIN, ни без него. Потеряете телефон — потеряете переписку; выгрузите архив, пока он есть.</string>
     <string name="keystore_unavailable">На этом телефоне нет рабочего хранилища ключей — привязать к нему аккаунт нельзя</string>
     <string name="device_secret_lost">Аккаунт привязан к этому телефону, но ключа больше нет. Так бывает после сброса или смены блокировки экрана; переписку не открыть.</string>
+    <string name="merge_contacts">Добавить контакты из архива</string>
+    <string name="merge_contacts_desc">Берёт знакомства из резервной копии в открытый сейчас аккаунт. Переписка остаётся как была.</string>
+    <string name="merge_button">Добавить</string>
+    <string name="merge_done">Контакты добавлены</string>
+    <string name="merge_added">Добавлено: %1$d. Уже были: %2$d (их не трогали).</string>
+    <string name="merge_refused">Негодных записей: %1$d — стоит проверить, откуда этот архив.</string>
+    <string name="merge_foreign">Список чужой: никто из добавленных не сверен, локальные имена не перенесены.</string>
+    <string name="merge_failed">Не удалось добавить контакты</string>
 </resources>

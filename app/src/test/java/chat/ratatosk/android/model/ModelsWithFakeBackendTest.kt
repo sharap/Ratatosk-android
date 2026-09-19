@@ -63,6 +63,15 @@ class ModelsWithFakeBackendTest {
     private val calls: MutableList<String> = Collections.synchronizedList(mutableListOf())
 
     private inner class RecordingClient : FakeClient() {
+        override fun `mergeContacts`(
+            `archive`: kotlin.String,
+            `unlock`: org.ratatosk.core.FfiArchiveUnlock,
+            `scratchDir`: kotlin.String,
+        ): org.ratatosk.core.FfiMerged {
+            calls += "client.mergeContacts:$archive:черновик=${java.io.File(scratchDir).isDirectory}"
+            return org.ratatosk.core.FfiMerged(ownGraph = false, added = 2UL, known = 1UL, refused = 0UL)
+        }
+
         override fun `setAvatar`(`bytes`: kotlin.ByteArray?) {
             calls += "client.setAvatar:${bytes?.size ?: "null"}"
         }
@@ -407,5 +416,30 @@ class ModelsWithFakeBackendTest {
 
         waitUntil("сказано про хранилище") { accountsSession.error.value != null }
         assertTrue("открывать было нечем: ${seen()}", seen().none { it.startsWith("open:") })
+    }
+
+    /**
+     * Контакты из архива приезжают в открытый аккаунт, а расшифрованный
+     * черновик после этого не остаётся на диске.
+     *
+     * Черновик — это чужая база открытым текстом: он живёт ровно столько,
+     * сколько идёт слияние, и удаляется даже если оно не удалось.
+     */
+    @Test
+    fun mergingContactsCleansUpItsScratchDirectory() {
+        val s = session(companion = false)
+        val backup = chat.ratatosk.android.ui.model.BackupModel(s, onImported = {}, onContactsMerged = {})
+
+        var merged: org.ratatosk.core.FfiMerged? = null
+        backup.mergeContacts("/архив.db", org.ratatosk.core.FfiArchiveUnlock.Key("ключ")) { result ->
+            merged = result.getOrNull()
+        }
+
+        waitUntil("слияние прошло") { merged != null }
+        assertEquals(2UL, merged!!.added)
+        assertTrue("черновик был каталогом: ${seen()}", seen().any { it.endsWith("черновик=true") })
+
+        val leftovers = app.cacheDir.listFiles()?.filter { it.name.startsWith("merge-") } ?: emptyList()
+        assertTrue("черновик остался на диске: $leftovers", leftovers.isEmpty())
     }
 }
