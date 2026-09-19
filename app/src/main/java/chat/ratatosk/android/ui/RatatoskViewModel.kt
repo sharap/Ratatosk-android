@@ -36,7 +36,8 @@ class RatatoskViewModel private constructor(
     chat.ratatosk.android.ui.model.GroupsApi by models.groups,
     chat.ratatosk.android.ui.model.ContactsApi by models.contacts,
     chat.ratatosk.android.ui.model.FilesApi by models.files,
-    chat.ratatosk.android.ui.model.ChatsApi by models.chats {
+    chat.ratatosk.android.ui.model.ChatsApi by models.chats,
+    chat.ratatosk.android.ui.model.AccountsApi by models.accounts {
 
     constructor(application: Application) : this(application, chat.ratatosk.android.ui.model.AppModels(application))
 
@@ -46,6 +47,8 @@ class RatatoskViewModel private constructor(
         models.onOpenContact = { setActiveContact(it) }
         models.onPreviewFor = { generatePreview(it) }
         models.onChatOpened = { _activeContactIdFlow.value = null }
+        models.onAccountOpened = { opened -> _isInitialized.value = opened; _isCompanionMode.value = false }
+        models.onStartSession = { setupEngine() }
     }
 
     override fun onCleared() {
@@ -100,26 +103,14 @@ class RatatoskViewModel private constructor(
 
 
     /** Идёт открытие аккаунта: вывод ключа из PIN занимает заметные секунды. */
-    private val _isOpening = MutableStateFlow(false)
-    val isOpening: StateFlow<Boolean> = _isOpening.asStateFlow()
 
     /** Тихая попытка открыть без PIN не удалась — теперь его надо спросить. */
-    private val _pinRequired = MutableStateFlow(false)
-    val pinRequired: StateFlow<Boolean> = _pinRequired.asStateFlow()
 
-    private val _isFindingHidden = MutableStateFlow(false)
-    val isFindingHidden = _isFindingHidden.asStateFlow()
 
     val activeAccountId = models.session.activeAccountId
 
-    private val _availableAccounts = MutableStateFlow<List<FfiAccount>>(emptyList())
-    val availableAccounts = _availableAccounts.asStateFlow()
 
-    private val _selectedAccount = MutableStateFlow<FfiAccount?>(null)
-    val selectedAccount = _selectedAccount.asStateFlow()
 
-    private val _isCreatingNewAccount = MutableStateFlow(false)
-    val isCreatingNewAccount = _isCreatingNewAccount.asStateFlow()
 
     private val _isCompanionMode = MutableStateFlow<Boolean>(RatatoskCore.isCompanionMode())
     val isCompanionMode: StateFlow<Boolean> = _isCompanionMode.asStateFlow()
@@ -166,8 +157,6 @@ class RatatoskViewModel private constructor(
     private val _isInitialized = MutableStateFlow(RatatoskCore.isInitialized())
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
 
-    private val _accountExists = MutableStateFlow(false)
-    val accountExists: StateFlow<Boolean> = _accountExists.asStateFlow()
     
 
 
@@ -903,22 +892,7 @@ class RatatoskViewModel private constructor(
 
 
 
-    fun refreshAccounts() {
-        _availableAccounts.value = RatatoskCore.listAccounts()
-    }
 
-    fun wipeAccount(id: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                RatatoskCore.wipeAccount(id)
-                refreshAccounts()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to wipe account", e)
-                _error.value = e.message?.takeIf { it.isNotBlank() }
-                    ?: getApplication<Application>().getString(R.string.error_account_delete_failed)
-            }
-        }
-    }
 
     /**
      * Выгружает архив.
@@ -929,48 +903,7 @@ class RatatoskViewModel private constructor(
 
 
 
-    fun findHiddenAccount(pin: String, onFound: (ByteArray) -> Unit, onNotFound: () -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            _isFindingHidden.value = true
-            try {
-                val id = RatatoskCore.findHidden(pin)
-                viewModelScope.launch {
-                    if (id != null) onFound(id) else onNotFound()
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Find hidden failed", e)
-                viewModelScope.launch { onNotFound() }
-            } finally {
-                _isFindingHidden.value = false
-            }
-        }
-    }
 
-    fun initialize(label: String, pin: String?, displayName: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val account = RatatoskCore.createAccount(label)
-                RatatoskCore.initialize(account.id, pin, null, displayName)
-                
-                val idHex = account.id.toHexString()
-                settingsRepository.registerAccount(idHex, displayName)
-                
-                withContext(Dispatchers.Main) {
-                    _isInitialized.value = true
-                    models.session._activeAccountId.value = idHex
-                    _isCompanionMode.value = false
-                    settingsRepository.setLastAccountId(idHex)
-                    setupEngine()
-                    refreshAccounts()
-                    _error.value = null
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to initialize account", e)
-                _error.value = e.message?.takeIf { it.isNotBlank() }
-                    ?: getApplication<Application>().getString(R.string.error_account_open_failed)
-            }
-        }
-    }
 
     /**
      * Порт и ключ этого устройства — их вводят на телефоне руками, когда
@@ -1063,41 +996,6 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    fun unlock(account: FfiAccount, pin: String?) {
-        viewModelScope.launch(Dispatchers.IO) {
-            _isOpening.value = true
-            try {
-                val idHex = account.id.toHexString()
-                val savedName = settingsRepository.getDisplayName(idHex).firstOrNull() ?: account.label
-                RatatoskCore.initialize(account.id, pin, null, savedName)
-                settingsRepository.setLastAccountId(idHex)
-                // Открылся без PIN — в следующий раз и спрашивать не будем.
-                settingsRepository.setNeedsPinHint(idHex, pin != null)
-                withContext(Dispatchers.Main) {
-                    _isInitialized.value = true
-                    models.session._activeAccountId.value = idHex
-                    _isCompanionMode.value = false
-                    _pinRequired.value = false
-                    setupEngine()
-                    _error.value = null
-                }
-            } catch (e: Exception) {
-                if (pin == null && e is RatatoskException.Locked) {
-                    // Не подошло — значит PIN всё-таки есть. Это не ошибка:
-                    // остаёмся на экране и просим его.
-                    android.util.Log.d("RatatoskVM", "Account needs PIN to unlock")
-                    settingsRepository.setNeedsPinHint(account.id.toHexString(), true)
-                    withContext(Dispatchers.Main) { _pinRequired.value = true }
-                    return@launch
-                }
-                android.util.Log.w("RatatoskVM", "Failed to unlock account", e)
-                _error.value = e.message?.takeIf { it.isNotBlank() }
-                    ?: getApplication<Application>().getString(R.string.error_account_open_failed)
-            } finally {
-                _isOpening.value = false
-            }
-        }
-    }
 
     fun unlockCompanion(link: chat.ratatosk.android.data.CompanionLink) {
         initializeCompanion(link.inviteUri, link.port, link.peerAddr, link.cachePath, link.label, link.torDir)
@@ -1121,19 +1019,13 @@ class RatatoskViewModel private constructor(
         companionEventsJob = null
         
         _isInitialized.value = false
-        models.session._isCompanionLinked.value = false
         _companionCacheEnabled.value = false
         resetCompanionFreshness()
         currentCompanionLabel = null
-        models.session._activeAccountId.value = null
-        _selectedAccount.value = null
-        _isCreatingNewAccount.value = false
-        
-        // Clear all session state
-        models.chats.reset()
+
+        // Состояние прошлого аккаунта забывают все модели разом.
+        models.resetAll()
         _activeContactIdFlow.value = null
-        models.contacts.reset()
-        models.files.reset()
         // Расшифрованные копии вложений в кэше — вместе с сессией. Они
         // лежат открытым текстом, и переживать выход из аккаунта им незачем.
         try {
@@ -1141,14 +1033,7 @@ class RatatoskViewModel private constructor(
         } catch (e: Exception) {
             android.util.Log.w("RatatoskVM", "Failed to clear decrypted caches: ${e.message}")
         }
-        models.pairing.reset()
-        models.transports.reset()
-        
-        // Остальное состояние прошлого аккаунта: оно принадлежит человеку,
-        // который уже вышел, и всплывать у следующего ему незачем.
-        models.groups.reset()
         _sharedDraft.value = null
-        models.contacts.setFingerprint(null)
         _pendingAvatarUri.value = null
         _pendingAvatarChatId.value = null
         _honestNotices.value = emptyList()
@@ -1162,31 +1047,7 @@ class RatatoskViewModel private constructor(
         _error.value = null
     }
 
-    fun selectAccount(account: FfiAccount?) {
-        _selectedAccount.value = account
-        _pinRequired.value = false
-        if (account == null) {
-            _isCreatingNewAccount.value = false
-            return
-        }
-        // Спрашивать PIN у аккаунта, у которого его нет, — вопрос о том, чего
-        // нет. Пробуем открыть молча; подсказка избавляет от бессмысленного
-        // счёта там, где PIN уже спрашивали в прошлый раз.
-        viewModelScope.launch {
-            if (settingsRepository.needsPinHint(account.id.toHexString()).first()) {
-                _pinRequired.value = true
-            } else {
-                unlock(account, null)
-            }
-        }
-    }
 
-    fun setCreatingNewAccount(creating: Boolean) {
-        _isCreatingNewAccount.value = creating
-        if (creating) {
-            _selectedAccount.value = null
-        }
-    }
 
 
 

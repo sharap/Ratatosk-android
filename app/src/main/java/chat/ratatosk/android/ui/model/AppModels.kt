@@ -57,6 +57,36 @@ class AppModels(application: Application) {
         openContact = { onOpenContact(it) },
     )
 
+    /**
+     * Сессия закрыта: каждая модель забывает состояние прошлого аккаунта.
+     *
+     * Собрано в одном месте не ради красоты: раньше этот список жил внутри
+     * `logout`, и каждое новое поле надо было не забыть туда дописать —
+     * половину забывали, и чужие данные всплывали у следующего аккаунта.
+     */
+    /** Аккаунт открыт и сессию надо поднять; ставит `RatatoskViewModel`. */
+    var onAccountOpened: (Boolean) -> Unit = {}
+    var onStartSession: () -> Unit = {}
+
+    val accounts: AccountsModel = AccountsModel(
+        session = session,
+        onOpened = { onAccountOpened(it) },
+        startSession = { onStartSession() },
+    )
+
+    fun resetAll() {
+        accounts.reset()
+        chats.reset()
+        contacts.reset()
+        files.reset()
+        groups.reset()
+        pairing.reset()
+        transports.reset()
+        session._isCompanionLinked.value = false
+        session._activeAccountId.value = null
+        session._error.value = null
+    }
+
     fun close() {
         modelScope.cancel()
     }
