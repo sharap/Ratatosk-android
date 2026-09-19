@@ -51,9 +51,13 @@ object RatatoskCore : EventObserver, CompanionObserver {
     )
     private var sessionCredentials: SessionCredentials? = null
 
-    // Use a buffer with replay to ensure UI doesn't miss events during transitions
+    // Повтор — для подписчика, пришедшего чуть позже открытия аккаунта.
+    // Держать его между аккаунтами и пересозданиями сервиса нельзя: буфер
+    // живёт в объекте уровня процесса, а дедуп уведомлений — в экземпляре
+    // сервиса, и после пересоздания человек получал пачку уведомлений
+    // о старых сообщениях. Чистится при выходе из аккаунта.
     private val _events = MutableSharedFlow<FfiEvent>(
-        replay = 50, 
+        replay = 50,
         extraBufferCapacity = 500,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
@@ -313,6 +317,11 @@ object RatatoskCore : EventObserver, CompanionObserver {
             sessionCredentials = null
             isCompanionMode = false
             companionChatCache.clear()
+            // Прошлому аккаунту повторять нечего — его события чужие.
+            @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+            _events.resetReplayCache()
+            @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+            _companionEvents.resetReplayCache()
         }
     }
 

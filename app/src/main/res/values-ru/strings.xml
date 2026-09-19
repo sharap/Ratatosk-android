@@ -305,6 +305,11 @@
     <string name="companion_offline">Телефон не на связи</string>
     <string name="companion_revoked">Сопряжение отозвано с телефона</string>
     <string name="export_failed">Не удалось выгрузить архив</string>
+    <string name="limit_up_to">до %1$s</string>
+    <string name="companion_stale_data">Данные с прошлого подключения — телефон ещё не ответил</string>
+    <string name="file_fetching">Забираем с телефона: %1$d%%</string>
+    <string name="file_fetching_unknown">Забираем с телефона…</string>
+    <string name="fetch_waiting_phone">Ждём связи с телефоном — приём продолжится с того же места</string>
     <string name="preview_photo">[фото]</string>
     <string name="preview_video">[видео]</string>
     <string name="preview_audio">[аудио]</string>

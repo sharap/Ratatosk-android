@@ -135,6 +135,7 @@ fun ChatScreen(
     val searchResults by viewModel.searchResults.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
 
+    val repliedMessages by viewModel.repliedMessages.collectAsState()
     val displayMessages = remember(messages) { messages.reversed() }
     // Корутинам — всегда свежий список. Захваченный обычный `val` не меняется,
     // и переход к сообщению ждал догрузки, которой некому было случиться.
@@ -742,7 +743,15 @@ fun ChatScreen(
                                             pendingScrollToId = hex
                                         },
                                         retractionNotice = { viewModel.getRetractionNotice() },
-                                        getRepliedMessage = { id -> viewModel.getMessage(id) },
+                                        // Цитата — из потока: пришла позже, значит
+                                        // перерисуется. Раньше это был одноразовый
+                                        // вызов при отрисовке, и пустая цитата
+                                        // оставалась пустой навсегда.
+                                        getRepliedMessage = { id ->
+                                            repliedMessages[id.toHexString()]
+                                                ?: messages.firstOrNull { it.msgId.contentEquals(id) }
+                                                ?: viewModel.getMessage(id)
+                                        },
                                         isHighlighted = highlightedMsgId == msg.msgId.toHexString(),
                                         isCompact = isCompact,
                                         showAuthor = isGroupChat,
@@ -1489,9 +1498,12 @@ fun SharedContactCard(
         Spacer(modifier = Modifier.height(8.dp))
         if (sharedContact.mine) {
             Text(text = stringResource(R.string.this_is_you), style = MaterialTheme.typography.labelMedium, color = contentColor.copy(alpha = 0.6f), modifier = Modifier.align(Alignment.End))
-        } else if (sharedContact.alreadyKnown && sharedContact.peerIk.isNotEmpty()) {
+        } else if (sharedContact.alreadyKnown && sharedContact.peerIk.size >= 16) {
             OutlinedButton(
-                onClick = { onOpenChat(sharedContact.peerIk) }, modifier = Modifier.fillMaxWidth()
+                // Чат человека — первые 16 байт `IK`; у компаньона на месте
+                // ключа уже сам `chatId`, и обрезка его не меняет. Раньше
+                // сюда уезжал полный ключ, и чат не открывался.
+                onClick = { onOpenChat(sharedContact.peerIk.copyOf(16)) }, modifier = Modifier.fillMaxWidth()
             ) {
                 Text(stringResource(R.string.already_in_contacts))
             }
@@ -1544,8 +1556,13 @@ fun FileAttachment(
         val sending by viewModel.fileSending.collectAsState()
         val waiting by viewModel.fileWaiting.collectAsState()
         val activeJobs by viewModel.activeJobsFlow.collectAsState()
+        val saveProgress by viewModel.saveProgress.collectAsState()
+        val fetchPaused by viewModel.fetchPaused.collectAsState()
         val fileIdHex = file.fileId.toHexString()
         val isExportingActive = activeJobs.contains(fileIdHex)
+        // Сколько уже легло сюда. `null` — ещё неизвестно: тогда честнее
+        // крутилка без числа, чем доля, которая про другое.
+        val fetchFraction = if (isExportingActive) saveProgress[fileIdHex] else null
         val currentProgress = progress[fileIdHex] ?: (if (file.complete) 1f else if (file.receivedChunks > 0UL) file.receivedChunks.toFloat() / file.chunkTotal.toFloat() else 0f)
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
@@ -1588,7 +1605,17 @@ fun FileAttachment(
                     val pausedIncoming = file.incoming && !file.accepted &&
                         !file.complete && file.receivedChunks > 0UL
 
-                    if (pausedIncoming) {
+                    if (isExportingActive) {
+                        Text(
+                            text = when {
+                                fetchPaused -> stringResource(R.string.fetch_waiting_phone)
+                                fetchFraction != null -> stringResource(R.string.file_fetching, (fetchFraction * 100).toInt())
+                                else -> stringResource(R.string.file_fetching_unknown)
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (fetchPaused) contentColor.copy(alpha = 0.6f) else linkColor
+                        )
+                    } else if (pausedIncoming) {
                         Text(
                             text = stringResource(R.string.file_paused),
                             style = MaterialTheme.typography.labelSmall,
@@ -1650,7 +1677,11 @@ fun FileAttachment(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (isExportingActive) {
                             Box(contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(progress = { currentProgress }, modifier = Modifier.size(32.dp), strokeWidth = 2.dp, color = linkColor)
+                                if (fetchFraction == null) {
+                                    CircularProgressIndicator(modifier = Modifier.size(32.dp), strokeWidth = 2.dp, color = linkColor)
+                                } else {
+                                    CircularProgressIndicator(progress = { fetchFraction }, modifier = Modifier.size(32.dp), strokeWidth = 2.dp, color = linkColor)
+                                }
                                 IconButton(onClick = { viewModel.cancelFileJob(file.fileId) }, modifier = Modifier.size(24.dp)) { Icon(Icons.Default.Close, contentDescription = "Cancel", tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp)) }
                             }
                         } else {

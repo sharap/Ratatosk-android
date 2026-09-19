@@ -47,6 +47,7 @@ fun ChatListScreen(
     val contactAvatars by viewModel.contactAvatars.collectAsState()
     val isCompanionMode by viewModel.isCompanionMode.collectAsState()
     val isCompanionLinked by viewModel.isCompanionLinked.collectAsState()
+    val isCompanionFresh by viewModel.isCompanionFresh.collectAsState()
     val activeChatId by viewModel.activeChatIdFlow.collectAsState()
 
     val chats = remember(contacts, groups, allMessages, activeChatId) {
@@ -101,6 +102,23 @@ fun ChatListScreen(
                             style = MaterialTheme.typography.labelSmall,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                             color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+
+                // Пока телефон не ответил, на экране то, что лежит в кэше, —
+                // и это не то же самое, что «нет связи»: связь может быть, а
+                // список ещё прошлый. Поэтому полосы две и признаки разные.
+                if (isCompanionMode && isCompanionLinked && !isCompanionFresh) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = stringResource(R.string.companion_stale_data),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                         )
                     }
                 }

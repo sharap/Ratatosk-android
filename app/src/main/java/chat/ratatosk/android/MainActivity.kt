@@ -62,6 +62,17 @@ class MainActivity : ComponentActivity() {
         chat.ratatosk.android.util.IncomingIntents.parse(intent)?.let { incoming = it }
     }
 
+    override fun onResume() {
+        super.onResume()
+        chat.ratatosk.android.util.VisibleChat.setForeground(true)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Свёрнутое окно с открытым чатом — это «не видит»: уведомление нужно.
+        chat.ratatosk.android.util.VisibleChat.setForeground(false)
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         chat.ratatosk.android.util.IncomingIntents.save(outState, incoming)

@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Job
@@ -57,6 +58,21 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     // событием и потому не двигался вовсе.
     private val _fileSending = MutableStateFlow<Map<String, Float>>(emptyMap())
     val fileSending = _fileSending.asStateFlow()
+
+    /**
+     * Сколько вложения уже легло **на это устройство**, по `fileId` в hex.
+     *
+     * Это не то же, что [fileProgress]: там — сколько собрал владелец файла
+     * (у компаньона это телефон, и у готового файла всегда сто процентов),
+     * а здесь — ход выкладывания сюда. Событий на каждый кусок ядро не даёт,
+     * поэтому доля берётся из растущего файла на диске.
+     */
+    private val _saveProgress = MutableStateFlow<Map<String, Float>>(emptyMap())
+    val saveProgress = _saveProgress.asStateFlow()
+
+    /** Приём сюда ждёт связи с телефоном, а не сорвался (`FetchPaused`). */
+    private val _fetchPaused = MutableStateFlow(false)
+    val fetchPaused: StateFlow<Boolean> = _fetchPaused.asStateFlow()
 
     // Почему передача файла стоит (§10.3). Состояние, а не происшествие:
     // показывать его надо на самом файле, пока оно держится, а не
@@ -163,6 +179,17 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     private val _mediaExportedPath = MutableStateFlow<String?>(null)
     val mediaExportedPath = _mediaExportedPath.asStateFlow()
+
+    /**
+     * Показанное приехало с телефона (`true`) или поднято из кэша (`false`).
+     *
+     * Это не то же, что «есть связь»: связь может быть, а список ещё из кэша.
+     */
+    private val _isCompanionFresh = MutableStateFlow(false)
+    val isCompanionFresh: StateFlow<Boolean> = _isCompanionFresh.asStateFlow()
+
+    /** Наблюдатели за растущими файлами: по одному на сохранение. */
+    private val fetchWatchers = ConcurrentHashMap<String, kotlinx.coroutines.Job>()
 
     private val pendingCompanionSaves = ConcurrentHashMap<String, (java.io.File) -> Unit>()
     private val pendingCompanionPaths = ConcurrentHashMap<String, String>()
@@ -497,11 +524,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
                 android.util.Log.d("RatatoskVM", "Initial companion chats() call for cache")
                 companion.chats()
-                
-                // Fetch own avatar
-                try {
-                    companion.avatar(null)
-                } catch (e: Exception) { /* ignore */ }
+                // Своё лицо здесь не спрашиваем: телефона на линии ещё нет,
+                // и запрос уходит в пустоту. Его место — в ветке `Linked`
+                // («Свою — раз за подключение», FFI о `avatar`).
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to setup companion engine", e)
             }
@@ -512,6 +537,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         when (event) {
             is FfiCompanionEvent.Chats -> {
                 android.util.Log.d("RatatoskVM", "Companion received ${event.chats.size} chats, fresh=${event.fresh}")
+                _isCompanionFresh.value = event.fresh
                 val (groupChats, contactChats) = event.chats.partition { it.isGroup }
 
                 val mappedContacts = contactChats.map { mapCompanionChat(it) }
@@ -634,6 +660,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             }
             is FfiCompanionEvent.History -> {
                 android.util.Log.d("RatatoskVM", "Companion received ${event.page.size} messages for chat ${event.chatId.toHexString()}, fresh=${event.fresh}")
+                _isCompanionFresh.value = event.fresh
                 val mappedMessages = event.page.map { mapCompanionMessage(it) }
                 val chatIdHex = event.chatId.toHexString()
                 _messages.update { it + (chatIdHex to mappedMessages) }
@@ -645,6 +672,11 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 android.util.Log.i("RatatoskVM", "Companion LINKED")
                 _isCompanionLinked.value = true
                 RatatoskCore.getCompanion().chats()
+                // Телефон на линии — самое время спросить своё лицо: метки для
+                // сравнения у него нет, поэтому спрашиваем раз за подключение.
+                try {
+                    RatatoskCore.getCompanion().avatar(null)
+                } catch (e: Exception) { /* ignore */ }
             }
             is FfiCompanionEvent.Unlinked -> {
                 android.util.Log.w("RatatoskVM", "Companion UNLINKED")
@@ -661,7 +693,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             }
             is FfiCompanionEvent.FileSaved -> {
                 val hex = event.fileId.toHexString()
-                _fileProgress.update { it + (hex to 1f) }
+                _saveProgress.update { it + (hex to 1f) }
+                _fetchPaused.value = false
+                stopFetchWatchers(listOf(hex))
                 _activeJobsFlow.update { it - hex }
                 if (currentCompanionSaveFileId == hex) currentCompanionSaveFileId = null
                 pendingCompanionSaves.remove(hex)?.let { callback ->
@@ -670,6 +704,20 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                             callback(java.io.File(path))
                         }
                     }
+                }
+            }
+            // Приём сюда не сорвался, а ждёт: записанное лежит на диске
+            // и допишется с того же места (FFI, FetchPaused).
+            is FfiCompanionEvent.FetchPaused -> {
+                android.util.Log.i("RatatoskVM", "Companion fetch paused")
+                _fetchPaused.value = true
+            }
+            is FfiCompanionEvent.FetchResumed -> {
+                _fetchPaused.value = false
+                val hex = currentCompanionSaveFileId
+                if (hex != null && event.total > 0uL) {
+                    val done = (event.done.toFloat() / event.total.toFloat()).coerceIn(0f, 1f)
+                    _saveProgress.update { it + (hex to done) }
                 }
             }
             is FfiCompanionEvent.FilePreview -> {
@@ -693,6 +741,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             }
             is FfiCompanionEvent.FileGone -> {
                 val hex = event.fileId.toHexString()
+                stopFetchWatchers(listOf(hex))
                 _activeJobsFlow.update { it - hex }
                 if (currentCompanionSaveFileId == hex) currentCompanionSaveFileId = null
                 pendingCompanionSaves.remove(hex)
@@ -802,13 +851,18 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
+        // Ключа в карточке компаньона нет вовсе (§13.4 не пускает `IK` через
+        // границу устройства), поэтому на его месте — известный `chatId`,
+        // а отпечатка нет: показывать пустую строку вместо него нельзя.
         val mappedSharedContact = msg.shared?.let { shared ->
             FfiSharedContact(
                 peerIk = shared.chatId ?: ByteArray(0),
                 displayName = shared.name,
                 fingerprint = "",
                 alreadyKnown = shared.chatId != null,
-                mine = false
+                // Своя карточка, вернувшаяся из чата, — это «это вы»,
+                // а не предложение добавить себя в контакты.
+                mine = msg.mine
             )
         }
 
@@ -1251,6 +1305,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         
         _isInitialized.value = false
         _isCompanionLinked.value = false
+        resetCompanionFreshness()
         currentCompanionLabel = null
         _activeAccountId.value = null
         _selectedAccount.value = null
@@ -1258,12 +1313,16 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         
         // Clear all session state
         _activeChatIdFlow.value = null
+        chat.ratatosk.android.util.VisibleChat.clear()
         _activeContactIdFlow.value = null
         _contacts.value = emptyList()
         _messages.value = emptyMap()
         _messageStatuses.value = emptyMap()
         _unreadCounts.value = emptyMap()
         _fileProgress.value = emptyMap()
+        _saveProgress.value = emptyMap()
+        _fetchPaused.value = false
+        stopFetchWatchers(fetchWatchers.keys.toList())
         _fileSending.value = emptyMap()
         _fileWaiting.value = emptyMap()
         _filePreviews.value = emptyMap()
@@ -1563,9 +1622,43 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
      * Без этого ожидание висело вечно — крутилка не гасла, файл не открывался,
      * и человеку не говорили ни слова о причине.
      */
+    /**
+     * Следит за растущим файлом и переводит его размер в долю.
+     *
+     * Ядро пишет вложение в файл с припиской `.part` и до конца приёма
+     * о ходе не сообщает: его события говорят только о том, сколько собрал
+     * телефон, — а это давно сто процентов.
+     */
+    private fun watchFetchProgress(fileIdHex: String, destination: java.io.File, sizeBytes: ULong) {
+        val total = sizeBytes.toLong()
+        if (total <= 0L) return
+        val part = java.io.File(destination.parentFile, destination.name + ".part")
+        fetchWatchers.remove(fileIdHex)?.cancel()
+        fetchWatchers[fileIdHex] = viewModelScope.launch(Dispatchers.IO) {
+            while (isActive && pendingCompanionSaves.containsKey(fileIdHex)) {
+                val written = when {
+                    destination.isFile -> destination.length()
+                    part.isFile -> part.length()
+                    else -> 0L
+                }
+                _saveProgress.update { it + (fileIdHex to (written.toFloat() / total).coerceIn(0f, 1f)) }
+                kotlinx.coroutines.delay(400)
+            }
+        }
+    }
+
+    private fun stopFetchWatchers(fileIds: Collection<String>) {
+        fileIds.forEach { fetchWatchers.remove(it)?.cancel() }
+    }
+
+    private fun resetCompanionFreshness() {
+        _isCompanionFresh.value = false
+    }
+
     private fun failPendingCompanionSaves(reason: String?) {
         if (pendingCompanionSaves.isEmpty() && currentCompanionSaveFileId == null) return
         val waiting = pendingCompanionSaves.keys.toList()
+        stopFetchWatchers(waiting)
         pendingCompanionSaves.clear()
         pendingCompanionPaths.clear()
         currentCompanionSaveFileId = null
@@ -1598,6 +1691,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             pendingCompanionSaves[fileIdHex] = onComplete
             pendingCompanionPaths[fileIdHex] = destination.absolutePath
             _activeJobsFlow.update { it + fileIdHex }
+            // Прошлая доля того же файла ввела бы в заблуждение.
+            _saveProgress.update { it - fileIdHex }
+            _fetchPaused.value = false
+            watchFetchProgress(fileIdHex, destination, file.sizeBytes)
 
             viewModelScope.launch(Dispatchers.IO) {
                 try {
@@ -1644,7 +1741,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                         if (chunk != null) {
                             output.write(chunk)
                             output.flush()
-                            _fileProgress.update { it + (fileIdHex to (i.toFloat() / total.toFloat())) }
+                            _saveProgress.update { it + (fileIdHex to (i.toFloat() / total.toFloat())) }
                         } else {
                             // Своё вложение ядро читает из исходника по
                             // пути, а не из принятого: отправитель ничего
@@ -2728,6 +2825,8 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     fun setActiveChat(chatId: ByteArray?) {
         _activeChatIdFlow.value = chatId
+        // Сервису уведомлений это нужно, а общей модели у них с экраном нет.
+        chat.ratatosk.android.util.VisibleChat.setOpenChat(chatId?.toHexString())
         if (chatId != null) {
             _activeContactIdFlow.value = null
             activeChatId = chatId.toHexString()

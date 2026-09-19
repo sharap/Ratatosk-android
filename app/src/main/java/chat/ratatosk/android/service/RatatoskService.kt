@@ -86,6 +86,19 @@ class RatatoskService : Service() {
     }
 
     companion object {
+        // Набор живёт рядом с буфером повторов — в процессе, а не в экземпляре
+        // сервиса. Сервис пересоздаётся (START_STICKY, watchdog), и с полем
+        // экземпляра набор обнулялся, а буфер оставался полным: человек получал
+        // пачку уведомлений о сообщениях, которые давно прочитал.
+        //
+        // Потолок нужен, чтобы набор не рос всю жизнь процесса; при вытеснении
+        // худшее — повторное уведомление о совсем старом сообщении, чего
+        // повтор всё равно не достанет.
+        private val notifiedMsgIds = object : LinkedHashMap<String, Boolean>(64, 0.75f, false) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Boolean>?): Boolean =
+                size > 256
+        }
+
         const val SERVICE_CHANNEL_ID = "ratatosk_service_channel"
         const val MESSAGE_CHANNEL_ID = "ratatosk_message_channel"
         const val NOTIFICATION_ID = 1
@@ -470,9 +483,12 @@ class RatatoskService : Service() {
     // Потолок нужен, чтобы набор не рос всю жизнь процесса; при вытеснении
     // худшее, что случится, — повторное уведомление о совсем старом
     // сообщении, чего replay всё равно не достанет.
-    private val notifiedMsgIds = object : LinkedHashMap<String, Boolean>(64, 0.75f, false) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Boolean>?): Boolean =
-            size > 256
+    private fun dismissChatNotification(chatIdHex: String) {
+        try {
+            NotificationManagerCompat.from(this).cancel(chatIdHex.hashCode())
+        } catch (e: Exception) {
+            android.util.Log.w("RatatoskService", "Failed to dismiss notification: ${e.message}")
+        }
     }
 
     private fun alreadyNotified(msgIdHex: String): Boolean = synchronized(notifiedMsgIds) {
@@ -483,6 +499,12 @@ class RatatoskService : Service() {
         val chatIdHex = event.chatId.toHexString()
         val accountId = RatatoskCore.getActiveAccountId() ?: return
         if (alreadyNotified(event.msgId.toHexString())) return
+        // Человек смотрит в этот чат — уведомлять его о том, что он и так
+        // видит, незачем; заодно снимаем прежнее по этому чату.
+        if (chat.ratatosk.android.util.VisibleChat.isVisible(chatIdHex)) {
+            dismissChatNotification(chatIdHex)
+            return
+        }
         
         serviceScope.launch {
             val msg = try {
@@ -708,6 +730,11 @@ class RatatoskService : Service() {
         if (alreadyNotified(message.msgId.toHexString())) return
 
         val chatIdHex = message.chatId.toHexString()
+        // То же правило, что и у полного клиента: открытый и видимый чат — молчим.
+        if (chat.ratatosk.android.util.VisibleChat.isVisible(chatIdHex)) {
+            dismissChatNotification(chatIdHex)
+            return
+        }
         val accountId = RatatoskCore.getActiveAccountId() ?: return
         
         serviceScope.launch {

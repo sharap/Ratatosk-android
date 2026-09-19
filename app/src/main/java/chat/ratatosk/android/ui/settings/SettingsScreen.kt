@@ -1932,7 +1932,12 @@ fun SettingsStorageSection(
 
     Box {
         OutlinedButton(onClick = { showLimitMenu = true }, modifier = Modifier.fillMaxWidth()) {
-            val currentLabel = limits.find { it.first == autoAcceptLimit }?.second ?: stringResource(R.string.limit_never)
+            // Значение мог выставить другой клиент, и в списке его может не быть.
+            // Показываем его как есть: «никогда» вместо настоящего лимита — неправда.
+            val known = limits.find { it.first == autoAcceptLimit }?.second
+            val currentLabel = known
+                ?: autoAcceptLimit?.let { stringResource(R.string.limit_up_to, FileUtils.formatFileSize(it)) }
+                ?: stringResource(R.string.limit_always)
             Text("${stringResource(R.string.auto_accept_limit)}: $currentLabel")
         }
         DropdownMenu(expanded = showLimitMenu, onDismissRequest = { showLimitMenu = false }) {

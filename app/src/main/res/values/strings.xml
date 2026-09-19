@@ -305,6 +305,11 @@
     <string name="companion_offline">The phone is offline</string>
     <string name="companion_revoked">The pairing was revoked from the phone</string>
     <string name="export_failed">Could not export the archive</string>
+    <string name="limit_up_to">up to %1$s</string>
+    <string name="companion_stale_data">Data from the last connection — the phone has not answered yet</string>
+    <string name="file_fetching">Fetching from the phone: %1$d%%</string>
+    <string name="file_fetching_unknown">Fetching from the phone…</string>
+    <string name="fetch_waiting_phone">Waiting for the phone — the transfer will continue from the same place</string>
     <string name="preview_photo">[Photo]</string>
     <string name="preview_video">[Video]</string>
     <string name="preview_audio">[Audio]</string>
