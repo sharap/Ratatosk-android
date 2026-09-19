@@ -381,8 +381,18 @@ class RatatoskService : Service() {
                 return@launch
             }
             val name = settings.getDisplayName(lastId).firstOrNull() ?: "Ratatosk"
+            // Привязанный к телефону аккаунт открывается секретом из Keystore.
+            // Без него служба поднимала бы ядро «пустым ключом» и получала
+            // отказ — то есть к утру приложение снова было бы не живо.
+            val deviceKey = if (settings.isDeviceBound(lastId).firstOrNull() == true) {
+                chat.ratatosk.android.data.KeystoreSecrets(applicationContext).get(lastId)
+                    ?: run {
+                        android.util.Log.w("RatatoskService", "Device secret is gone — waiting for the user")
+                        return@launch
+                    }
+            } else null
             try {
-                RatatoskCore.initialize(accountId, null, null, name)
+                RatatoskCore.initialize(accountId, null, deviceKey, name)
                 android.util.Log.i("RatatoskService", "Account session recovered")
                 handBtRadio()
             } catch (locked: RatatoskException.Locked) {

@@ -413,4 +413,8 @@
     <string name="link_warn_userinfo">Всё, что до @, — не адрес: ведёт на %1$s</string>
     <string name="link_warn_punycode">Хост записан кодом (xn--): он может выглядеть как другой</string>
     <string name="link_warn_scheme">Это не веб-адрес: %1$s</string>
+    <string name="bind_to_device">Привязать к этому телефону</string>
+    <string name="bind_to_device_desc">База открывается ключом из защищённой памяти телефона: больше нигде её не открыть — ни с PIN, ни без него. Потеряете телефон — потеряете переписку; выгрузите архив, пока он есть.</string>
+    <string name="keystore_unavailable">На этом телефоне нет рабочего хранилища ключей — привязать к нему аккаунт нельзя</string>
+    <string name="device_secret_lost">Аккаунт привязан к этому телефону, но ключа больше нет. Так бывает после сброса или смены блокировки экрана; переписку не открыть.</string>
 </resources>

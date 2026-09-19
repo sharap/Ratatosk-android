@@ -26,6 +26,9 @@ class SessionContext(
     val settings: SettingsRepository,
     /** Ядро за швом: в тестах сюда кладут двойника. */
     val core: Backend = CoreBackend,
+    /** Секрет устройства для базы аккаунта; в тестах — свой. */
+    val secrets: chat.ratatosk.android.data.DeviceSecrets =
+        chat.ratatosk.android.data.KeystoreSecrets(app),
     /** Строки ресурсов: в тестах ресурсов нет, а ошибки показывать надо. */
     private val strings: (Int) -> String = { app.getString(it) },
 ) {

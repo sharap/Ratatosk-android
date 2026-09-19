@@ -28,7 +28,14 @@ interface AccountsApi {
     fun refreshAccounts()
     fun wipeAccount(id: ByteArray)
     fun findHiddenAccount(pin: String, onFound: (ByteArray) -> Unit, onNotFound: () -> Unit)
-    fun initialize(label: String, pin: String?, displayName: String)
+    /**
+     * Заводит аккаунт.
+     *
+     * @param bindToDevice привязать базу к этому телефону секретом из
+     *   Keystore: тогда её не открыть больше нигде — ни с PIN, ни без.
+     *   Обратная сторона: потеря телефона — потеря переписки.
+     */
+    fun initialize(label: String, pin: String?, displayName: String, bindToDevice: Boolean = false)
     fun unlock(account: FfiAccount, pin: String?)
     fun selectAccount(account: FfiAccount?)
     fun setCreatingNewAccount(creating: Boolean)
@@ -66,6 +73,9 @@ class AccountsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 session.core.wipeAccount(id)
+                // Секрет переживать аккаунт незачем: открывать им больше нечего.
+                session.secrets.forget(id.toHexString())
+                session.settings.setDeviceBound(id.toHexString(), false)
                 refreshAccounts()
             } catch (e: Exception) {
                 android.util.Log.w("RatatoskVM", "Failed to wipe account", e)
@@ -92,13 +102,21 @@ class AccountsModel(
         }
     }
 
-    override fun initialize(label: String, pin: String?, displayName: String) {
+    override fun initialize(label: String, pin: String?, displayName: String, bindToDevice: Boolean) {
         session.scope.launch(Dispatchers.IO) {
             try {
                 val account = session.core.createAccount(label)
-                session.core.openAccount(account.id, pin, null, displayName)
-                
                 val idHex = account.id.toHexString()
+                // Секрет — раньше открытия: база, заведённая ключом, который
+                // не удалось сохранить, не откроется больше никогда.
+                val deviceKey = if (bindToDevice) {
+                    if (!session.secrets.isAvailable) {
+                        throw IllegalStateException(session.string(R.string.keystore_unavailable))
+                    }
+                    session.secrets.create(idHex).also { session.settings.setDeviceBound(idHex, true) }
+                } else null
+                session.core.openAccount(account.id, pin, deviceKey, displayName)
+
                 session.settings.registerAccount(idHex, displayName)
                 
                 withContext(Dispatchers.Main) {
@@ -123,7 +141,11 @@ class AccountsModel(
             try {
                 val idHex = account.id.toHexString()
                 val savedName = session.settings.getDisplayName(idHex).firstOrNull() ?: account.label
-                session.core.openAccount(account.id, pin, null, savedName)
+                val deviceKey = if (session.settings.isDeviceBound(idHex).first()) {
+                    session.secrets.get(idHex)
+                        ?: throw IllegalStateException(session.string(R.string.device_secret_lost))
+                } else null
+                session.core.openAccount(account.id, pin, deviceKey, savedName)
                 session.settings.setLastAccountId(idHex)
                 // Открылся без PIN — в следующий раз и спрашивать не будем.
                 session.settings.setNeedsPinHint(idHex, pin != null)

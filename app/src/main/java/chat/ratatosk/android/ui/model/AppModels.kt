@@ -19,6 +19,9 @@ class AppModels(
     application: Application,
     /** Ядро за швом: в проверках сюда кладут двойника. */
     core: Backend = CoreBackend,
+    /** Секрет устройства; в проверках сюда кладут свой. */
+    secrets: chat.ratatosk.android.data.DeviceSecrets =
+        chat.ratatosk.android.data.KeystoreSecrets(application),
     /** Строки ресурсов: в проверках ресурсов нет. */
     strings: (Int) -> String = { application.getString(it) },
 ) {
@@ -29,6 +32,7 @@ class AppModels(
         scope = modelScope,
         settings = SettingsRepository(application),
         core = core,
+        secrets = secrets,
         strings = strings,
     )
 

@@ -4,6 +4,7 @@ import android.app.Application
 import chat.ratatosk.android.data.SettingsRepository
 import chat.ratatosk.android.fake.FakeBackend
 import chat.ratatosk.android.fake.FakeClient
+import chat.ratatosk.android.fake.FakeSecrets
 import chat.ratatosk.android.fake.FakeCompanion
 import chat.ratatosk.android.ui.model.ChatsModel
 import chat.ratatosk.android.ui.model.ClientModel
@@ -51,8 +52,10 @@ class ModelsWithFakeBackendTest {
      */
     private inner class TestApp : Application() {
         override fun getApplicationContext(): android.content.Context = this
-        override fun getFilesDir(): java.io.File = dataDir
-        override fun getCacheDir(): java.io.File = dataDir
+        override fun getFilesDir(): java.io.File = this@ModelsWithFakeBackendTest.dataDir
+        override fun getCacheDir(): java.io.File = this@ModelsWithFakeBackendTest.dataDir
+        // `DataStore` спрашивает и его — на устройстве это корень данных приложения.
+        override fun getDataDir(): java.io.File = this@ModelsWithFakeBackendTest.dataDir
     }
 
     private val app: Application = TestApp()
@@ -101,6 +104,7 @@ class ModelsWithFakeBackendTest {
     }
 
     private val backend = FakeBackend()
+    private val secrets = FakeSecrets()
 
     private fun session(companion: Boolean = false): SessionContext {
         backend.isCompanion = companion
@@ -111,6 +115,7 @@ class ModelsWithFakeBackendTest {
             scope = scope,
             settings = SettingsRepository(app),
             core = backend,
+            secrets = secrets,
             strings = { "строка:$it" },
         )
     }
@@ -140,7 +145,8 @@ class ModelsWithFakeBackendTest {
             if (check()) return
             Thread.sleep(5)
         }
-        throw AssertionError("не дождались: $what; было: ${seen()}")
+        val error = if (::accountsSession.isInitialized) accountsSession.error.value else null
+        throw AssertionError("не дождались: $what; было: ${seen()}; секреты: ${secrets.calls}; ошибка: $error")
     }
 
     private val chatA = byteArrayOf(1, 2, 3)
@@ -334,5 +340,72 @@ class ModelsWithFakeBackendTest {
 
         waitUntil("фото снято") { contacts.myAvatar.value == null }
         assertEquals(listOf("client.setAvatar:3", "client.setAvatar:null"), seen())
+    }
+
+    /** Ядро с записью того, чем открывали аккаунт. */
+    private inner class AccountBackend : chat.ratatosk.android.ui.model.Backend by backend {
+        override fun createAccount(label: String): org.ratatosk.core.FfiAccount =
+            org.ratatosk.core.FfiAccount(byteArrayOf(0xAB.toByte()), label, 0UL)
+
+        override fun openAccount(accountId: ByteArray, pin: String?, deviceKey: ByteArray?, displayName: String) {
+            calls += "open:${accountId.toHexString()}:pin=${pin ?: "нет"}:ключ=${deviceKey?.size ?: "нет"}"
+        }
+    }
+
+    /** Сессия последней собранной модели аккаунтов: в ней видно ошибку. */
+    private lateinit var accountsSession: SessionContext
+
+    private fun accountsModel(): chat.ratatosk.android.ui.model.AccountsModel {
+        val s = session(companion = false)
+        accountsSession = SessionContext(
+            app = app,
+            scope = scope,
+            settings = s.settings,
+            core = AccountBackend(),
+            secrets = secrets,
+            strings = { "строка:$it" },
+        )
+        return chat.ratatosk.android.ui.model.AccountsModel(accountsSession, onOpened = {}, startSession = {})
+    }
+
+    /**
+     * Секрет заводится **до** открытия базы.
+     *
+     * Наоборот нельзя: база, заведённая ключом, который не удалось
+     * сохранить, не откроется больше никогда — ни здесь, ни где-либо ещё.
+     */
+    @Test
+    fun bindingToThePhoneCreatesTheSecretBeforeOpening() {
+        val accounts = accountsModel()
+
+        accounts.initialize("метка", pin = null, displayName = "Имя", bindToDevice = true)
+
+        waitUntil("аккаунт открыт") { seen().any { it.startsWith("open:") } }
+        assertEquals(listOf("create:ab"), secrets.calls)
+        assertTrue(seen().toString(), seen().contains("open:ab:pin=нет:ключ=32"))
+    }
+
+    /** Без привязки ядру не передают ничего: база защищена только PIN. */
+    @Test
+    fun withoutBindingNoSecretIsCreated() {
+        val accounts = accountsModel()
+
+        accounts.initialize("метка", pin = "1234", displayName = "Имя", bindToDevice = false)
+
+        waitUntil("аккаунт открыт") { seen().any { it.startsWith("open:") } }
+        assertTrue("секрет не нужен: ${secrets.calls}", secrets.calls.isEmpty())
+        assertTrue(seen().toString(), seen().contains("open:ab:pin=1234:ключ=нет"))
+    }
+
+    /** Телефон без хранилища ключей говорит об этом, а не заводит аккаунт втихую. */
+    @Test
+    fun withoutKeyStorageBindingFailsLoudly() {
+        secrets.isAvailable = false
+        val accounts = accountsModel()
+
+        accounts.initialize("метка", pin = null, displayName = "Имя", bindToDevice = true)
+
+        waitUntil("сказано про хранилище") { accountsSession.error.value != null }
+        assertTrue("открывать было нечем: ${seen()}", seen().none { it.startsWith("open:") })
     }
 }

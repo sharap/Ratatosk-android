@@ -118,6 +118,18 @@ class SettingsRepository(private val context: Context) {
         context.dataStore.edit { it[booleanPreferencesKey(accountKey(accountId, "needs_pin"))] = needs }
     }
 
+    /**
+     * Аккаунт привязан к этому телефону: его база открывается секретом
+     * из Keystore. Признак нужен до открытия — чтобы знать, что секрет
+     * обязателен, и не молчать, если его вдруг не стало.
+     */
+    fun isDeviceBound(accountId: String): Flow<Boolean> =
+        context.dataStore.data.map { it[booleanPreferencesKey(accountKey(accountId, "device_bound"))] ?: false }
+
+    suspend fun setDeviceBound(accountId: String, bound: Boolean) {
+        context.dataStore.edit { it[booleanPreferencesKey(accountKey(accountId, "device_bound"))] = bound }
+    }
+
     val chatTheme: Flow<ChatThemeData> = context.dataStore.data.map { preferences ->
         ChatThemeData(
             themeColor = preferences[Keys.THEME_COLOR]?.let { Color(it.toInt()) } ?: Color.Unspecified,

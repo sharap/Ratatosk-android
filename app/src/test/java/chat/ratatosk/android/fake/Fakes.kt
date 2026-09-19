@@ -200,3 +200,30 @@ class FakeBackend(
     override fun hasBtRadio(): Boolean = false
     override fun coreLogFile(context: android.content.Context): java.io.File = notCalled("coreLogFile")
 }
+
+/**
+ * Секреты устройства без Keystore: в проверках его нет вовсе.
+ *
+ * @param available притвориться телефоном без рабочего хранилища ключей.
+ */
+class FakeSecrets(
+    override var isAvailable: Boolean = true,
+) : chat.ratatosk.android.data.DeviceSecrets {
+    val stored = mutableMapOf<String, ByteArray>()
+    val calls = mutableListOf<String>()
+
+    override fun get(accountIdHex: String): ByteArray? {
+        calls += "get:$accountIdHex"
+        return stored[accountIdHex]
+    }
+
+    override fun create(accountIdHex: String): ByteArray {
+        calls += "create:$accountIdHex"
+        return ByteArray(32) { 7 }.also { stored[accountIdHex] = it }
+    }
+
+    override fun forget(accountIdHex: String) {
+        calls += "forget:$accountIdHex"
+        stored.remove(accountIdHex)
+    }
+}

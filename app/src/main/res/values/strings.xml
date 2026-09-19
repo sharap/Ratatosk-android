@@ -409,4 +409,8 @@
     <string name="link_warn_userinfo">Everything before @ is not the address — it leads to %1$s</string>
     <string name="link_warn_punycode">The host is written in punycode (xn--): it may look like another one</string>
     <string name="link_warn_scheme">This is not a web address: %1$s</string>
+    <string name="bind_to_device">Bind to this phone</string>
+    <string name="bind_to_device_desc">The database is opened with a key kept in this phone\'s secure hardware: it cannot be opened anywhere else — with or without a PIN. Lose the phone and the history is gone with it; export an archive while you still can.</string>
+    <string name="keystore_unavailable">This phone has no working key storage — the account cannot be bound to it</string>
+    <string name="device_secret_lost">This account is bound to this phone, but its key is gone. It happens after a factory reset or a change of the screen lock; the history cannot be opened.</string>
 </resources>

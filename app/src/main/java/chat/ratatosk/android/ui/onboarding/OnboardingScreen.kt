@@ -41,6 +41,7 @@ fun OnboardingScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     var displayName by remember { mutableStateOf("") }
     var pin by remember { mutableStateOf("") }
+    var bindToDevice by remember { mutableStateOf(false) }
     val notices by viewModel.honestNotices.collectAsState()
     val onboardingError by viewModel.error.collectAsState()
 
@@ -177,11 +178,32 @@ fun OnboardingScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Привязка к телефону: ключ базы уезжает в Keystore. Сказать про
+        // цену надо здесь, до создания, а не когда телефон уже потерян.
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.bind_to_device), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = stringResource(R.string.bind_to_device_desc),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
+            Switch(checked = bindToDevice, onCheckedChange = { bindToDevice = it })
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = { 
-                viewModel.initialize(displayName, pin.takeIf { it.isNotEmpty() }, displayName) 
+            onClick = {
+                viewModel.initialize(
+                    displayName,
+                    pin.takeIf { it.isNotEmpty() },
+                    displayName,
+                    bindToDevice,
+                )
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = displayName.isNotBlank()
