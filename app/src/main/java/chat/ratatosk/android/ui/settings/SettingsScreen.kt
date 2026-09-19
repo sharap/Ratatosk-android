@@ -1724,9 +1724,13 @@ fun ExportArchiveDialog(
                     onClick = {
                         isExporting = true
                         viewModel.exportHistory(selectedScope, passphrase.takeIf { it.isNotBlank() }) { result ->
-                            exportResult = result
+                            // Ожидание снимаем в обоих исходах: иначе при ошибке
+                            // диалог нельзя ни закрыть, ни отменить.
                             isExporting = false
-                            onSuccess(result.path, result.keyText)
+                            result.onSuccess { exported ->
+                                exportResult = exported
+                                onSuccess(exported.path, exported.keyText)
+                            }
                         }
                     },
                     enabled = !isExporting

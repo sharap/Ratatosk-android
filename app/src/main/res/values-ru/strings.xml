@@ -301,6 +301,10 @@
     <string name="done">Готово</string>
     <string name="companion_mode_desc">Режим компаньона: Привязано к основному устройству.</string>
     <string name="avatar_load_failed">Не удалось открыть это изображение</string>
+    <string name="avatar_compress_failed">Не удалось уложить эту картинку в разрешённый размер — прежняя осталась на месте</string>
+    <string name="companion_offline">Телефон не на связи</string>
+    <string name="companion_revoked">Сопряжение отозвано с телефона</string>
+    <string name="export_failed">Не удалось выгрузить архив</string>
     <string name="preview_photo">[фото]</string>
     <string name="preview_video">[видео]</string>
     <string name="preview_audio">[аудио]</string>

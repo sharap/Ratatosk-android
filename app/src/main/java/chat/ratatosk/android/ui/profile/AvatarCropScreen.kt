@@ -48,6 +48,9 @@ fun AvatarCropScreen(
     var offset by remember { mutableStateOf(Offset.Zero) }
     var scale by remember { mutableStateOf(1f) }
     var containerSize by remember { mutableStateOf(Size.Zero) }
+    // Сжать не удалось — говорим об этом и остаёмся на экране: человек может
+    // отодвинуть кадр или взять другую картинку.
+    var compressFailed by remember { mutableStateOf(false) }
 
     LaunchedEffect(uri) {
         uri?.let {
@@ -74,6 +77,7 @@ fun AvatarCropScreen(
                 actions = {
                     IconButton(
                         onClick = {
+                            compressFailed = false
                             sourceBitmap?.let { bitmap ->
                                 val drawWidth = containerSize.width * scale
                                 val drawHeight = (containerSize.width / (bitmap.width.toFloat() / bitmap.height.toFloat())) * scale
@@ -95,15 +99,23 @@ fun AvatarCropScreen(
                                 
                                 val cropped = ImageUtils.cropAndResize(bitmap, relX, relY, relSizeX)
                                 
+                                // `null` — уложиться в разрешённый размер не вышло.
+                                // Отдать его дальше нельзя: для ядра `null` означает
+                                // «снять аватарку», и попытка поставить новую стёрла бы
+                                // прежнюю молча.
                                 val bytes = ImageUtils.compressToWebp(cropped, maxBytes)
-                                val pendingChatId = viewModel.pendingAvatarChatId.value
-                                if (pendingChatId != null) {
-                                    viewModel.setGroupAvatar(pendingChatId, bytes)
+                                if (bytes == null) {
+                                    compressFailed = true
                                 } else {
-                                    viewModel.setAvatar(bytes)
+                                    val pendingChatId = viewModel.pendingAvatarChatId.value
+                                    if (pendingChatId != null) {
+                                        viewModel.setGroupAvatar(pendingChatId, bytes)
+                                    } else {
+                                        viewModel.setAvatar(bytes)
+                                    }
+                                    viewModel.setPendingAvatarUri(null, null)
+                                    onDone()
                                 }
-                                viewModel.setPendingAvatarUri(null, null)
-                                onDone()
                             }
                         },
                         enabled = sourceBitmap != null
@@ -158,6 +170,13 @@ fun AvatarCropScreen(
                     
                     // Dim outside
                     // (Omitted for simplicity, but good for UX)
+                }
+                if (compressFailed) {
+                    Text(
+                        text = stringResource(R.string.avatar_compress_failed),
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
+                    )
                 }
             } ?: if (loadFailed) {
                 Text(

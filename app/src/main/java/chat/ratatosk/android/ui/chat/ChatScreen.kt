@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.withStyle
@@ -134,6 +136,9 @@ fun ChatScreen(
     val isSearching by viewModel.isSearching.collectAsState()
 
     val displayMessages = remember(messages) { messages.reversed() }
+    // Корутинам — всегда свежий список. Захваченный обычный `val` не меняется,
+    // и переход к сообщению ждал догрузки, которой некому было случиться.
+    val currentDisplay by rememberUpdatedState(displayMessages)
 
     val performBack = {
         onBack()
@@ -225,7 +230,7 @@ fun ChatScreen(
         val maxAttempts = 10
         
         while (pendingScrollToId == targetId && attempts < maxAttempts) {
-            val currentMessages = displayMessages
+            val currentMessages = currentDisplay
             val targetBytes = try { targetId.hexToByteArray() } catch (e: Exception) { null }
             val index = if (targetBytes != null) {
                 currentMessages.indexOfFirst { it.msgId.contentEquals(targetBytes) }
@@ -250,7 +255,12 @@ fun ChatScreen(
                 if (currentSize < 5000) {
                     viewModel.loadMessages(chatId, currentSize + 500)
                     attempts++
-                    val loadSuccess = snapshotFlow { displayMessages.size }.filter { it > currentSize }.firstOrNull()
+                    // Читаем состояние, а не захваченное значение: только тогда
+                    // поток оживает на догрузке. И ждём с оглядкой на часы —
+                    // ответа может не быть вовсе (телефон не на связи).
+                    val loadSuccess = withTimeoutOrNull(5_000) {
+                        snapshotFlow { currentDisplay.size }.filter { it > currentSize }.first()
+                    }
                     if (loadSuccess == null) break
                 } else break
             }
@@ -575,17 +585,30 @@ fun ChatScreen(
                                                 val currentEditing = editingMessage
                                                 val currentReply = replyingTo
                                                 if (attachedFiles.isNotEmpty()) {
-                                                    viewModel.sendFiles(chatId, attachedFiles, text)
+                                                    // Вложения идут одним сообщением, и ответа
+                                                    // ядро к нему не прикрепляет: `send_files`
+                                                    // цитаты не принимает. Значит ответ надо
+                                                    // отправить отдельно — молча терять его
+                                                    // нельзя, человек его набрал.
+                                                    if (currentReply != null && text.isNotBlank()) {
+                                                        viewModel.reply(chatId, currentReply.msgId, text)
+                                                        viewModel.sendFiles(chatId, attachedFiles, "")
+                                                    } else {
+                                                        viewModel.sendFiles(chatId, attachedFiles, text)
+                                                    }
                                                     attachedFiles = emptyList()
                                                 } else if (currentEditing != null) {
                                                     viewModel.editMessage(chatId, currentEditing.msgId, text)
-                                                    editingMessage = null
                                                 } else if (currentReply != null) {
                                                     viewModel.reply(chatId, currentReply.msgId, text)
-                                                    replyingTo = null
                                                 } else {
                                                     viewModel.sendText(chatId, text)
                                                 }
+                                                // Панели снимаем всегда: иначе ответ и правка
+                                                // остаются висеть после отправки, и кажется,
+                                                // что сообщение ушло не туда.
+                                                editingMessage = null
+                                                replyingTo = null
                                                 text = ""
                                             }
                                         },

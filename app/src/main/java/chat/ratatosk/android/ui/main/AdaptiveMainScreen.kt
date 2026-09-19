@@ -572,16 +572,20 @@ fun DetailPaneContent(
         }
         activeChatId != null || (currentKey?.startsWith("chat_") == true && detailChatId != null) -> {
             if (detailChatId != null) {
-                ChatScreen(
-                    viewModel = viewModel,
-                    chatId = detailChatId,
-                    onBack = { scope.launch { navigator.navigateBack() } },
-                    onHeaderClick = { 
-                        viewModel.setActiveContact(detailChatId)
-                    },
-                    showBackButton = showBackButton,
-                    isCompact = isCompact
-                )
+                // Ключ по чату: черновик, ответ, правка и вложения принадлежат
+                // одному разговору и не должны перетекать в другой.
+                key(detailChatId.toHexString()) {
+                    ChatScreen(
+                        viewModel = viewModel,
+                        chatId = detailChatId,
+                        onBack = { scope.launch { navigator.navigateBack() } },
+                        onHeaderClick = {
+                            viewModel.setActiveContact(detailChatId)
+                        },
+                        showBackButton = showBackButton,
+                        isCompact = isCompact
+                    )
+                }
             }
         }
         else -> {

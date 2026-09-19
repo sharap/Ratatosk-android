@@ -301,6 +301,10 @@
     <string name="done">Done</string>
     <string name="companion_mode_desc">Companion Mode: Linked to main device.</string>
     <string name="avatar_load_failed">Could not open this image</string>
+    <string name="avatar_compress_failed">Could not fit this picture into the allowed size — the previous one is untouched</string>
+    <string name="companion_offline">The phone is offline</string>
+    <string name="companion_revoked">The pairing was revoked from the phone</string>
+    <string name="export_failed">Could not export the archive</string>
     <string name="preview_photo">[Photo]</string>
     <string name="preview_video">[Video]</string>
     <string name="preview_audio">[Audio]</string>

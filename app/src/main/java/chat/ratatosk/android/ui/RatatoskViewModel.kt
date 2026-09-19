@@ -649,6 +649,15 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             is FfiCompanionEvent.Unlinked -> {
                 android.util.Log.w("RatatoskVM", "Companion UNLINKED")
                 _isCompanionLinked.value = false
+                // Телефон ушёл со связи — `FileSaved` уже не придёт.
+                failPendingCompanionSaves(getApplication<Application>().getString(R.string.companion_offline))
+            }
+            is FfiCompanionEvent.Revoked -> {
+                // Сопряжение отозвано: объект жив, но на любую команду отвечает
+                // отказом. Молчать об этом нельзя — окно иначе вечно «подключается».
+                android.util.Log.w("RatatoskVM", "Companion REVOKED")
+                _isCompanionLinked.value = false
+                failPendingCompanionSaves(getApplication<Application>().getString(R.string.companion_revoked))
             }
             is FfiCompanionEvent.FileSaved -> {
                 val hex = event.fileId.toHexString()
@@ -709,6 +718,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 if (!event.reason.contains("прежние просьбы") && !event.reason.contains("не отвечает на прежние")) {
                     _error.value = event.reason
                 }
+                // Отказ мог прийти и на просьбу забрать вложение: тогда ждать
+                // `FileSaved` больше нечего.
+                failPendingCompanionSaves(event.reason)
             }
             else -> {}
         }
@@ -1045,7 +1057,13 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun exportHistory(scope: FfiExportScope, phrase: String?, onResult: (FfiExported) -> Unit) {
+    /**
+     * Выгружает архив.
+     *
+     * Ответ приходит и при неудаче: раньше при ошибке колбэк не звали вовсе,
+     * и диалог оставался «в работе» навсегда — ни закрыть, ни отменить.
+     */
+    fun exportHistory(scope: FfiExportScope, phrase: String?, onResult: (Result<FfiExported>) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 // Каталог приложения на общем хранилище, а не публичные
@@ -1067,12 +1085,14 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 
                 val result = RatatoskCore.exportHistory(dest.absolutePath, scope, phrase)
                 withContext(Dispatchers.Main) {
-                    onResult(result)
+                    onResult(Result.success(result))
                 }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Export failed", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Export failed: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.export_failed)
+                    onResult(Result.failure(e))
                 }
             }
         }
@@ -1535,6 +1555,24 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 android.util.Log.w("RatatoskVM", "Failed to fetch preview for $hex: ${e.message}")
             }
         }
+    }
+
+    /**
+     * Роняет ожидание выкладывания: ядро отказало или телефон ушёл со связи.
+     *
+     * Без этого ожидание висело вечно — крутилка не гасла, файл не открывался,
+     * и человеку не говорили ни слова о причине.
+     */
+    private fun failPendingCompanionSaves(reason: String?) {
+        if (pendingCompanionSaves.isEmpty() && currentCompanionSaveFileId == null) return
+        val waiting = pendingCompanionSaves.keys.toList()
+        pendingCompanionSaves.clear()
+        pendingCompanionPaths.clear()
+        currentCompanionSaveFileId = null
+        _activeJobsFlow.update { it - waiting.toSet() }
+        val text = reason?.takeIf { it.isNotBlank() }
+            ?: getApplication<Application>().getString(R.string.file_unavailable)
+        _error.value = text
     }
 
     fun saveFile(file: FfiFile, destination: java.io.File, onComplete: (java.io.File) -> Unit) {
