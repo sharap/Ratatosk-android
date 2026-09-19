@@ -404,4 +404,13 @@
     <string name="avatar_change">Сменить фото</string>
     <string name="avatar_remove">Удалить фото</string>
     <string name="avatar_removed">Фото удалено</string>
+    <string name="link_open_title">Перейти по ссылке?</string>
+    <string name="link_leads_to">Ведёт на</string>
+    <string name="link_unknown_host">Адрес не удалось разобрать</string>
+    <string name="link_open">Перейти</string>
+    <string name="link_copy">Скопировать</string>
+    <string name="link_warn_shown_host">В тексте написано %1$s, а ведёт в другое место</string>
+    <string name="link_warn_userinfo">Всё, что до @, — не адрес: ведёт на %1$s</string>
+    <string name="link_warn_punycode">Хост записан кодом (xn--): он может выглядеть как другой</string>
+    <string name="link_warn_scheme">Это не веб-адрес: %1$s</string>
 </resources>

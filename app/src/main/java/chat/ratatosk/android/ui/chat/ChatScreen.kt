@@ -1147,6 +1147,22 @@ fun MessageBubble(
     
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
 
+    // Ссылка, по которой нажали: адрес и его подпись в тексте.
+    var pendingLink by remember { mutableStateOf<Pair<String, String>?>(null) }
+
+    pendingLink?.let { (url, shown) ->
+        chat.ratatosk.android.ui.components.LinkConfirmDialog(
+            url = url,
+            shownText = shown,
+            onDismiss = { pendingLink = null },
+            onOpen = { address ->
+                // Открыть может быть нечем — тогда лучше сказать, чем упасть.
+                runCatching { uriHandler.openUri(address) }
+                    .onFailure { android.util.Log.w("RatatoskVM", "Failed to open link", it) }
+            },
+        )
+    }
+
     Box(
         modifier = Modifier.fillMaxWidth().background(if (isHighlighted) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent),
         contentAlignment = alignment
@@ -1209,7 +1225,10 @@ fun MessageBubble(
                                         val characterIndex = layout.getOffsetForPosition(offset)
                                         annotatedBody.getStringAnnotations("URL", characterIndex, characterIndex)
                                             .firstOrNull()?.let { annotation ->
-                                                uriHandler.openUri(annotation.item)
+                                                // Не открываем сразу: куда ведёт ссылка,
+                                                // человек должен увидеть до перехода.
+                                                pendingLink = annotation.item to
+                                                    annotatedBody.text.substring(annotation.start, annotation.end)
                                                 return@detectTapGestures
                                             }
                                         annotatedBody.getStringAnnotations("EXPAND", characterIndex, characterIndex)

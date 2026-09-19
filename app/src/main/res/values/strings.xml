@@ -400,4 +400,13 @@
     <string name="avatar_change">Change photo</string>
     <string name="avatar_remove">Remove photo</string>
     <string name="avatar_removed">Photo removed</string>
+    <string name="link_open_title">Open this link?</string>
+    <string name="link_leads_to">Leads to</string>
+    <string name="link_unknown_host">The address could not be read</string>
+    <string name="link_open">Open</string>
+    <string name="link_copy">Copy</string>
+    <string name="link_warn_shown_host">The text says %1$s, the address leads elsewhere</string>
+    <string name="link_warn_userinfo">Everything before @ is not the address — it leads to %1$s</string>
+    <string name="link_warn_punycode">The host is written in punycode (xn--): it may look like another one</string>
+    <string name="link_warn_scheme">This is not a web address: %1$s</string>
 </resources>
