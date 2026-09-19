@@ -52,20 +52,7 @@ fun ChatListScreen(
     val activeChatId by viewModel.activeChatIdFlow.collectAsState()
 
     val chats = remember(contacts, groups, allMessages, activeChatId) {
-        (contacts.map { ChatItem.Contact(it) } + groups.map { ChatItem.Group(it) })
-            .filter { chatItem ->
-                when (chatItem) {
-                    is ChatItem.Group -> true
-                    is ChatItem.Contact -> {
-                        val hexId = chatItem.chatId.toHexString()
-                        val msgs = allMessages[hexId]
-                        !msgs.isNullOrEmpty() || activeChatId?.contentEquals(chatItem.chatId) == true
-                    }
-                }
-            }
-            .sortedByDescending { chatItem ->
-                allMessages[chatItem.chatId.toHexString()]?.lastOrNull()?.wallMs ?: 0UL
-            }
+        buildChatList(contacts, groups, allMessages, activeChatId)
     }
 
     LaunchedEffect(Unit) {
