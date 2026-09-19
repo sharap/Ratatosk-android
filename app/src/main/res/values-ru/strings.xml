@@ -312,6 +312,17 @@
     <string name="fetch_waiting_phone">Ждём связи с телефоном — приём продолжится с того же места</string>
     <string name="opening_account">Открываем аккаунт…</string>
     <string name="port_invalid">Порт — число от 1 до 65535</string>
+    <string name="companion_section">Второй экран</string>
+    <string name="companion_cache">Хранить копию переписки на этом устройстве</string>
+    <string name="companion_cache_on_title">Что даёт и чего не даёт этот файл</string>
+    <string name="companion_cache_on_desc">Копия переписки шифруется, но ключ выводится из ссылки сопряжения, которая лежит на этом же устройстве. Значит защита работает против скопированного файла и резервной копии — и не работает против забранного устройства.</string>
+    <string name="companion_cache_off_desc">Выключение стирает уже сохранённое. Без копии окно показывает только то, что приехало с телефона в этот раз.</string>
+    <string name="companion_cache_needs_link">Ссылка сопряжения не сохранена — копию переписки нечем будет открыть в следующий раз</string>
+    <string name="companion_cache_failed">Не удалось переключить копию переписки</string>
+    <string name="companion_manual_title">Телефон не находит это устройство?</string>
+    <string name="companion_manual_desc">Обычно телефон находит второй экран сам. Если он в другой сети, за VPN или в гостевом Wi-Fi, введите на телефоне эти значения руками.</string>
+    <string name="companion_manual_port">Порт</string>
+    <string name="companion_manual_key">Ключ этого устройства</string>
     <string name="preview_photo">[фото]</string>
     <string name="preview_video">[видео]</string>
     <string name="preview_audio">[аудио]</string>

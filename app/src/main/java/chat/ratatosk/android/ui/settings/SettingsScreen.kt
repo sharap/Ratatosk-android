@@ -241,6 +241,11 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                     }
 
+                    // Сам второй экран: копия переписки и то, чем его найти с телефона.
+                    if (isCompanionMode) {
+                        SettingsCompanionOwnSection(viewModel)
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                    }
                     SettingsPrivacySection(
                         showName = showName,
                         showText = showText,
@@ -354,6 +359,11 @@ fun SettingsScreen(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
                 }
 
+                // Сам второй экран: копия переписки и то, чем его найти с телефона.
+                if (isCompanionMode) {
+                    SettingsCompanionOwnSection(viewModel)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+                }
                 SettingsPrivacySection(
                     showName = showName,
                     showText = showText,
@@ -1570,6 +1580,100 @@ fun SettingsTransportsSection(
             }
         }
     )
+}
+
+/**
+ * Настройки самого второго экрана: копия переписки и то, чем его найти
+ * с телефона, когда тот не находит сам.
+ */
+@Composable
+fun SettingsCompanionOwnSection(viewModel: RatatoskViewModel) {
+    val cacheEnabled by viewModel.companionCacheEnabled.collectAsState()
+    var confirmOn by remember { mutableStateOf(false) }
+    var showManual by remember { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
+    // Порт и ключ спрашиваем у ядра один раз на открытие диалога, а не на кадр.
+    val endpoint = remember(showManual) { if (showManual) viewModel.companionEndpoint() else null }
+
+    Text(text = stringResource(R.string.companion_section), style = MaterialTheme.typography.titleMedium)
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(stringResource(R.string.companion_cache))
+            Text(
+                text = if (cacheEnabled) stringResource(R.string.companion_cache_on_desc)
+                       else stringResource(R.string.companion_cache_off_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(
+            checked = cacheEnabled,
+            onCheckedChange = { on -> if (on) confirmOn = true else viewModel.setCompanionCache(false) }
+        )
+    }
+
+    OutlinedButton(onClick = { showManual = true }, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.companion_manual_title))
+    }
+
+    if (confirmOn) {
+        AlertDialog(
+            onDismissRequest = { confirmOn = false },
+            title = { Text(stringResource(R.string.companion_cache_on_title)) },
+            text = { Text(stringResource(R.string.companion_cache_on_desc)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.setCompanionCache(true)
+                    confirmOn = false
+                }) { Text(stringResource(R.string.enable)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmOn = false }) { Text(stringResource(R.string.cancel)) } }
+        )
+    }
+
+    if (showManual) {
+        AlertDialog(
+            onDismissRequest = { showManual = false },
+            title = { Text(stringResource(R.string.companion_manual_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.companion_manual_desc), style = MaterialTheme.typography.bodySmall)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    if (endpoint == null) {
+                        Text(
+                            text = stringResource(R.string.connecting_to_phone_cached),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        val (port, key) = endpoint
+                        Text(stringResource(R.string.companion_manual_port), style = MaterialTheme.typography.labelMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(port.toString(), modifier = Modifier.weight(1f))
+                            IconButton(onClick = { clipboardManager.setText(AnnotatedString(port.toString())) }) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.copy))
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(stringResource(R.string.companion_manual_key), style = MaterialTheme.typography.labelMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(key, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                            IconButton(onClick = { clipboardManager.setText(AnnotatedString(key)) }) {
+                                Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.copy))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showManual = false }) { Text(stringResource(R.string.close)) } }
+        )
+    }
 }
 
 @Composable

@@ -312,6 +312,17 @@
     <string name="fetch_waiting_phone">Waiting for the phone — the transfer will continue from the same place</string>
     <string name="opening_account">Opening the account…</string>
     <string name="port_invalid">Port must be a number from 1 to 65535</string>
+    <string name="companion_section">Second screen</string>
+    <string name="companion_cache">Keep a copy of the conversation on this device</string>
+    <string name="companion_cache_on_title">What this file gives and does not give</string>
+    <string name="companion_cache_on_desc">The copy is encrypted, but the key comes from the pairing link stored on this very device. So it protects against a copied file and a backup — and not against the device being taken.</string>
+    <string name="companion_cache_off_desc">Turning it off erases what has been saved. Without a copy the app shows only what came from the phone this time.</string>
+    <string name="companion_cache_needs_link">The pairing link is not saved — there would be nothing to open the copy with next time</string>
+    <string name="companion_cache_failed">Could not switch the conversation copy</string>
+    <string name="companion_manual_title">The phone cannot find this device?</string>
+    <string name="companion_manual_desc">Usually the phone finds the second screen by itself. If it is on another network, behind a VPN or on a guest Wi-Fi, enter these values on the phone by hand.</string>
+    <string name="companion_manual_port">Port</string>
+    <string name="companion_manual_key">Key of this device</string>
     <string name="preview_photo">[Photo]</string>
     <string name="preview_video">[Video]</string>
     <string name="preview_audio">[Audio]</string>

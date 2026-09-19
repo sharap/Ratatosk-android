@@ -297,10 +297,7 @@ class RatatoskService : Service() {
 
                 try {
                     if (RatatoskCore.isInitialized() && !RatatoskCore.isCompanionMode()) {
-                        android.util.Log.i("RatatoskNetwork", "==================================================")
-                        android.util.Log.i("RatatoskNetwork", ">>> NETWORK CHANGED CALLED: networkChanged() <<<")
-                        android.util.Log.i("RatatoskNetwork", "==================================================")
-                        println(">>> RatatoskNetwork: networkChanged() called <<<")
+                        android.util.Log.i("RatatoskNetwork", "Network changed, telling the core")
                         RatatoskCore.getClient().networkChanged()
                     } else {
                         android.util.Log.w("RatatoskNetwork", "Network change detected, but core is not ready")

@@ -128,7 +128,9 @@ object RatatoskCore : EventObserver, CompanionObserver {
                 val file = coreLogFile(context)
                 file.parentFile?.mkdirs()
                 org.ratatosk.core.enableFileLogging(LOG_FILTER, file.absolutePath)
-                android.util.Log.i("RatatoskCore", "core logging to file: ${file.absolutePath}")
+                // Без пути: он и так известен, а в журнал попадают имена каталогов
+                // человека — сюда кладут только то, что не жалко прочитать чужому.
+                android.util.Log.i("RatatoskCore", "core logging to file")
             } else if (chat.ratatosk.android.BuildConfig.DEBUG) {
                 org.ratatosk.core.enableLogging(LOG_FILTER)
                 android.util.Log.i("RatatoskCore", "core logging to logcat")

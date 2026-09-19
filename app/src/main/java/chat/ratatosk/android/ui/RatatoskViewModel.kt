@@ -1238,6 +1238,64 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    /**
+     * Порт и ключ этого устройства — их вводят на телефоне руками, когда
+     * он не находит второй экран сам (гостевой Wi-Fi, VPN, изоляция клиентов).
+     * `null` — не компаньон или связи ещё нет.
+     */
+    fun companionEndpoint(): Pair<Int, String>? = try {
+        if (!RatatoskCore.isCompanionMode()) null
+        else {
+            val companion = RatatoskCore.getCompanion()
+            companion.port().toInt() to companion.desktopIk().toHexString()
+        }
+    } catch (e: Exception) {
+        null
+    }
+
+    /** Хранится ли снимок переписки этого второго экрана на диске. */
+    private val _companionCacheEnabled = MutableStateFlow(false)
+    val companionCacheEnabled: StateFlow<Boolean> = _companionCacheEnabled.asStateFlow()
+
+    /**
+     * Включает или выключает снимок переписки.
+     *
+     * Выключение зовёт `set_cache_path(null)` — файл стирает само ядро.
+     * Включить можно только когда ссылка сопряжения сохранена: без неё
+     * снимок было бы нечем открыть в следующий раз.
+     */
+    fun setCompanionCache(enabled: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val link = settingsRepository.companionLinks.first()
+                    .firstOrNull { it.label == currentCompanionLabel }
+                if (!enabled) {
+                    RatatoskCore.getCompanion().setCachePath(null)
+                    if (link != null) {
+                        settingsRepository.saveCompanionLink(link.copy(cachePath = null))
+                    }
+                    withContext(Dispatchers.Main) { _companionCacheEnabled.value = false }
+                    return@launch
+                }
+                if (link == null) {
+                    _error.value = getApplication<Application>().getString(R.string.companion_cache_needs_link)
+                    return@launch
+                }
+                val path = java.io.File(
+                    getApplication<Application>().filesDir,
+                    "companion_cache_${link.inviteUri.hashCode()}"
+                ).absolutePath
+                RatatoskCore.getCompanion().setCachePath(path)
+                settingsRepository.saveCompanionLink(link.copy(cachePath = path))
+                withContext(Dispatchers.Main) { _companionCacheEnabled.value = true }
+            } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to switch companion cache", e)
+                _error.value = e.message?.takeIf { it.isNotBlank() }
+                    ?: getApplication<Application>().getString(R.string.companion_cache_failed)
+            }
+        }
+    }
+
     fun initializeCompanion(inviteUri: String, port: Int, peerAddr: String?, cachePath: String?, label: String, torDir: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -1248,6 +1306,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
                 RatatoskCore.initializeCompanion(inviteUri, port.toUShort(), peerAddr, resolvedCachePath, torDir)
                 currentCompanionLabel = label
+                _companionCacheEnabled.value = resolvedCachePath != null
                 if (resolvedCachePath != null) {
                     settingsRepository.saveCompanionLink(
                         chat.ratatosk.android.data.CompanionLink(label, inviteUri, port, peerAddr, resolvedCachePath, torDir)
@@ -1329,6 +1388,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         
         _isInitialized.value = false
         _isCompanionLinked.value = false
+        _companionCacheEnabled.value = false
         resetCompanionFreshness()
         currentCompanionLabel = null
         _activeAccountId.value = null
@@ -1810,7 +1870,8 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 viewModelScope.launch { onComplete(destination) }
             } catch (e: Exception) {
                 if (e !is kotlinx.coroutines.CancellationException) {
-                    android.util.Log.e("RatatoskVM", "Failed to save file ${file.name}", e)
+                    // Имя файла приходит от собеседника — в журнал его класть нельзя.
+                    android.util.Log.e("RatatoskVM", "Failed to save file", e)
                     withContext(Dispatchers.Main) { _error.value = fileFailureText(e) }
                 }
             } finally {
@@ -3139,7 +3200,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 _error.value = event.reason
             }
             is FfiEvent.MailAccountReady -> {
-                android.util.Log.i("RatatoskVM", "Mail account ready: ${event.address}")
+                android.util.Log.i("RatatoskVM", "Mail account ready")
                 refreshTransportStatus()
             }
             is FfiEvent.MailAccountFailed -> {
@@ -3159,7 +3220,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 // Could show as a global notice or snackbar
             }
             is FfiEvent.PairingReady -> {
-                android.util.Log.i("RatatoskVM", "Pairing ready event received. URI: ${event.uri}")
+                // Ссылка сопряжения — это и есть секрет: у кого она, тот второй
+                // экран этого телефона до отзыва. В журнал она не идёт.
+                android.util.Log.i("RatatoskVM", "Pairing ready event received")
                 _pairingUri.value = event.uri
                 loadPairedDevices()
             }
