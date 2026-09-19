@@ -24,7 +24,26 @@ import org.ratatosk.core.*
 import java.util.concurrent.ConcurrentHashMap
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-class RatatoskViewModel(application: Application) : AndroidViewModel(application) {
+class RatatoskViewModel private constructor(
+    application: Application,
+    private val models: chat.ratatosk.android.ui.model.AppModels,
+) : AndroidViewModel(application),
+    // Разрезка: часть работы уехала в модели по назначению, а экраны
+    // по-прежнему зовут `viewModel.x` — интерфейсы моделей делегируются.
+    chat.ratatosk.android.ui.model.BackupApi by models.backup,
+    chat.ratatosk.android.ui.model.PairingApi by models.pairing {
+
+    constructor(application: Application) : this(application, chat.ratatosk.android.ui.model.AppModels(application))
+
+    init {
+        models.onAccountsChanged = { refreshAccounts() }
+    }
+
+    override fun onCleared() {
+        models.close()
+        super.onCleared()
+    }
+
     private val settingsRepository = SettingsRepository(application)
     
     private val _events = MutableStateFlow<List<FfiEvent>>(emptyList())
@@ -176,11 +195,6 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _activeContactIdFlow = MutableStateFlow<ByteArray?>(null)
     val activeContactIdFlow = _activeContactIdFlow.asStateFlow()
 
-    private val _pairedDevices = MutableStateFlow<List<FfiPairedDevice>>(emptyList())
-    val pairedDevices = _pairedDevices.asStateFlow()
-
-    private val _pairingUri = MutableStateFlow<String?>(null)
-    val pairingUri = _pairingUri.asStateFlow()
 
     private val _activeMediaFile = MutableStateFlow<FfiFile?>(null)
     val activeMediaFile = _activeMediaFile.asStateFlow()
@@ -1125,75 +1139,8 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
      * Ответ приходит и при неудаче: раньше при ошибке колбэк не звали вовсе,
      * и диалог оставался «в работе» навсегда — ни закрыть, ни отменить.
      */
-    fun exportHistory(scope: FfiExportScope, phrase: String?, onResult: (Result<FfiExported>) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                // Каталог приложения на общем хранилище, а не публичные
-                // «Загрузки». Архив пишет **ядро**, ему нужен настоящий путь
-                // в файловой системе, поэтому MediaStore здесь не подходит,
-                // а прямая запись в публичные «Загрузки» с Android 10
-                // запрещена без разрешений, которых у приложения нет: она
-                // отваливалась EACCES, а человек видел только «Export failed».
-                //
-                // Этот путь разрешений не требует и виден проводником:
-                // Android/data/chat.ratatosk.android/files/Download/ratatosk_backups.
-                val downloadsDir = getApplication<Application>()
-                    .getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
-                    ?: getApplication<Application>().filesDir
-                val ratatoskDir = java.io.File(downloadsDir, "ratatosk_backups")
-                ratatoskDir.mkdirs()
-                val fileName = "ratatosk_backup_${System.currentTimeMillis()}.db"
-                val dest = java.io.File(ratatoskDir, fileName)
-                
-                val result = RatatoskCore.exportHistory(dest.absolutePath, scope, phrase)
-                withContext(Dispatchers.Main) {
-                    onResult(Result.success(result))
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Export failed", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.export_failed)
-                    onResult(Result.failure(e))
-                }
-            }
-        }
-    }
 
-    fun importArchive(path: String, unlock: FfiArchiveUnlock, label: String, onResult: (Result<FfiImported>) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val result = RatatoskCore.importArchive(getApplication(), path, unlock, label)
-                withContext(Dispatchers.Main) {
-                    refreshAccounts()
-                    onResult(Result.success(result))
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Import failed", e)
-                withContext(Dispatchers.Main) {
-                    onResult(Result.failure(e))
-                }
-            }
-        }
-    }
 
-    fun peekArchive(path: String, onResult: (FfiArchivePeek?) -> Unit) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val result = RatatoskCore.peekArchive(path)
-                withContext(Dispatchers.Main) {
-                    onResult(result)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Peek failed", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_archive_read_failed)
-                    onResult(null)
-                }
-            }
-        }
-    }
 
     fun findHiddenAccount(pin: String, onFound: (ByteArray) -> Unit, onNotFound: () -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -1421,8 +1368,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         _repliedMessages.value = emptyMap()
         _activeJobsFlow.value = emptySet()
         _searchResults.value = emptyList()
-        _pairedDevices.value = emptyList()
-        _pairingUri.value = null
+        models.pairing.reset()
         _myAvatar.value = null
         _contactAvatars.value = emptyMap()
         _torStatus.value = null
@@ -2924,59 +2870,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun loadPairedDevices() {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (!RatatoskCore.isInitialized()) return@launch
-                val devices = RatatoskCore.getClient().devices()
-                withContext(Dispatchers.Main) {
-                    _pairedDevices.value = devices
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to load paired devices", e)
-            }
-        }
-    }
 
-    fun startPairing(label: String) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (!RatatoskCore.isInitialized()) return@launch
-                android.util.Log.d("RatatoskVM", "Starting pairing for label: $label")
-                _pairingUri.value = null
-                RatatoskCore.getClient().pairDevice(label)
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to start pairing", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_pairing_failed)
-                }
-            }
-        }
-    }
 
-    fun stopPairing() {
-        _pairingUri.value = null
-    }
 
-    fun revokePairing(deviceId: ByteArray) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (!RatatoskCore.isInitialized()) return@launch
-                RatatoskCore.getClient().revokePairing(deviceId)
-                loadPairedDevices()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to revoke pairing", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_pairing_revoke_failed)
-                }
-            }
-        }
-    }
 
     fun setActiveChat(chatId: ByteArray?) {
         _activeChatIdFlow.value = chatId
@@ -3223,7 +3119,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 // Ссылка сопряжения — это и есть секрет: у кого она, тот второй
                 // экран этого телефона до отзыва. В журнал она не идёт.
                 android.util.Log.i("RatatoskVM", "Pairing ready event received")
-                _pairingUri.value = event.uri
+                models.pairing.onPairingReady(event.uri)
                 loadPairedDevices()
             }
             is FfiEvent.PairingRevoked -> {
