@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import chat.ratatosk.android.ui.theme.successColor
 import chat.ratatosk.android.util.nearbyLabelRes
 import chat.ratatosk.android.util.nearby
 import chat.ratatosk.android.R
@@ -141,7 +142,7 @@ fun ContactDetailsScreen(
                                 Surface(
                                     modifier = Modifier.size(8.dp),
                                     shape = androidx.compose.foundation.shape.CircleShape,
-                                    color = Color.Green
+                                    color = successColor
                                 ) {}
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
@@ -369,7 +370,7 @@ fun ContactDetailsScreen(
                                         text = stringResource(R.string.direct_channel) + ": ${direct.name}",
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.Green
+                                        color = successColor
                                     )
                                 }
                             }

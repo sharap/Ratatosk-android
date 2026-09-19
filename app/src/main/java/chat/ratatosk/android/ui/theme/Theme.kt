@@ -36,6 +36,13 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+/**
+ * Цвет «на связи» для текущей темы. Вынесен из экранов: одна и та же точка
+ * стояла в двух десятках мест, каждый раз своим значением.
+ */
+val successColor: Color
+    @Composable get() = if (isSystemInDarkTheme()) SuccessDark else SuccessLight
+
 @Composable
 fun RatatoskTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),

@@ -134,6 +134,18 @@ class SettingsRepository(private val context: Context) {
     fun getNotificationsShowText(accountId: String): Flow<Boolean> = context.dataStore.data.map { it[booleanPreferencesKey(accountKey(accountId, "notifications_show_text"))] ?: true }
     fun getDownloadDirUri(accountId: String): Flow<String?> = context.dataStore.data.map { it[stringPreferencesKey(accountKey(accountId, "download_dir_uri"))] }
 
+    /**
+     * Прошлый раз этот аккаунт не открылся без PIN — значит спрашивать сразу.
+     * Подсказка для скорости, а не секрет: соврать она может только в сторону
+     * лишнего вопроса, и тогда попытка всё равно делается.
+     */
+    fun needsPinHint(accountId: String): Flow<Boolean> =
+        context.dataStore.data.map { it[booleanPreferencesKey(accountKey(accountId, "needs_pin"))] ?: false }
+
+    suspend fun setNeedsPinHint(accountId: String, needs: Boolean) {
+        context.dataStore.edit { it[booleanPreferencesKey(accountKey(accountId, "needs_pin"))] = needs }
+    }
+
     val chatTheme: Flow<ChatThemeData> = context.dataStore.data.map { preferences ->
         ChatThemeData(
             themeColor = preferences[Keys.THEME_COLOR]?.let { Color(it.toInt()) } ?: Color.Unspecified,

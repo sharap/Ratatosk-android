@@ -21,6 +21,9 @@ fun UnlockScreen(
     var pin by remember { mutableStateOf("") }
     val error by viewModel.error.collectAsState()
 
+    val isOpening by viewModel.isOpening.collectAsState()
+    val pinRequired by viewModel.pinRequired.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -53,17 +56,29 @@ fun UnlockScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        OutlinedTextField(
-            value = pin,
-            onValueChange = { pin = it },
-            label = { Text(stringResource(R.string.enter_pin)) },
-            modifier = Modifier.fillMaxWidth()
-        )
+        if (isOpening) {
+            // Вывод ключа из PIN занимает секунды: без индикатора экран
+            // выглядит застывшим, и человек жмёт кнопку ещё раз.
+            CircularProgressIndicator()
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = stringResource(R.string.opening_account),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        } else if (pinRequired) {
+            OutlinedTextField(
+                value = pin,
+                onValueChange = { pin = it },
+                label = { Text(stringResource(R.string.enter_pin)) },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = { viewModel.unlock(account, pin.takeIf { it.isNotEmpty() }) },
+            enabled = !isOpening && pinRequired,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.unlock))

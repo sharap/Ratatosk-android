@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import chat.ratatosk.android.ui.theme.successColor
 import chat.ratatosk.android.util.nearby
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
@@ -91,7 +92,7 @@ fun ContactsScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(contacts) { contact ->
+                    items(contacts, key = { it.chatId.toHexString() }) { contact ->
                         val isSelected = activeContactId?.contentEquals(contact.chatId) == true
 
                         ListItem(
@@ -103,7 +104,7 @@ fun ContactsScreen(
                                         Surface(
                                             modifier = Modifier.size(8.dp),
                                             shape = androidx.compose.foundation.shape.CircleShape,
-                                            color = androidx.compose.ui.graphics.Color.Green
+                                            color = successColor
                                         ) {}
                                     }
                                 }

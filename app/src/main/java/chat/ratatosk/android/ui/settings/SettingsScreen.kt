@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import chat.ratatosk.android.ui.theme.successColor
 import chat.ratatosk.android.util.FileUtils
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
@@ -464,13 +465,20 @@ fun SettingsScreen(
     }
 
     if (showMailSetup) {
-        var addr by remember { mutableStateOf(mailAccount?.address ?: "") }
-        var pass by remember { mutableStateOf(mailAccount?.password ?: "") }
-        var imapH by remember { mutableStateOf(mailAccount?.imapHost ?: "") }
-        var imapP by remember { mutableStateOf(mailAccount?.imapPort?.toString() ?: "0") }
-        var smtpH by remember { mutableStateOf(mailAccount?.smtpHost ?: "") }
-        var smtpP by remember { mutableStateOf(mailAccount?.smtpPort?.toString() ?: "0") }
-        var viaT by remember { mutableStateOf(mailAccount?.viaTor ?: true) }
+        // Ключ по аккаунту: он приезжает из ядра и может прийти позже первой
+        // отрисовки диалога — без ключа поля так и остались бы пустыми,
+        // а сохранение затёрло бы настроенный ящик пустотой.
+        var addr by remember(mailAccount) { mutableStateOf(mailAccount?.address ?: "") }
+        var pass by remember(mailAccount) { mutableStateOf(mailAccount?.password ?: "") }
+        var imapH by remember(mailAccount) { mutableStateOf(mailAccount?.imapHost ?: "") }
+        var imapP by remember(mailAccount) { mutableStateOf(mailAccount?.imapPort?.toString() ?: "993") }
+        var smtpH by remember(mailAccount) { mutableStateOf(mailAccount?.smtpHost ?: "") }
+        var smtpP by remember(mailAccount) { mutableStateOf(mailAccount?.smtpPort?.toString() ?: "465") }
+        var viaT by remember(mailAccount) { mutableStateOf(mailAccount?.viaTor ?: true) }
+
+        val imapOk = imapP.toIntOrNull()?.let { it in 1..65535 } == true
+        val smtpOk = smtpP.toIntOrNull()?.let { it in 1..65535 } == true
+        val formOk = addr.isNotBlank() && pass.isNotBlank() && imapH.isNotBlank() && smtpH.isNotBlank() && imapOk && smtpOk
 
         AlertDialog(
             onDismissRequest = { showMailSetup = false },
@@ -480,9 +488,28 @@ fun SettingsScreen(
                     OutlinedTextField(value = addr, onValueChange = { addr = it }, label = { Text(stringResource(R.string.address)) }, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(value = pass, onValueChange = { pass = it }, label = { Text(stringResource(R.string.password)) }, modifier = Modifier.fillMaxWidth())
                     OutlinedTextField(value = imapH, onValueChange = { imapH = it }, label = { Text(stringResource(R.string.imap_host)) }, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = imapP, onValueChange = { imapP = it }, label = { Text(stringResource(R.string.imap_port)) }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(
+                        value = imapP,
+                        onValueChange = { imapP = it.filter { c -> c.isDigit() } },
+                        label = { Text(stringResource(R.string.imap_port)) },
+                        isError = !imapOk,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     OutlinedTextField(value = smtpH, onValueChange = { smtpH = it }, label = { Text(stringResource(R.string.smtp_host)) }, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = smtpP, onValueChange = { smtpP = it }, label = { Text(stringResource(R.string.smtp_port)) }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(
+                        value = smtpP,
+                        onValueChange = { smtpP = it.filter { c -> c.isDigit() } },
+                        label = { Text(stringResource(R.string.smtp_port)) },
+                        isError = !smtpOk,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (!imapOk || !smtpOk) {
+                        Text(
+                            text = stringResource(R.string.port_invalid),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(checked = viaT, onCheckedChange = { viaT = it })
                         Text(stringResource(R.string.via_tor))
@@ -490,10 +517,14 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.setMailAccount(addr, pass, imapH, imapP.toIntOrNull() ?: 0, smtpH, smtpP.toIntOrNull() ?: 0, viaT)
-                    showMailSetup = false
-                }) { Text(stringResource(R.string.save)) }
+                TextButton(
+                    // Пустыми полями заведённый ящик не затираем.
+                    enabled = formOk,
+                    onClick = {
+                        viewModel.setMailAccount(addr, pass, imapH, imapP.toInt(), smtpH, smtpP.toInt(), viaT)
+                        showMailSetup = false
+                    }
+                ) { Text(stringResource(R.string.save)) }
             },
             dismissButton = { TextButton(onClick = { showMailSetup = false }) { Text(stringResource(R.string.cancel)) } }
         )
@@ -642,13 +673,13 @@ fun SettingsScreen(
                                                 Surface(
                                                     modifier = Modifier.size(8.dp),
                                                     shape = CircleShape,
-                                                    color = Color(0xFF4CAF50)
+                                                    color = successColor
                                                 ) {}
                                                 Spacer(modifier = Modifier.width(6.dp))
                                                 Text(
                                                     text = stringResource(R.string.peer_connected),
                                                     style = MaterialTheme.typography.labelSmall,
-                                                    color = Color(0xFF4CAF50),
+                                                    color = successColor,
                                                     fontWeight = FontWeight.Bold
                                                 )
                                                 if (aliveInfo.latencyMs > 0) {
@@ -741,13 +772,13 @@ fun SettingsScreen(
                                             Surface(
                                                 modifier = Modifier.size(8.dp),
                                                 shape = CircleShape,
-                                                color = Color(0xFF4CAF50)
+                                                color = successColor
                                             ) {}
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
                                                 text = stringResource(R.string.peer_connected) + " (входящий)",
                                                 style = MaterialTheme.typography.labelSmall,
-                                                color = Color(0xFF4CAF50)
+                                                color = successColor
                                             )
                                             if (inboundPeer.latencyMs > 0) {
                                                 Spacer(modifier = Modifier.width(6.dp))
@@ -1017,13 +1048,13 @@ fun SettingsScreen(
                                                 Surface(
                                                     modifier = Modifier.size(8.dp),
                                                     shape = CircleShape,
-                                                    color = Color(0xFF4CAF50)
+                                                    color = successColor
                                                 ) {}
                                                 Spacer(modifier = Modifier.width(6.dp))
                                                 Text(
                                                     text = stringResource(R.string.peer_connected),
                                                     style = MaterialTheme.typography.labelSmall,
-                                                    color = Color(0xFF4CAF50),
+                                                    color = successColor,
                                                     fontWeight = FontWeight.Bold
                                                 )
                                             } else {
@@ -1213,6 +1244,10 @@ fun SettingsTransportsSection(
     onShowYggPeersSetup: () -> Unit,
     onShowNostrRelaysSetup: () -> Unit
 ) {
+    // Последний осмысленный режим: восстанавливаем его при включении.
+    var lastYggMode by remember { mutableStateOf(if (yggMode != FfiYggMode.OFF) yggMode else FfiYggMode.EMBEDDED) }
+    LaunchedEffect(yggMode) { if (yggMode != FfiYggMode.OFF) lastYggMode = yggMode }
+
     Text(text = stringResource(R.string.transports), style = MaterialTheme.typography.titleMedium)
     Spacer(modifier = Modifier.height(16.dp))
 
@@ -1275,7 +1310,12 @@ fun SettingsTransportsSection(
         description = stringResource(R.string.ygg_desc),
         enabled = yggMode != FfiYggMode.OFF,
         ready = transportsReady[FfiTransport.YGG] ?: false,
-        onToggle = { enabled -> if (!enabled) onSelectYggMode(FfiYggMode.OFF) else onSelectYggMode(FfiYggMode.EMBEDDED) },
+        // Включаем тот режим, что был до выключения: внешний демон, выключенный
+        // на минуту, возвращался встроенным узлом — и человек этого не просил.
+        onToggle = { enabled ->
+            if (!enabled) onSelectYggMode(FfiYggMode.OFF)
+            else onSelectYggMode(lastYggMode)
+        },
         statusContent = {
             Column(modifier = Modifier.padding(top = 4.dp)) {
                 @OptIn(ExperimentalLayoutApi::class)
@@ -1307,7 +1347,7 @@ fun SettingsTransportsSection(
                     Text(
                         text = stringResource(R.string.ygg_key_status, keyText),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color(0xFF4CAF50)
+                        color = successColor
                     )
                     if (!yggAddress.isNullOrBlank()) {
                         Text(
@@ -1342,7 +1382,7 @@ fun SettingsTransportsSection(
                     Text(
                         text = stringResource(R.string.ygg_key_status, keyText),
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (yggKey.isNullOrBlank()) MaterialTheme.colorScheme.outline else Color(0xFF4CAF50)
+                        color = if (yggKey.isNullOrBlank()) MaterialTheme.colorScheme.outline else successColor
                     )
                     if (!yggAddress.isNullOrBlank()) {
                         Text(
@@ -1409,7 +1449,7 @@ fun SettingsTransportsSection(
                     Text(
                         text = statusText,
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (status.state == FfiMailState.FAILED) MaterialTheme.colorScheme.error else if (status.state == FfiMailState.READY) Color(0xFF4CAF50) else MaterialTheme.colorScheme.outline
+                        color = if (status.state == FfiMailState.FAILED) MaterialTheme.colorScheme.error else if (status.state == FfiMailState.READY) successColor else MaterialTheme.colorScheme.outline
                     )
                     
                     if (status.state == FfiMailState.READY) {
@@ -1514,7 +1554,7 @@ fun SettingsTransportsSection(
                         Text(
                             text = stringResource(R.string.ygg_peers_status, nostrRelays.size) + if (activeRelays > 0) " (активно: $activeRelays)" else "",
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (activeRelays > 0) Color(0xFF4CAF50) else MaterialTheme.colorScheme.outline
+                            color = if (activeRelays > 0) successColor else MaterialTheme.colorScheme.outline
                         )
                     }
 
@@ -1689,7 +1729,7 @@ fun ExportArchiveDialog(
                         Text(stringResource(R.string.creating_archive), modifier = Modifier.align(Alignment.CenterHorizontally))
                     }
                 } else {
-                    Text(stringResource(R.string.backup_success), fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                    Text(stringResource(R.string.backup_success), fontWeight = FontWeight.Bold, color = successColor)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(stringResource(R.string.backup_path, exportResult!!.path), style = MaterialTheme.typography.labelSmall)
                     Spacer(modifier = Modifier.height(16.dp))
@@ -1803,7 +1843,7 @@ fun NostrTransportPreview() {
                         Text(
                             text = "Реле настроено: 2 (активно: 2)",
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF4CAF50)
+                            color = successColor
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -1989,7 +2029,7 @@ fun SettingsThemeSection(
 ) {
     val context = LocalContext.current
     Text(text = stringResource(R.string.chat_theme), style = MaterialTheme.typography.titleMedium)
-    val themeColors = listOf(Color.Unspecified, Color.Gray, Color(0xFF2196F3), Color(0xFF4CAF50), Color(0xFFF44336), Color(0xFFFF9800), Color(0xFF9C27B0), Color(0xFF00BCD4))
+    val themeColors = listOf(Color.Unspecified, Color.Gray, Color(0xFF2196F3), successColor, Color(0xFFF44336), Color(0xFFFF9800), Color(0xFF9C27B0), Color(0xFF00BCD4))
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 8.dp)) {
         items(themeColors) { color ->
             val isSelected = chatTheme.themeColor == color
@@ -2029,7 +2069,7 @@ fun TransportItem(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(if (ready) Color(0xFF4CAF50) else Color.Gray))
+                        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(if (ready) successColor else Color.Gray))
                     }
                     Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -2103,9 +2143,9 @@ fun YggPeersDialogPreview() {
                             Text("tcp://peer1.yggdrasil.net:65535", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                             Spacer(modifier = Modifier.height(2.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Surface(modifier = Modifier.size(8.dp), shape = CircleShape, color = Color(0xFF4CAF50)) {}
+                                Surface(modifier = Modifier.size(8.dp), shape = CircleShape, color = successColor) {}
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Подключен", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50), fontWeight = FontWeight.Bold)
+                                Text("Подключен", style = MaterialTheme.typography.labelSmall, color = successColor, fontWeight = FontWeight.Bold)
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text("• 42 мс", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                             }

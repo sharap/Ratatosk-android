@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
+import chat.ratatosk.android.ui.theme.successColor
 import chat.ratatosk.android.util.toHexString
 import qrcode.QRCode
 import org.ratatosk.core.FfiPairedDevice
@@ -195,7 +196,7 @@ fun DeviceItem(
                 Surface(
                     modifier = Modifier.size(8.dp),
                     shape = CircleShape,
-                    color = if (device.connected) Color.Green else Color.Gray
+                    color = if (device.connected) successColor else Color.Gray
                 ) {}
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(

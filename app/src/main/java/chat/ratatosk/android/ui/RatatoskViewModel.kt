@@ -125,6 +125,14 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
     private val _isSearching = MutableStateFlow(false)
     val isSearching = _isSearching.asStateFlow()
 
+    /** Идёт открытие аккаунта: вывод ключа из PIN занимает заметные секунды. */
+    private val _isOpening = MutableStateFlow(false)
+    val isOpening: StateFlow<Boolean> = _isOpening.asStateFlow()
+
+    /** Тихая попытка открыть без PIN не удалась — теперь его надо спросить. */
+    private val _pinRequired = MutableStateFlow(false)
+    val pinRequired: StateFlow<Boolean> = _pinRequired.asStateFlow()
+
     private val _isFindingHidden = MutableStateFlow(false)
     val isFindingHidden = _isFindingHidden.asStateFlow()
 
@@ -240,9 +248,6 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
-
-    private val _myIk = MutableStateFlow<ByteArray?>(null)
-    val myIk = _myIk.asStateFlow()
 
     private val _fingerprint = MutableStateFlow<String?>(null)
     val fingerprint = _fingerprint.asStateFlow()
@@ -443,7 +448,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 RatatoskCore.initializeRegistry(application)
                 refreshAccounts()
             } catch (e: Exception) {
-                _error.value = "Failed to open registry: ${e.message}"
+                android.util.Log.w("RatatoskVM", "Failed to open registry", e)
+                _error.value = e.message?.takeIf { it.isNotBlank() }
+                    ?: getApplication<Application>().getString(R.string.error_accounts_unavailable)
             }
         }
 
@@ -510,12 +517,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val companion = RatatoskCore.getCompanion()
-                val ik = companion.deviceId()
-                val fingerprint = ik.toHexString()
+                val fingerprint = companion.deviceId().toHexString()
                 val phoneName = try { companion.phoneName() } catch (e: Exception) { "Companion" }
                 
                 withContext(Dispatchers.Main) {
-                    _myIk.value = ik
                     _fingerprint.value = fingerprint
                     if (currentCompanionLabel == null) currentCompanionLabel = phoneName
                     _isInitialized.value = true
@@ -937,11 +942,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 android.util.Log.d("RatatoskVM", "Engine setup: getting fingerprint and limits")
                 val client = RatatoskCore.getClient()
                 val fingerprint = client.fingerprint()
-                val ik = activeAccountId.value?.hexToByteArray()
                 val maxAvatar = try { maxAvatarBytes().toInt() } catch (e: Exception) { 32768 }
                 
                 withContext(Dispatchers.Main) {
-                    _myIk.value = ik
                     _fingerprint.value = fingerprint
                     _maxAvatarBytes.value = maxAvatar
                 }
@@ -1011,7 +1014,8 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Critical failure during setupEngine", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to load identity: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_identity_load_failed)
                 }
             }
         }
@@ -1036,8 +1040,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to refresh contacts", e)
                 viewModelScope.launch {
-                    _error.value = "Failed to refresh contacts: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_contacts_refresh_failed)
                 }
             }
         }
@@ -1106,7 +1112,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 RatatoskCore.wipeAccount(id)
                 refreshAccounts()
             } catch (e: Exception) {
-                _error.value = "Failed to wipe account: ${e.message}"
+                android.util.Log.w("RatatoskVM", "Failed to wipe account", e)
+                _error.value = e.message?.takeIf { it.isNotBlank() }
+                    ?: getApplication<Application>().getString(R.string.error_account_delete_failed)
             }
         }
     }
@@ -1179,7 +1187,8 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Peek failed", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to peek archive: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_archive_read_failed)
                     onResult(null)
                 }
             }
@@ -1222,7 +1231,9 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     _error.value = null
                 }
             } catch (e: Exception) {
-                _error.value = "Failed to initialize: ${e.message}"
+                android.util.Log.w("RatatoskVM", "Failed to initialize account", e)
+                _error.value = e.message?.takeIf { it.isNotBlank() }
+                    ?: getApplication<Application>().getString(R.string.error_account_open_failed)
             }
         }
     }
@@ -1252,32 +1263,45 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     _error.value = null
                 }
             } catch (e: Exception) {
-                _error.value = "Failed to link: ${e.message}"
+                android.util.Log.w("RatatoskVM", "Failed to link companion", e)
+                _error.value = e.message?.takeIf { it.isNotBlank() }
+                    ?: getApplication<Application>().getString(R.string.error_pairing_failed)
             }
         }
     }
 
     fun unlock(account: FfiAccount, pin: String?) {
         viewModelScope.launch(Dispatchers.IO) {
+            _isOpening.value = true
             try {
                 val idHex = account.id.toHexString()
                 val savedName = settingsRepository.getDisplayName(idHex).firstOrNull() ?: account.label
                 RatatoskCore.initialize(account.id, pin, null, savedName)
+                settingsRepository.setLastAccountId(idHex)
+                // Открылся без PIN — в следующий раз и спрашивать не будем.
+                settingsRepository.setNeedsPinHint(idHex, pin != null)
                 withContext(Dispatchers.Main) {
                     _isInitialized.value = true
                     _activeAccountId.value = idHex
                     _isCompanionMode.value = false
-                    settingsRepository.setLastAccountId(idHex)
+                    _pinRequired.value = false
                     setupEngine()
                     _error.value = null
                 }
             } catch (e: Exception) {
                 if (pin == null && e is RatatoskException.Locked) {
-                    // Account is locked and needs a PIN, we stay on the unlock screen
+                    // Не подошло — значит PIN всё-таки есть. Это не ошибка:
+                    // остаёмся на экране и просим его.
                     android.util.Log.d("RatatoskVM", "Account needs PIN to unlock")
+                    settingsRepository.setNeedsPinHint(account.id.toHexString(), true)
+                    withContext(Dispatchers.Main) { _pinRequired.value = true }
                     return@launch
                 }
-                _error.value = "Failed to unlock: ${e.message}"
+                android.util.Log.w("RatatoskVM", "Failed to unlock account", e)
+                _error.value = e.message?.takeIf { it.isNotBlank() }
+                    ?: getApplication<Application>().getString(R.string.error_account_open_failed)
+            } finally {
+                _isOpening.value = false
             }
         }
     }
@@ -1345,6 +1369,23 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
         _mailStatus.value = null
         _mailAccount.value = null
         
+        // Остальное состояние прошлого аккаунта: оно принадлежит человеку,
+        // который уже вышел, и всплывать у следующего ему незачем.
+        _groups.value = emptyList()
+        _isSearching.value = false
+        _activeMediaFile.value = null
+        _mediaExportedPath.value = null
+        _sharedDraft.value = null
+        _fingerprint.value = null
+        _pendingScrollToMsgId.value = null
+        _pendingAvatarUri.value = null
+        _pendingAvatarChatId.value = null
+        _autoAcceptLimit.value = null
+        _myContactUri.value = null
+        _honestNotices.value = emptyList()
+        _cardVersion.value = null
+        _error.value = null
+
         companionAvatarMs.clear()
         pendingCompanionSaves.clear()
         pendingCompanionPaths.clear()
@@ -1357,11 +1398,20 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
 
     fun selectAccount(account: FfiAccount?) {
         _selectedAccount.value = account
-        if (account != null) {
-            // Automatically attempt to unlock with no PIN
-            unlock(account, null)
-        } else {
+        _pinRequired.value = false
+        if (account == null) {
             _isCreatingNewAccount.value = false
+            return
+        }
+        // Спрашивать PIN у аккаунта, у которого его нет, — вопрос о том, чего
+        // нет. Пробуем открыть молча; подсказка избавляет от бессмысленного
+        // счёта там, где PIN уже спрашивали в прошлый раз.
+        viewModelScope.launch {
+            if (settingsRepository.needsPinHint(account.id.toHexString()).first()) {
+                _pinRequired.value = true
+            } else {
+                unlock(account, null)
+            }
         }
     }
 
@@ -1424,8 +1474,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to send text", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to send: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_send_failed)
                 }
             }
         }
@@ -1466,8 +1518,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to send files", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to send files: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_send_files_failed)
                 }
             }
         }
@@ -1813,7 +1867,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                         val sink = FileUtils.openDownloadSink(getApplication(), file.name)
                         if (sink == null) {
                             withContext(Dispatchers.Main) {
-                                _error.value = "Не удалось сохранить файл в «Загрузки»"
+                                _error.value = getApplication<Application>().getString(R.string.error_save_to_downloads)
                             }
                             savedFile.delete()
                             return@launch
@@ -1879,7 +1933,7 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 val sink = FileUtils.openDownloadSink(getApplication(), file.name)
                 if (sink == null) {
                     withContext(Dispatchers.Main) {
-                        _error.value = "Не удалось сохранить файл в «Загрузки»"
+                        _error.value = getApplication<Application>().getString(R.string.error_save_to_downloads)
                     }
                     return@launch
                 }
@@ -2037,8 +2091,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 client.networkChanged()
                 refreshTransportStatus()
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to toggle transport", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to toggle transport: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_transport_switch_failed)
                 }
             }
         }
@@ -2050,8 +2106,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 RatatoskCore.getClient().setMailAccount(address, password, imapHost, imapPort.toUShort(), smtpHost, smtpPort.toUShort(), viaTor)
                 refreshTransportStatus()
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to set mail account", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to set mail account: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_mail_setup_failed)
                 }
             }
         }
@@ -2062,8 +2120,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             try {
                 RatatoskCore.getClient().createMailAccount(url, viaTor)
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to create mail account", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to create mail account: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_mail_register_failed)
                 }
             }
         }
@@ -2102,8 +2162,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 client.networkChanged()
                 refreshTransportStatus()
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to set Yggdrasil mode", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to set Yggdrasil mode: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_ygg_settings_failed)
                 }
             }
         }
@@ -2120,8 +2182,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 client.networkChanged()
                 refreshTransportStatus()
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to set Yggdrasil key", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to set Yggdrasil key: ${e.message ?: "Invalid key"}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_ygg_key_invalid)
                 }
             }
         }
@@ -2137,8 +2201,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 client.networkChanged()
                 refreshTransportStatus()
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to set Yggdrasil peers", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to set Yggdrasil peers: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_ygg_settings_failed)
                 }
             }
         }
@@ -2154,8 +2220,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 client.networkChanged()
                 refreshTransportStatus()
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to set Nostr relays", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to set Nostr relays: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_nostr_settings_failed)
                 }
             }
         }
@@ -2170,8 +2238,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 client.networkChanged()
                 refreshTransportStatus()
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to set Nostr direct mode", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to set Nostr direct mode: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_nostr_settings_failed)
                 }
             }
         }
@@ -2217,8 +2287,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to add contact", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to add contact: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_add_contact_failed)
                 }
             }
         }
@@ -2233,8 +2305,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     RatatoskCore.getClient().createGroup(title)
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to create group", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to create group: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_group_create_failed)
                 }
             }
         }
@@ -2250,8 +2324,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     refreshContacts()
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to rename group", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to rename group: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_group_rename_failed)
                 }
             }
         }
@@ -2267,8 +2343,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     RatatoskCore.getClient().inviteToGroup(chatId, peerIk)
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to invite to group", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to invite: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_group_invite_failed)
                 }
             }
         }
@@ -2284,8 +2362,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     RatatoskCore.getClient().evictFromGroup(chatId, peerIk)
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to evict from group", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to evict: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_group_evict_failed)
                 }
             }
         }
@@ -2301,8 +2381,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     refreshContacts()
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to leave group", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to leave group: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_group_leave_failed)
                 }
             }
         }
@@ -2396,8 +2478,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     refreshContacts()
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to add shared contact", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to add shared contact: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_add_contact_failed)
                 }
             }
         }
@@ -2422,8 +2506,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to share contact", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to share contact: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_share_contact_failed)
                 }
             }
         }
@@ -2586,7 +2672,8 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to forward", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to forward: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_forward_failed)
                 }
             }
         }
@@ -2614,8 +2701,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 RatatoskCore.getClient().markVerified(peerIk)
                 refreshContacts()
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to mark as verified", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to mark as verified: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_verification_change_failed)
                 }
             }
         }
@@ -2628,8 +2717,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 RatatoskCore.getClient().revokeVerification(peerIk)
                 refreshContacts()
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to revoke verification", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to revoke verification: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_verification_change_failed)
                 }
             }
         }
@@ -2798,7 +2889,8 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to start pairing", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to start pairing: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_pairing_failed)
                 }
             }
         }
@@ -2816,8 +2908,10 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 RatatoskCore.getClient().revokePairing(deviceId)
                 loadPairedDevices()
             } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to revoke pairing", e)
                 withContext(Dispatchers.Main) {
-                    _error.value = "Failed to revoke: ${e.message}"
+                    _error.value = e.message?.takeIf { it.isNotBlank() }
+                        ?: getApplication<Application>().getString(R.string.error_pairing_revoke_failed)
                 }
             }
         }
@@ -3049,7 +3143,8 @@ class RatatoskViewModel(application: Application) : AndroidViewModel(application
                 refreshTransportStatus()
             }
             is FfiEvent.MailAccountFailed -> {
-                _error.value = "Mail setup failed: ${event.reason}"
+                _error.value = event.reason.takeIf { it.isNotBlank() }
+                    ?: getApplication<Application>().getString(R.string.error_mail_setup_failed)
                 refreshTransportStatus()
             }
             is FfiEvent.MailLoginFailed -> {

@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import chat.ratatosk.android.ui.theme.successColor
 import chat.ratatosk.android.util.nearby
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
@@ -200,7 +201,10 @@ fun ChatListScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp)
                 ) {
-                    items(chats.size) { index ->
+                    // Ключ по чату: без него при перестановке списка Compose
+                    // сопоставляет строки по месту, и состояние строки уезжает
+                    // к соседу.
+                    items(chats.size, key = { chats[it].chatId.toHexString() }) { index ->
                         val chatItem = chats[index]
                         val hexId = chatItem.chatId.toHexString()
                         val unreadCount = unreadCounts[hexId] ?: 0
@@ -216,7 +220,7 @@ fun ChatListScreen(
                                         Surface(
                                             modifier = Modifier.size(8.dp),
                                             shape = androidx.compose.foundation.shape.CircleShape,
-                                            color = androidx.compose.ui.graphics.Color.Green
+                                            color = successColor
                                         ) {}
                                     }
                                 }

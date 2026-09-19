@@ -310,6 +310,8 @@
     <string name="file_fetching">Забираем с телефона: %1$d%%</string>
     <string name="file_fetching_unknown">Забираем с телефона…</string>
     <string name="fetch_waiting_phone">Ждём связи с телефоном — приём продолжится с того же места</string>
+    <string name="opening_account">Открываем аккаунт…</string>
+    <string name="port_invalid">Порт — число от 1 до 65535</string>
     <string name="preview_photo">[фото]</string>
     <string name="preview_video">[видео]</string>
     <string name="preview_audio">[аудио]</string>
@@ -361,4 +363,31 @@
     <string name="link_pair_title">Ссылка сопряжения</string>
     <string name="link_pair_busy_body">По этой ссылке устройство становится терминалом другого телефона. Принять её может только устройство, на котором не открыт аккаунт: закройте аккаунт и откройте ссылку снова.</string>
     <string name="link_pair_not_contact">Это ссылка сопряжения, а не приглашение в контакты.</string>
+    <!-- Ошибки, которые видит человек: запасной текст, когда у сбоя нет своих слов -->
+    <string name="error_accounts_unavailable">Не удалось открыть список аккаунтов</string>
+    <string name="error_account_open_failed">Не удалось открыть аккаунт</string>
+    <string name="error_account_delete_failed">Не удалось удалить аккаунт</string>
+    <string name="error_identity_load_failed">Не удалось загрузить данные аккаунта</string>
+    <string name="error_archive_read_failed">Не удалось прочитать архив</string>
+    <string name="error_contacts_refresh_failed">Не удалось обновить список контактов</string>
+    <string name="error_add_contact_failed">Не удалось добавить контакт</string>
+    <string name="error_share_contact_failed">Не удалось отправить контакт</string>
+    <string name="error_send_failed">Не удалось отправить сообщение</string>
+    <string name="error_send_files_failed">Не удалось отправить файлы</string>
+    <string name="error_forward_failed">Не удалось переслать сообщения</string>
+    <string name="error_save_to_downloads">Не удалось сохранить файл в «Загрузки»</string>
+    <string name="error_verification_change_failed">Не удалось изменить отметку о проверке</string>
+    <string name="error_group_create_failed">Не удалось создать группу</string>
+    <string name="error_group_rename_failed">Не удалось переименовать группу</string>
+    <string name="error_group_invite_failed">Не удалось пригласить в группу</string>
+    <string name="error_group_evict_failed">Не удалось исключить участника</string>
+    <string name="error_group_leave_failed">Не удалось выйти из группы</string>
+    <string name="error_pairing_failed">Не удалось связать устройства</string>
+    <string name="error_pairing_revoke_failed">Не удалось отозвать доступ устройства</string>
+    <string name="error_transport_switch_failed">Не удалось переключить способ связи</string>
+    <string name="error_mail_setup_failed">Не удалось настроить почту</string>
+    <string name="error_mail_register_failed">Не удалось завести почтовый ящик</string>
+    <string name="error_ygg_settings_failed">Не удалось изменить настройки Yggdrasil</string>
+    <string name="error_ygg_key_invalid">Ключ Yggdrasil записан неверно</string>
+    <string name="error_nostr_settings_failed">Не удалось изменить настройки Nostr</string>
 </resources>
