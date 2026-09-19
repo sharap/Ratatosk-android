@@ -401,4 +401,7 @@
     <string name="error_ygg_settings_failed">Не удалось изменить настройки Yggdrasil</string>
     <string name="error_ygg_key_invalid">Ключ Yggdrasil записан неверно</string>
     <string name="error_nostr_settings_failed">Не удалось изменить настройки Nostr</string>
+    <string name="avatar_change">Сменить фото</string>
+    <string name="avatar_remove">Удалить фото</string>
+    <string name="avatar_removed">Фото удалено</string>
 </resources>

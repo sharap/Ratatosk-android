@@ -60,6 +60,10 @@ class ModelsWithFakeBackendTest {
     private val calls: MutableList<String> = Collections.synchronizedList(mutableListOf())
 
     private inner class RecordingClient : FakeClient() {
+        override fun `setAvatar`(`bytes`: kotlin.ByteArray?) {
+            calls += "client.setAvatar:${bytes?.size ?: "null"}"
+        }
+
         override fun `sendText`(`chatId`: kotlin.ByteArray, `text`: kotlin.String) {
             calls += "client.sendText:${chatId.toHexString()}:$text"
         }
@@ -308,5 +312,27 @@ class ModelsWithFakeBackendTest {
         assertEquals(null, models.session.activeAccountId.value)
         assertEquals(null, models.session.error.value)
         models.close()
+    }
+
+    /**
+     * Снятое фото доходит до ядра и пропадает с экрана.
+     *
+     * `set_avatar(null)` — это «лица больше нет», а не ошибка сжатия:
+     * `null` тут значение, а не сбой, и перепутать их легко (этап A
+     * чинил ровно обратное — случайный `null` стирал прежнее фото).
+     */
+    @Test
+    fun removingTheOwnPhotoReachesTheCore() {
+        val s = session(companion = false)
+        val groups = GroupsModel(s) {}
+        val contacts = ContactsModel(s, groups, loadMessages = {}, openContact = {})
+
+        contacts.setAvatar(byteArrayOf(1, 2, 3))
+        waitUntil("фото поставлено") { contacts.myAvatar.value != null }
+
+        contacts.setAvatar(null)
+
+        waitUntil("фото снято") { contacts.myAvatar.value == null }
+        assertEquals(listOf("client.setAvatar:3", "client.setAvatar:null"), seen())
     }
 }

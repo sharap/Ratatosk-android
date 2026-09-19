@@ -98,7 +98,8 @@ fun ProfileScreen(
                             newName = userName ?: ""
                             showEditName = true
                         },
-                        isCompact = false
+                        isCompact = false,
+                        onRemoveAvatar = { viewModel.setAvatar(null) },
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -168,7 +169,8 @@ fun ProfileScreen(
                         newName = userName ?: ""
                         showEditName = true
                     },
-                    isCompact = true
+                    isCompact = true,
+                    onRemoveAvatar = { viewModel.setAvatar(null) },
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -298,14 +300,21 @@ fun ProfileScreen(
     }
 }
 
+/**
+ * @param onRemoveAvatar снять фото совсем (`set_avatar(null)` в ядре).
+ *   `null` — снимать нечего или некому: у чужого фото такой власти нет.
+ */
 @Composable
 fun ProfileHeaderSection(
     myAvatar: ByteArray?,
     userName: String?,
     onAvatarClick: () -> Unit,
     onEditNameClick: () -> Unit,
-    isCompact: Boolean = true
+    isCompact: Boolean = true,
+    onRemoveAvatar: (() -> Unit)? = null,
 ) {
+    var photoMenu by remember { mutableStateOf(false) }
+
     Box(
         contentAlignment = Alignment.BottomEnd,
         modifier = if (isCompact) Modifier.fillMaxWidth().aspectRatio(1f) else Modifier.size(200.dp)
@@ -316,13 +325,26 @@ fun ProfileHeaderSection(
             modifier = Modifier.fillMaxSize(),
             shape = androidx.compose.ui.graphics.RectangleShape
         )
-        SmallFloatingActionButton(
-            onClick = onAvatarClick,
-            modifier = Modifier.padding(16.dp).size(40.dp),
-            shape = CircleShape,
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ) {
-            Icon(Icons.Default.AddAPhoto, contentDescription = "Change Avatar", modifier = Modifier.size(20.dp))
+        Box {
+            SmallFloatingActionButton(
+                // Пока фото нет, выбирать не из чего: сразу открываем галерею.
+                onClick = { if (myAvatar != null && onRemoveAvatar != null) photoMenu = true else onAvatarClick() },
+                modifier = Modifier.padding(16.dp).size(40.dp),
+                shape = CircleShape,
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Icon(Icons.Default.AddAPhoto, contentDescription = stringResource(R.string.avatar_change), modifier = Modifier.size(20.dp))
+            }
+            DropdownMenu(expanded = photoMenu, onDismissRequest = { photoMenu = false }) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.avatar_change)) },
+                    onClick = { photoMenu = false; onAvatarClick() },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.avatar_remove)) },
+                    onClick = { photoMenu = false; onRemoveAvatar?.invoke() },
+                )
+            }
         }
     }
     

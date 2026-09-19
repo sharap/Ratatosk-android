@@ -111,13 +111,27 @@ fun GroupDetailsScreen(
                             icon = Icons.Default.Groups
                         )
                         if (group.mine && group.joined) {
+                            var photoMenu by remember { mutableStateOf(false) }
+                            Box {
                             SmallFloatingActionButton(
-                                onClick = { avatarLauncher.launch("image/*") },
+                                // Пока фото нет, выбирать не из чего.
+                                onClick = { if (groupAvatarBytes != null) photoMenu = true else avatarLauncher.launch("image/*") },
                                 modifier = Modifier.padding(16.dp).size(40.dp),
                                 shape = CircleShape,
                                 containerColor = MaterialTheme.colorScheme.primaryContainer
                             ) {
-                                Icon(Icons.Default.AddAPhoto, contentDescription = "Change Avatar", modifier = Modifier.size(20.dp))
+                                Icon(Icons.Default.AddAPhoto, contentDescription = stringResource(R.string.avatar_change), modifier = Modifier.size(20.dp))
+                            }
+                            DropdownMenu(expanded = photoMenu, onDismissRequest = { photoMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.avatar_change)) },
+                                    onClick = { photoMenu = false; avatarLauncher.launch("image/*") },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.avatar_remove)) },
+                                    onClick = { photoMenu = false; viewModel.setGroupAvatar(group.chatId, null) },
+                                )
+                            }
                             }
                         }
                     }
