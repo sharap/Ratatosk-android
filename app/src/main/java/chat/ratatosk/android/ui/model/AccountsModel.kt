@@ -1,7 +1,6 @@
 package chat.ratatosk.android.ui.model
 
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.util.toHexString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,13 +59,13 @@ class AccountsModel(
     override val accountExists: StateFlow<Boolean> = _accountExists.asStateFlow()
 
     override fun refreshAccounts() {
-        _availableAccounts.value = RatatoskCore.listAccounts()
+        _availableAccounts.value = session.core.listAccounts()
     }
 
     override fun wipeAccount(id: ByteArray) {
         session.scope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.wipeAccount(id)
+                session.core.wipeAccount(id)
                 refreshAccounts()
             } catch (e: Exception) {
                 android.util.Log.w("RatatoskVM", "Failed to wipe account", e)
@@ -80,7 +79,7 @@ class AccountsModel(
         session.scope.launch(Dispatchers.IO) {
             _isFindingHidden.value = true
             try {
-                val id = RatatoskCore.findHidden(pin)
+                val id = session.core.findHidden(pin)
                 session.scope.launch {
                     if (id != null) onFound(id) else onNotFound()
                 }
@@ -96,8 +95,8 @@ class AccountsModel(
     override fun initialize(label: String, pin: String?, displayName: String) {
         session.scope.launch(Dispatchers.IO) {
             try {
-                val account = RatatoskCore.createAccount(label)
-                RatatoskCore.initialize(account.id, pin, null, displayName)
+                val account = session.core.createAccount(label)
+                session.core.openAccount(account.id, pin, null, displayName)
                 
                 val idHex = account.id.toHexString()
                 session.settings.registerAccount(idHex, displayName)
@@ -124,7 +123,7 @@ class AccountsModel(
             try {
                 val idHex = account.id.toHexString()
                 val savedName = session.settings.getDisplayName(idHex).firstOrNull() ?: account.label
-                RatatoskCore.initialize(account.id, pin, null, savedName)
+                session.core.openAccount(account.id, pin, null, savedName)
                 session.settings.setLastAccountId(idHex)
                 // Открылся без PIN — в следующий раз и спрашивать не будем.
                 session.settings.setNeedsPinHint(idHex, pin != null)

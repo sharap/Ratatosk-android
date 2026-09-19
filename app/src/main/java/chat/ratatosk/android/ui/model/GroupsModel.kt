@@ -1,7 +1,6 @@
 package chat.ratatosk.android.ui.model
 
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.util.toHexString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,9 +61,9 @@ class GroupsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().createGroup(title)
+                    session.core.companion().createGroup(title)
                 } else {
-                    RatatoskCore.getClient().createGroup(title)
+                    session.core.client().createGroup(title)
                 }
             } catch (e: Exception) {
                 android.util.Log.w("RatatoskVM", "Failed to create group", e)
@@ -80,9 +79,9 @@ class GroupsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().renameGroup(chatId, title)
+                    session.core.companion().renameGroup(chatId, title)
                 } else {
-                    RatatoskCore.getClient().renameGroup(chatId, title)
+                    session.core.client().renameGroup(chatId, title)
                     onContactsChanged()
                 }
             } catch (e: Exception) {
@@ -99,10 +98,10 @@ class GroupsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().inviteToGroup(chatId, peerIk)
-                    RatatoskCore.getCompanion().members(chatId)
+                    session.core.companion().inviteToGroup(chatId, peerIk)
+                    session.core.companion().members(chatId)
                 } else {
-                    RatatoskCore.getClient().inviteToGroup(chatId, peerIk)
+                    session.core.client().inviteToGroup(chatId, peerIk)
                 }
             } catch (e: Exception) {
                 android.util.Log.w("RatatoskVM", "Failed to invite to group", e)
@@ -118,10 +117,10 @@ class GroupsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().evictFromGroup(chatId, peerIk)
-                    RatatoskCore.getCompanion().members(chatId)
+                    session.core.companion().evictFromGroup(chatId, peerIk)
+                    session.core.companion().members(chatId)
                 } else {
-                    RatatoskCore.getClient().evictFromGroup(chatId, peerIk)
+                    session.core.client().evictFromGroup(chatId, peerIk)
                 }
             } catch (e: Exception) {
                 android.util.Log.w("RatatoskVM", "Failed to evict from group", e)
@@ -137,9 +136,9 @@ class GroupsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().leaveGroup(chatId)
+                    session.core.companion().leaveGroup(chatId)
                 } else {
-                    RatatoskCore.getClient().leaveGroup(chatId)
+                    session.core.client().leaveGroup(chatId)
                     onContactsChanged()
                 }
             } catch (e: Exception) {
@@ -156,7 +155,7 @@ class GroupsModel(
         if (session.isCompanion) {
             session.scope.launch(Dispatchers.IO) {
                 try {
-                    RatatoskCore.getCompanion().members(chatId)
+                    session.core.companion().members(chatId)
                 } catch (e: Exception) {
                     android.util.Log.e("RatatoskVM", "Failed to load companion members", e)
                 }

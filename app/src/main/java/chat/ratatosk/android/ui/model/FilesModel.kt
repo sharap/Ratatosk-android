@@ -1,7 +1,6 @@
 package chat.ratatosk.android.ui.model
 
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.util.FileUtils
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
@@ -126,9 +125,9 @@ class FilesModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().acceptFile(fileId)
+                    session.core.companion().acceptFile(fileId)
                 } else {
-                    RatatoskCore.getClient().acceptFile(fileId)
+                    session.core.client().acceptFile(fileId)
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
@@ -141,9 +140,9 @@ class FilesModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().pauseFile(fileId)
+                    session.core.companion().pauseFile(fileId)
                 } else {
-                    RatatoskCore.getClient().pauseFile(fileId)
+                    session.core.client().pauseFile(fileId)
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
@@ -156,9 +155,9 @@ class FilesModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().declineFile(fileId)
+                    session.core.companion().declineFile(fileId)
                 } else {
-                    RatatoskCore.getClient().declineFile(fileId)
+                    session.core.client().declineFile(fileId)
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
@@ -179,9 +178,9 @@ class FilesModel(
                 if (session.isCompanion) {
                     // Это запрос, а не чтение: байты приедут событием
                     // FfiCompanionEvent.FilePreview и лягут в _filePreviews.
-                    RatatoskCore.getCompanion().preview(fileId)
+                    session.core.companion().preview(fileId)
                 } else {
-                    val bytes = RatatoskCore.getClient().previewOf(fileId)
+                    val bytes = session.core.client().previewOf(fileId)
                     if (bytes != null) {
                         _filePreviews.update { it + (hex to bytes) }
                     }
@@ -263,7 +262,7 @@ class FilesModel(
             session.scope.launch(Dispatchers.IO) {
                 try {
                     destination.parentFile?.mkdirs()
-                    RatatoskCore.getCompanion().saveFile(
+                    session.core.companion().saveFile(
                         file.fileId,
                         file.chunkTotal,
                         file.chunkBytes.toULong(),
@@ -289,7 +288,7 @@ class FilesModel(
             try {
                 destination.parentFile?.mkdirs()
                 
-                reader = RatatoskCore.getClient().openFile(file.fileId)
+                reader = session.core.client().openFile(file.fileId)
                 if (reader == null) {
                     withContext(Dispatchers.Main) {
                         session._error.value = session.string(R.string.file_unavailable)
@@ -403,7 +402,7 @@ class FilesModel(
         val job = session.scope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
             var reader: FfiFileReader? = null
             try {
-                reader = RatatoskCore.getClient().openFile(file.fileId)
+                reader = session.core.client().openFile(file.fileId)
                 if (reader == null) {
                     withContext(Dispatchers.Main) {
                         session._error.value = session.string(R.string.file_unavailable)
@@ -493,7 +492,7 @@ class FilesModel(
             if (currentCompanionSaveFileId == hex) {
                 session.scope.launch(Dispatchers.IO) {
                     try {
-                        RatatoskCore.getCompanion().cancelSave()
+                        session.core.companion().cancelSave()
                     } catch (e: Exception) {
                         android.util.Log.e("RatatoskVM", "Failed to cancel companion save", e)
                     }
@@ -514,7 +513,7 @@ class FilesModel(
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
             try {
-                val result = RatatoskCore.getClient().sweepOrphanFiles()
+                val result = session.core.client().sweepOrphanFiles()
                 session.scope.launch { onResult(result) }
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to sweep orphan files", e)
@@ -533,7 +532,7 @@ class FilesModel(
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().setAutoAcceptBytes(limit)
+                session.core.client().setAutoAcceptBytes(limit)
                 _autoAcceptLimit.value = limit
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to set auto-accept limit", e)

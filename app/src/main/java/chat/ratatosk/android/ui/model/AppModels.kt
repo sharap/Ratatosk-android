@@ -15,13 +15,21 @@ import kotlinx.coroutines.cancel
  * корутин, а не `viewModelScope`: он доступен только после создания объекта,
  * а моделям он нужен уже в конструкторе. Закрывается вместе с моделью.
  */
-class AppModels(application: Application) {
+class AppModels(
+    application: Application,
+    /** Ядро за швом: в проверках сюда кладут двойника. */
+    core: Backend = CoreBackend,
+    /** Строки ресурсов: в проверках ресурсов нет. */
+    strings: (Int) -> String = { application.getString(it) },
+) {
     private val modelScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     val session = SessionContext(
         app = application,
         scope = modelScope,
         settings = SettingsRepository(application),
+        core = core,
+        strings = strings,
     )
 
     /** Перечитать список аккаунтов после ввоза архива; ставит `RatatoskViewModel`. */

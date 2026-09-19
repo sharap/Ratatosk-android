@@ -1,7 +1,6 @@
 package chat.ratatosk.android.ui.model
 
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,8 +35,8 @@ class PairingModel(private val session: SessionContext) : PairingApi {
     override fun loadPairedDevices() {
         if (session.isCompanion) return
         session.io("Failed to load paired devices") {
-            if (!RatatoskCore.isInitialized()) return@io
-            val devices = RatatoskCore.getClient().devices()
+            if (!session.core.isInitialized) return@io
+            val devices = session.core.client().devices()
             withContext(Dispatchers.Main) { _pairedDevices.value = devices }
         }
     }
@@ -45,11 +44,11 @@ class PairingModel(private val session: SessionContext) : PairingApi {
     override fun startPairing(label: String) {
         if (session.isCompanion) return
         session.io("Failed to start pairing", R.string.error_pairing_failed) {
-            if (!RatatoskCore.isInitialized()) return@io
+            if (!session.core.isInitialized) return@io
             // Ссылка придёт событием `PairingReady`: команда пересекает границу
             // в одну сторону, и ответ у ядра один на все команды.
             _pairingUri.value = null
-            RatatoskCore.getClient().pairDevice(label)
+            session.core.client().pairDevice(label)
         }
     }
 
@@ -60,8 +59,8 @@ class PairingModel(private val session: SessionContext) : PairingApi {
     override fun revokePairing(deviceId: ByteArray) {
         if (session.isCompanion) return
         session.io("Failed to revoke pairing", R.string.error_pairing_revoke_failed) {
-            if (!RatatoskCore.isInitialized()) return@io
-            RatatoskCore.getClient().revokePairing(deviceId)
+            if (!session.core.isInitialized) return@io
+            session.core.client().revokePairing(deviceId)
             loadPairedDevices()
         }
     }

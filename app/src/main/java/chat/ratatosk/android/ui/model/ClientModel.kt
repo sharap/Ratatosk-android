@@ -1,7 +1,6 @@
 package chat.ratatosk.android.ui.model
 
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
 import kotlinx.coroutines.Dispatchers
@@ -63,19 +62,19 @@ class ClientModel(
         if (eventsJob != null) return
         android.util.Log.d("RatatoskVM", "Starting event collection job")
         eventsJob = session.scope.launch(Dispatchers.IO) {
-            RatatoskCore.events.collect { event ->
+            session.core.events.collect { event ->
                 handleEvent(event)
             }
         }
     }
 
     fun setupEngine() {
-        android.util.Log.d("RatatoskVM", "Setting up engine components... Companion mode: ${RatatoskCore.isCompanionMode()}")
-        onCompanionMode(RatatoskCore.isCompanionMode())
+        android.util.Log.d("RatatoskVM", "Setting up engine components... Companion mode: ${session.core.isCompanion}")
+        onCompanionMode(session.core.isCompanion)
 
         session.scope.launch(Dispatchers.IO) {
             try {
-                if (RatatoskCore.isCompanionMode()) {
+                if (session.core.isCompanion) {
                     openCompanion()
                     return@launch
                 }
@@ -95,10 +94,10 @@ class ClientModel(
                 // поднимается с запуском, на другом не поднимается вовсе.
                 // Вызов идемпотентен и под замком, так что лишним он
                 // не будет даже там, где служба успела раньше.
-                RatatoskCore.ensureBtRadio(session.app)
+                session.core.ensureBtRadio(session.app)
 
                 android.util.Log.d("RatatoskVM", "Engine setup: getting fingerprint and limits")
-                val client = RatatoskCore.getClient()
+                val client = session.core.client()
                 val fingerprint = client.fingerprint()
                 val maxAvatar = try { maxAvatarBytes().toInt() } catch (e: Exception) { 32768 }
                 
@@ -205,7 +204,7 @@ class ClientModel(
                 val hex = event.peerIk.toHexString()
                 session.scope.launch(Dispatchers.IO) {
                     try {
-                        val bytes = RatatoskCore.getClient().avatarOf(event.peerIk)
+                        val bytes = session.core.client().avatarOf(event.peerIk)
                         withContext(Dispatchers.Main) {
                             if (bytes != null) {
                                 contacts.putAvatar(hex, bytes)
@@ -279,7 +278,7 @@ class ClientModel(
                     isAnnouncingTor = true
                     session.scope.launch(Dispatchers.IO) {
                         try {
-                            val client = RatatoskCore.getClient()
+                            val client = session.core.client()
                             val card = client.myAddresses()
                             
                             withContext(Dispatchers.Main) {
@@ -362,7 +361,7 @@ class ClientModel(
                 val hex = event.chatId.toHexString()
                 session.scope.launch(Dispatchers.IO) {
                     try {
-                        val bytes = RatatoskCore.getClient().groupAvatar(event.chatId)
+                        val bytes = session.core.client().groupAvatar(event.chatId)
                         withContext(Dispatchers.Main) {
                             if (bytes != null) {
                                 contacts.putAvatar(hex, bytes)

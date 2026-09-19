@@ -1,7 +1,6 @@
 package chat.ratatosk.android.ui.model
 
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
 import kotlinx.coroutines.Dispatchers
@@ -130,8 +129,8 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
      */
     override fun handBtRadio() {
         session.scope.launch(Dispatchers.IO) {
-            RatatoskCore.ensureBtRadio(session.app)
-            val has = RatatoskCore.hasBtRadio()
+            session.core.ensureBtRadio(session.app)
+            val has = session.core.hasBtRadio()
             withContext(Dispatchers.Main) { onBtRadio(has) }
         }
     }
@@ -157,7 +156,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
             try {
-                val client = RatatoskCore.getClient()
+                val client = session.core.client()
                 val en = FfiTransport.values().associateWith { client.transportEnabled(it) }
                 val re = FfiTransport.values().associateWith { client.transportReady(it) }
                 val ts = client.torStatus()
@@ -169,7 +168,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
                 val ya = if (ykBytes.isNotEmpty()) org.ratatosk.core.yggAddress(ykBytes) else null
                 val yp = client.yggPeers()
                 val ypa = try { client.yggPeersAlive() } catch (e: Exception) { null }
-                val btRadio = RatatoskCore.hasBtRadio()
+                val btRadio = session.core.hasBtRadio()
                 val nr = try { client.nostrRelays() } catch (e: Exception) { emptyList() }
                 val nra = try { client.nostrRelaysAlive() } catch (e: Exception) { null }
                 val npub = try { client.nostrNpub() } catch (e: Exception) { "" }
@@ -203,7 +202,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
     override fun setTransportEnabled(transport: FfiTransport, enabled: Boolean) {
         session.scope.launch(Dispatchers.IO) {
             try {
-                val client = RatatoskCore.getClient()
+                val client = session.core.client()
                 client.setTransportEnabled(transport, enabled)
                 client.networkChanged()
                 refreshTransportStatus()
@@ -220,7 +219,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
     override fun setMailAccount(address: String, password: String, imapHost: String, imapPort: Int, smtpHost: String, smtpPort: Int, viaTor: Boolean) {
         session.scope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().setMailAccount(address, password, imapHost, imapPort.toUShort(), smtpHost, smtpPort.toUShort(), viaTor)
+                session.core.client().setMailAccount(address, password, imapHost, imapPort.toUShort(), smtpHost, smtpPort.toUShort(), viaTor)
                 refreshTransportStatus()
             } catch (e: Exception) {
                 android.util.Log.w("RatatoskVM", "Failed to set mail account", e)
@@ -235,7 +234,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
     override fun createMailAccount(url: String, viaTor: Boolean) {
         session.scope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().createMailAccount(url, viaTor)
+                session.core.client().createMailAccount(url, viaTor)
             } catch (e: Exception) {
                 android.util.Log.w("RatatoskVM", "Failed to create mail account", e)
                 withContext(Dispatchers.Main) {
@@ -249,7 +248,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
     override fun clearMailAccount() {
         session.scope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().clearMailAccount()
+                session.core.client().clearMailAccount()
                 refreshTransportStatus()
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to clear mail account", e)
@@ -273,7 +272,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
             try {
-                val client = RatatoskCore.getClient()
+                val client = session.core.client()
                 client.setYggMode(mode)
                 client.setTransportEnabled(FfiTransport.YGG, mode != FfiYggMode.OFF)
                 client.networkChanged()
@@ -294,7 +293,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
             try {
                 val clean = keyHex.trim().replace(" ", "").replace(":", "")
                 val bytes = if (clean.isEmpty()) byteArrayOf() else clean.hexToByteArray()
-                val client = RatatoskCore.getClient()
+                val client = session.core.client()
                 client.setYggKey(bytes)
                 client.networkChanged()
                 refreshTransportStatus()
@@ -313,7 +312,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
         session.scope.launch(Dispatchers.IO) {
             try {
                 val cleanedPeers = peers.map { it.trim() }.filter { it.isNotEmpty() }
-                val client = RatatoskCore.getClient()
+                val client = session.core.client()
                 client.setYggPeers(cleanedPeers)
                 client.networkChanged()
                 refreshTransportStatus()
@@ -332,7 +331,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
         session.scope.launch(Dispatchers.IO) {
             try {
                 val cleanedRelays = relays.map { it.trim() }.filter { it.isNotEmpty() }
-                val client = RatatoskCore.getClient()
+                val client = session.core.client()
                 client.setNostrRelays(cleanedRelays)
                 client.networkChanged()
                 refreshTransportStatus()
@@ -350,7 +349,7 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
             try {
-                val client = RatatoskCore.getClient()
+                val client = session.core.client()
                 client.setNostrDirect(direct)
                 client.networkChanged()
                 refreshTransportStatus()

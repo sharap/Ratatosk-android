@@ -2,7 +2,6 @@ package chat.ratatosk.android.ui.model
 
 import android.app.Application
 import androidx.annotation.StringRes
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.data.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,25 +24,29 @@ class SessionContext(
     val app: Application,
     val scope: CoroutineScope,
     val settings: SettingsRepository,
+    /** Ядро за швом: в тестах сюда кладут двойника. */
+    val core: Backend = CoreBackend,
+    /** Строки ресурсов: в тестах ресурсов нет, а ошибки показывать надо. */
+    private val strings: (Int) -> String = { app.getString(it) },
 ) {
     internal val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
     /** Второй экран телефона, а не полный клиент. */
-    val isCompanion: Boolean get() = RatatoskCore.isCompanionMode()
+    val isCompanion: Boolean get() = core.isCompanion
 
     /**
      * Есть ли связь с телефоном (у компаньона). Нужен нескольким моделям:
      * без связи команды уходят в пустоту, и звать их незачем.
      */
     /** Какой аккаунт открыт; `null` — никакой. Настройки у каждого свои. */
-    internal val _activeAccountId = MutableStateFlow(RatatoskCore.getActiveAccountId())
+    internal val _activeAccountId = MutableStateFlow(core.activeAccountId)
     val activeAccountId: StateFlow<String?> = _activeAccountId.asStateFlow()
 
     internal val _isCompanionLinked = MutableStateFlow(false)
     val isCompanionLinked: StateFlow<Boolean> = _isCompanionLinked.asStateFlow()
 
-    fun string(@StringRes id: Int): String = app.getString(id)
+    fun string(@StringRes id: Int): String = strings(id)
 
     fun clearError() {
         _error.value = null
@@ -68,7 +71,7 @@ class SessionContext(
         } catch (e: Exception) {
             android.util.Log.w("RatatoskVM", logLabel, e)
             if (fallback != null) {
-                val text = e.message?.takeIf { it.isNotBlank() } ?: app.getString(fallback)
+                val text = e.message?.takeIf { it.isNotBlank() } ?: string(fallback)
                 withContext(Dispatchers.Main) { _error.value = text }
             }
         }

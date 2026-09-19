@@ -1,7 +1,6 @@
 package chat.ratatosk.android.ui.model
 
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.data.CompanionLink
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
@@ -90,7 +89,7 @@ class CompanionModel(
         // Start collecting events BEFORE making calls
         if (companionEventsJob == null) {
             companionEventsJob = session.scope.launch(Dispatchers.IO) {
-                RatatoskCore.companionEvents.collect { event ->
+                session.core.companionEvents.collect { event ->
                     handleCompanionEvent(event)
                 }
             }
@@ -100,7 +99,7 @@ class CompanionModel(
 
         session.scope.launch(Dispatchers.IO) {
             try {
-                val companion = RatatoskCore.getCompanion()
+                val companion = session.core.companion()
                 val fingerprint = companion.deviceId().toHexString()
                 val phoneName = try { companion.phoneName() } catch (e: Exception) { "Companion" }
                 
@@ -143,7 +142,7 @@ class CompanionModel(
                     if (chat.isGroup && session._isCompanionLinked.value) {
                         session.scope.launch(Dispatchers.IO) {
                             try {
-                                RatatoskCore.getCompanion().members(chat.chatId)
+                                session.core.companion().members(chat.chatId)
                             } catch (e: Exception) { /* ignore */ }
                         }
                     }
@@ -210,7 +209,7 @@ class CompanionModel(
                     if (!member.mine) {
                         session.scope.launch(Dispatchers.IO) {
                             try {
-                                RatatoskCore.getCompanion().avatar(member.chatId)
+                                session.core.companion().avatar(member.chatId)
                             } catch (e: Exception) { /* ignore */ }
                         }
                     }
@@ -220,15 +219,15 @@ class CompanionModel(
                 android.util.Log.i("RatatoskVM", "Companion group created: ${event.chatId.toHexString()}")
                 session.scope.launch(Dispatchers.IO) {
                     try {
-                        RatatoskCore.getCompanion().chats()
-                        RatatoskCore.getCompanion().members(event.chatId)
+                        session.core.companion().chats()
+                        session.core.companion().members(event.chatId)
                     } catch (e: Exception) { /* ignore */ }
                 }
             }
             is FfiCompanionEvent.ChatsChanged -> {
                 session.scope.launch(Dispatchers.IO) {
                     try {
-                        RatatoskCore.getCompanion().chats()
+                        session.core.companion().chats()
                     } catch (e: Exception) { /* ignore */ }
                 }
             }
@@ -238,7 +237,7 @@ class CompanionModel(
                     contacts.setAvatarStamp(hex, event.avatarMs)
                     session.scope.launch(Dispatchers.IO) {
                         try {
-                            RatatoskCore.getCompanion().avatar(event.chatId)
+                            session.core.companion().avatar(event.chatId)
                         } catch (e: Exception) { /* ignore */ }
                     }
                 } else {
@@ -260,11 +259,11 @@ class CompanionModel(
             is FfiCompanionEvent.Linked -> {
                 android.util.Log.i("RatatoskVM", "Companion LINKED")
                 session._isCompanionLinked.value = true
-                RatatoskCore.getCompanion().chats()
+                session.core.companion().chats()
                 // Телефон на линии — самое время спросить своё лицо: метки для
                 // сравнения у него нет, поэтому спрашиваем раз за подключение.
                 try {
-                    RatatoskCore.getCompanion().avatar(null)
+                    session.core.companion().avatar(null)
                 } catch (e: Exception) { /* ignore */ }
             }
             is FfiCompanionEvent.Unlinked -> {
@@ -330,7 +329,7 @@ class CompanionModel(
                 if (activeId != null) {
                     chats.loadMessages(activeId.hexToByteArray())
                 }
-                RatatoskCore.getCompanion().chats()
+                session.core.companion().chats()
             }
             is FfiCompanionEvent.Refused -> {
                 android.util.Log.w("RatatoskVM", "Companion refused command: ${event.reason}")
@@ -352,7 +351,7 @@ class CompanionModel(
             contacts.setAvatarStamp(chatIdHex, chat.avatarMs)
             session.scope.launch(Dispatchers.IO) {
                 try {
-                    RatatoskCore.getCompanion().avatar(chat.chatId)
+                    session.core.companion().avatar(chat.chatId)
                 } catch (e: Exception) { /* ignore */ }
             }
         }
@@ -375,7 +374,7 @@ class CompanionModel(
             contacts.setAvatarStamp(chatIdHex, chat.avatarMs)
             session.scope.launch(Dispatchers.IO) {
                 try {
-                    RatatoskCore.getCompanion().avatar(chat.chatId)
+                    session.core.companion().avatar(chat.chatId)
                 } catch (e: Exception) { /* ignore */ }
             }
         }
@@ -416,7 +415,7 @@ class CompanionModel(
         if (authorIk != null && contacts.contactAvatars.value[authorIk.toHexString()] == null && session.isCompanion) {
             session.scope.launch(Dispatchers.IO) {
                 try {
-                    RatatoskCore.getCompanion().avatar(authorIk)
+                    session.core.companion().avatar(authorIk)
                 } catch (e: Exception) { /* ignore */ }
             }
         }
@@ -479,7 +478,7 @@ class CompanionModel(
     override fun companionEndpoint(): Pair<Int, String>? = try {
         if (!session.isCompanion) null
         else {
-            val companion = RatatoskCore.getCompanion()
+            val companion = session.core.companion()
             companion.port().toInt() to companion.desktopIk().toHexString()
         }
     } catch (e: Exception) {
@@ -493,7 +492,7 @@ class CompanionModel(
                 val link = session.settings.companionLinks.first()
                     .firstOrNull { it.label == currentCompanionLabel }
                 if (!enabled) {
-                    RatatoskCore.getCompanion().setCachePath(null)
+                    session.core.companion().setCachePath(null)
                     if (link != null) {
                         session.settings.saveCompanionLink(link.copy(cachePath = null))
                     }
@@ -508,7 +507,7 @@ class CompanionModel(
                     session.app.filesDir,
                     "companion_cache_${link.inviteUri.hashCode()}"
                 ).absolutePath
-                RatatoskCore.getCompanion().setCachePath(path)
+                session.core.companion().setCachePath(path)
                 session.settings.saveCompanionLink(link.copy(cachePath = path))
                 withContext(Dispatchers.Main) { _companionCacheEnabled.value = true }
             } catch (e: Exception) {
@@ -534,7 +533,7 @@ class CompanionModel(
                     else java.io.File(session.app.filesDir, cachePath).absolutePath
                 } else null
 
-                RatatoskCore.initializeCompanion(inviteUri, port.toUShort(), peerAddr, resolvedCachePath, torDir)
+                session.core.openCompanion(inviteUri, port.toUShort(), peerAddr, resolvedCachePath, torDir)
                 currentCompanionLabel = label
                 _companionCacheEnabled.value = resolvedCachePath != null
                 if (resolvedCachePath != null) {

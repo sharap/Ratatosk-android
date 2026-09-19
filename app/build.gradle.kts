@@ -56,6 +56,15 @@ android {
             )
         }
     }
+    testOptions {
+        unitTests {
+            // Проверкам моделей нужен `android.util.Log`: без этого любой
+            // вызов журнала в них падает «Method d in android.util.Log not
+            // mocked». Ни одна проверка на журнал не смотрит.
+            isReturnDefaultValues = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -113,6 +122,8 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     testImplementation(libs.junit)
+    // Проверки моделей без ядра: `Dispatchers.setMain` и управляемое время.
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)

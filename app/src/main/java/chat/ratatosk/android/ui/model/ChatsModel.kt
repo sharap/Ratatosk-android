@@ -1,7 +1,6 @@
 package chat.ratatosk.android.ui.model
 
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.util.VisibleChat
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
@@ -101,7 +100,7 @@ class ChatsModel(
         if (session.isCompanion) {
             session.scope.launch(Dispatchers.IO) {
                 try {
-                    RatatoskCore.getCompanion().history(chatId, limit?.toUInt() ?: 100u, null)
+                    session.core.companion().history(chatId, limit?.toUInt() ?: 100u, null)
                 } catch (e: Exception) {
                     android.util.Log.e("RatatoskVM", "Failed to load companion messages", e)
                 }
@@ -126,11 +125,11 @@ class ChatsModel(
         // из открытия чата, из «загрузить ещё».
         val load = session.scope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
             try {
-                if (!RatatoskCore.isInitialized()) {
+                if (!session.core.isInitialized) {
                     android.util.Log.w("RatatoskVM", "loadMessages called but core not initialized")
                     return@launch
                 }
-                val msgs = RatatoskCore.getClient().messages(chatId, maxOf(targetLimit, 1).toUInt())
+                val msgs = session.core.client().messages(chatId, maxOf(targetLimit, 1).toUInt())
                 android.util.Log.d("RatatoskVM", "Fetched ${msgs.size} messages for $chatIdHex")
 
                 _messages.update { currentMap ->
@@ -165,7 +164,7 @@ class ChatsModel(
                     // Search not supported in companion mode yet
                     _searchResults.value = emptyList()
                 } else {
-                    val results = RatatoskCore.getClient().search(chatId, query, 50u)
+                    val results = session.core.client().search(chatId, query, 50u)
                     _searchResults.value = results
                 }
             } catch (e: Exception) {
@@ -192,10 +191,10 @@ class ChatsModel(
                         }
                         return@launch
                     }
-                    RatatoskCore.getCompanion().sendText(chatId, text)
+                    session.core.companion().sendText(chatId, text)
                     loadMessages(chatId)
                 } else {
-                    RatatoskCore.getClient().sendText(chatId, text)
+                    session.core.client().sendText(chatId, text)
                     loadMessages(chatId)
                     delay(150)
                     loadMessages(chatId)
@@ -230,7 +229,7 @@ class ChatsModel(
                         } else null
                         FfiCompanionOutgoing(file.absolutePath, preview)
                     }
-                    RatatoskCore.getCompanion().sendFiles(chatId, companionFiles, text)
+                    session.core.companion().sendFiles(chatId, companionFiles, text)
                     loadMessages(chatId)
                 } else {
                     val outgoingFiles = files.map { file ->
@@ -239,7 +238,7 @@ class ChatsModel(
                         } else null
                         FfiOutgoingFile(file.absolutePath, preview)
                     }
-                    RatatoskCore.getClient().sendFiles(chatId, outgoingFiles, text)
+                    session.core.client().sendFiles(chatId, outgoingFiles, text)
                     loadMessages(chatId)
                     delay(150)
                     loadMessages(chatId)
@@ -262,9 +261,9 @@ class ChatsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().clearChat(chatId)
+                    session.core.companion().clearChat(chatId)
                 } else {
-                    RatatoskCore.getClient().clearChat(chatId)
+                    session.core.client().clearChat(chatId)
                 }
                 _messages.update { it + (chatId.toHexString() to emptyList()) }
             } catch (e: Exception) {
@@ -277,9 +276,9 @@ class ChatsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().deleteMessages(chatId, msgIds)
+                    session.core.companion().deleteMessages(chatId, msgIds)
                 } else {
-                    RatatoskCore.getClient().deleteMessages(chatId, msgIds)
+                    session.core.client().deleteMessages(chatId, msgIds)
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
@@ -292,9 +291,9 @@ class ChatsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().retractMessages(chatId, msgIds)
+                    session.core.companion().retractMessages(chatId, msgIds)
                 } else {
-                    RatatoskCore.getClient().retractMessages(chatId, msgIds)
+                    session.core.client().retractMessages(chatId, msgIds)
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
@@ -307,9 +306,9 @@ class ChatsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().editMessage(chatId, msgId, text)
+                    session.core.companion().editMessage(chatId, msgId, text)
                 } else {
-                    RatatoskCore.getClient().editMessage(chatId, msgId, text)
+                    session.core.client().editMessage(chatId, msgId, text)
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
@@ -328,10 +327,10 @@ class ChatsModel(
                         }
                         return@launch
                     }
-                    RatatoskCore.getCompanion().sendReply(chatId, replyTo, text)
+                    session.core.companion().sendReply(chatId, replyTo, text)
                     loadMessages(chatId)
                 } else {
-                    RatatoskCore.getClient().reply(chatId, replyTo, text)
+                    session.core.client().reply(chatId, replyTo, text)
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
@@ -350,10 +349,10 @@ class ChatsModel(
                         }
                         return@launch
                     }
-                    RatatoskCore.getCompanion().forwardMessages(chatId, msgIds)
+                    session.core.companion().forwardMessages(chatId, msgIds)
                     loadMessages(chatId)
                 } else {
-                    RatatoskCore.getClient().forwardMessages(chatId, msgIds)
+                    session.core.client().forwardMessages(chatId, msgIds)
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
@@ -370,9 +369,9 @@ class ChatsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().markRead(chatId, upTo)
+                    session.core.companion().markRead(chatId, upTo)
                 } else {
-                    RatatoskCore.getClient().markRead(chatId, upTo)
+                    session.core.client().markRead(chatId, upTo)
                 }
                 _unreadCounts.update { it + (chatId.toHexString() to 0) }
             } catch (e: Exception) {
@@ -385,9 +384,9 @@ class ChatsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().setReaction(chatId, msgId, emoji ?: "")
+                    session.core.companion().setReaction(chatId, msgId, emoji ?: "")
                 } else {
-                    RatatoskCore.getClient().setReaction(chatId, msgId, emoji)
+                    session.core.client().setReaction(chatId, msgId, emoji)
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
@@ -404,7 +403,7 @@ class ChatsModel(
 
         session.scope.launch(Dispatchers.IO) {
             try {
-                val msg = RatatoskCore.getClient().message(msgId)
+                val msg = session.core.client().message(msgId)
                 _repliedMessages.update { it + (hex to msg) }
             } catch (e: Exception) { /* ignore */ }
         }

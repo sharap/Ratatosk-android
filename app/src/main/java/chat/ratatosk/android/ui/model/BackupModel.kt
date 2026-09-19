@@ -2,7 +2,6 @@ package chat.ratatosk.android.ui.model
 
 import android.app.Application
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -50,7 +49,7 @@ class BackupModel(
                 val fileName = "ratatosk_backup_${System.currentTimeMillis()}.db"
                 val dest = java.io.File(ratatoskDir, fileName)
 
-                val result = RatatoskCore.exportHistory(dest.absolutePath, scope, phrase)
+                val result = session.core.exportHistory(dest.absolutePath, scope, phrase)
                 withContext(Dispatchers.Main) {
                     onResult(Result.success(result))
                 }
@@ -68,7 +67,7 @@ class BackupModel(
     override fun importArchive(path: String, unlock: FfiArchiveUnlock, label: String, onResult: (Result<FfiImported>) -> Unit) {
         session.scope.launch(Dispatchers.IO) {
             try {
-                val result = RatatoskCore.importArchive(session.app, path, unlock, label)
+                val result = session.core.importArchive(session.app, path, unlock, label)
                 withContext(Dispatchers.Main) {
                     onImported()
                     onResult(Result.success(result))
@@ -85,7 +84,7 @@ class BackupModel(
     override fun peekArchive(path: String, onResult: (FfiArchivePeek?) -> Unit) {
         session.scope.launch(Dispatchers.IO) {
             try {
-                val result = RatatoskCore.peekArchive(path)
+                val result = session.core.peekArchive(path)
                 withContext(Dispatchers.Main) {
                     onResult(result)
                 }

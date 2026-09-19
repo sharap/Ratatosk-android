@@ -1,7 +1,6 @@
 package chat.ratatosk.android.ui.model
 
 import chat.ratatosk.android.R
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.util.hexToByteArray
 import chat.ratatosk.android.util.toHexString
 import kotlinx.coroutines.Dispatchers
@@ -129,10 +128,10 @@ class ContactsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().chats()
+                    session.core.companion().chats()
                 } else {
-                    val contactList = RatatoskCore.getClient().contacts()
-                    val groupList = RatatoskCore.getClient().groups()
+                    val contactList = session.core.client().contacts()
+                    val groupList = session.core.client().groups()
                     withContext(Dispatchers.Main) {
                         _contacts.value = contactList
                         groups.setGroups(groupList)
@@ -157,10 +156,10 @@ class ContactsModel(
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
             try {
-                val oldContacts = RatatoskCore.getClient().contacts()
-                RatatoskCore.getClient().addContact(uri, metInPerson)
-                val contactList = RatatoskCore.getClient().contacts()
-                val groupList = RatatoskCore.getClient().groups()
+                val oldContacts = session.core.client().contacts()
+                session.core.client().addContact(uri, metInPerson)
+                val contactList = session.core.client().contacts()
+                val groupList = session.core.client().groups()
 
                 val addedContact = contactList.find { newC ->
                     oldContacts.none { oldC -> oldC.chatId.contentEquals(newC.chatId) }
@@ -203,10 +202,10 @@ class ContactsModel(
             try {
                 if (session.isCompanion) {
                     if (!session.isCompanionLinked.value) return@launch
-                    RatatoskCore.getCompanion().addSharedContact(msgId)
+                    session.core.companion().addSharedContact(msgId)
                     refreshContacts()
                 } else {
-                    RatatoskCore.getClient().addSharedContact(msgId)
+                    session.core.client().addSharedContact(msgId)
                     refreshContacts()
                 }
             } catch (e: Exception) {
@@ -231,10 +230,10 @@ class ContactsModel(
                     }
                     val targetContact = _contacts.value.find { it.peerIk.contentEquals(peerIk) || it.chatId.contentEquals(peerIk) }
                     val whoChatId = targetContact?.chatId ?: peerIk
-                    RatatoskCore.getCompanion().shareContact(chatId, whoChatId)
+                    session.core.companion().shareContact(chatId, whoChatId)
                     loadMessages(chatId)
                 } else {
-                    RatatoskCore.getClient().shareContact(chatId, peerIk)
+                    session.core.client().shareContact(chatId, peerIk)
                     loadMessages(chatId)
                 }
             } catch (e: Exception) {
@@ -254,7 +253,7 @@ class ContactsModel(
         }
         session.scope.launch(Dispatchers.IO) {
             try {
-                val uri = RatatoskCore.getClient().myContactUri()
+                val uri = session.core.client().myContactUri()
                 withContext(Dispatchers.Main) {
                     _myContactUri.value = uri
                 }
@@ -276,7 +275,7 @@ class ContactsModel(
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().setLocalName(peerIk, name)
+                session.core.client().setLocalName(peerIk, name)
                 refreshContacts()
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to set local name", e)
@@ -288,7 +287,7 @@ class ContactsModel(
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().deleteContact(peerIk, purgeHistory)
+                session.core.client().deleteContact(peerIk, purgeHistory)
                 refreshContacts()
             } catch (e: Exception) {
                 android.util.Log.e("RatatoskVM", "Failed to delete contact", e)
@@ -304,7 +303,7 @@ class ContactsModel(
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().markVerified(peerIk)
+                session.core.client().markVerified(peerIk)
                 refreshContacts()
             } catch (e: Exception) {
                 android.util.Log.w("RatatoskVM", "Failed to mark as verified", e)
@@ -320,7 +319,7 @@ class ContactsModel(
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
             try {
-                RatatoskCore.getClient().revokeVerification(peerIk)
+                session.core.client().revokeVerification(peerIk)
                 refreshContacts()
             } catch (e: Exception) {
                 android.util.Log.w("RatatoskVM", "Failed to revoke verification", e)
@@ -339,9 +338,9 @@ class ContactsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().avatar(peerIk)
+                    session.core.companion().avatar(peerIk)
                 } else {
-                    val bytes = RatatoskCore.getClient().avatarOf(peerIk)
+                    val bytes = session.core.client().avatarOf(peerIk)
                     withContext(Dispatchers.Main) {
                         if (bytes != null) {
                             _contactAvatars.update { it + (hex to bytes) }
@@ -359,9 +358,9 @@ class ContactsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().setAvatar(bytes)
+                    session.core.companion().setAvatar(bytes)
                 } else {
-                    RatatoskCore.getClient().setAvatar(bytes)
+                    session.core.client().setAvatar(bytes)
                 }
                 _myAvatar.value = bytes
             } catch (e: Exception) {
@@ -381,9 +380,9 @@ class ContactsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().avatar(chatId)
+                    session.core.companion().avatar(chatId)
                 } else {
-                    val bytes = RatatoskCore.getClient().groupAvatar(chatId)
+                    val bytes = session.core.client().groupAvatar(chatId)
                     withContext(Dispatchers.Main) {
                         if (bytes != null) {
                             _contactAvatars.update { it + (hex to bytes) }
@@ -402,9 +401,9 @@ class ContactsModel(
         session.scope.launch(Dispatchers.IO) {
             try {
                 if (session.isCompanion) {
-                    RatatoskCore.getCompanion().setGroupAvatar(chatId, bytes)
+                    session.core.companion().setGroupAvatar(chatId, bytes)
                 } else {
-                    RatatoskCore.getClient().setGroupAvatar(chatId, bytes)
+                    session.core.client().setGroupAvatar(chatId, bytes)
                 }
                 withContext(Dispatchers.Main) {
                     if (bytes != null) {

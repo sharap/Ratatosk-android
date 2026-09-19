@@ -1,6 +1,5 @@
 package chat.ratatosk.android.ui.model
 
-import chat.ratatosk.android.core.RatatoskCore
 import chat.ratatosk.android.data.CompanionLink
 import chat.ratatosk.android.ui.theme.ChatThemeData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -98,5 +97,5 @@ class PrefsModel(
         session.scope.launch { session.settings.setCoreFileLog(enabled) }
     }
 
-    override fun coreLogFile(): java.io.File = RatatoskCore.coreLogFile(session.app)
+    override fun coreLogFile(): java.io.File = session.core.coreLogFile(session.app)
 }
