@@ -29,6 +29,7 @@ class AppModels(application: Application) {
 
     val backup: BackupModel = BackupModel(session) { onAccountsChanged() }
     val pairing: PairingModel = PairingModel(session)
+    val transports: TransportsModel = TransportsModel(session)
 
     fun close() {
         modelScope.cancel()

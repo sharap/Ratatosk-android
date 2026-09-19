@@ -31,7 +31,8 @@ class RatatoskViewModel private constructor(
     // Разрезка: часть работы уехала в модели по назначению, а экраны
     // по-прежнему зовут `viewModel.x` — интерфейсы моделей делегируются.
     chat.ratatosk.android.ui.model.BackupApi by models.backup,
-    chat.ratatosk.android.ui.model.PairingApi by models.pairing {
+    chat.ratatosk.android.ui.model.PairingApi by models.pairing,
+    chat.ratatosk.android.ui.model.TransportsApi by models.transports {
 
     constructor(application: Application) : this(application, chat.ratatosk.android.ui.model.AppModels(application))
 
@@ -126,20 +127,10 @@ class RatatoskViewModel private constructor(
     private val _searchResults = MutableStateFlow<List<FfiMessage>>(emptyList())
     val searchResults = _searchResults.asStateFlow()
 
-    private val _torStatus = MutableStateFlow<FfiTorStatus?>(null)
-    val torStatus = _torStatus.asStateFlow()
 
-    private val _mailStatus = MutableStateFlow<FfiMailStatus?>(null)
-    val mailStatus = _mailStatus.asStateFlow()
 
-    private val _mailAccount = MutableStateFlow<FfiMailAccount?>(null)
-    val mailAccount = _mailAccount.asStateFlow()
 
-    private val _transportsEnabled = MutableStateFlow<Map<FfiTransport, Boolean>>(emptyMap())
-    val transportsEnabled = _transportsEnabled.asStateFlow()
 
-    private val _transportsReady = MutableStateFlow<Map<FfiTransport, Boolean>>(emptyMap())
-    val transportsReady = _transportsReady.asStateFlow()
 
     private val _isSearching = MutableStateFlow(false)
     val isSearching = _isSearching.asStateFlow()
@@ -345,8 +336,6 @@ class RatatoskViewModel private constructor(
     // Вручено ли ядру радио. Отдельно от «включено»: ступень можно включить,
     // не выдав разрешений, и тогда она не поднимется — экран обязан
     // различать «выключено человеком» и «включено, а радио нет».
-    private val _btHasRadio = MutableStateFlow(false)
-    val btHasRadio = _btHasRadio.asStateFlow()
 
     /**
      * Пробует вручить радио — звать после выдачи разрешений.
@@ -358,7 +347,7 @@ class RatatoskViewModel private constructor(
         viewModelScope.launch(Dispatchers.IO) {
             RatatoskCore.ensureBtRadio(getApplication())
             val has = RatatoskCore.hasBtRadio()
-            withContext(Dispatchers.Main) { _btHasRadio.value = has }
+            withContext(Dispatchers.Main) { models.transports.onBtRadio(has) }
         }
     }
 
@@ -395,35 +384,15 @@ class RatatoskViewModel private constructor(
     val nostrEnabled = transportsEnabled.map { it[FfiTransport.NOSTR] ?: false }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    private val _nostrRelays = MutableStateFlow<List<String>>(emptyList())
-    val nostrRelays = _nostrRelays.asStateFlow()
 
-    private val _nostrRelaysAlive = MutableStateFlow<List<org.ratatosk.core.FfiNostrRelay>?>(null)
-    val nostrRelaysAlive = _nostrRelaysAlive.asStateFlow()
 
-    private val _nostrNpub = MutableStateFlow<String?>(null)
-    val nostrNpub = _nostrNpub.asStateFlow()
 
-    private val _nostrDirect = MutableStateFlow(false)
-    val nostrDirect = _nostrDirect.asStateFlow()
 
-    private val _nostrAdvertisedRelays = MutableStateFlow<List<String>>(emptyList())
-    val nostrAdvertisedRelays = _nostrAdvertisedRelays.asStateFlow()
 
-    private val _yggMode = MutableStateFlow(FfiYggMode.OFF)
-    val yggMode = _yggMode.asStateFlow()
 
-    private val _yggKey = MutableStateFlow<String?>(null)
-    val yggKey = _yggKey.asStateFlow()
 
-    private val _yggAddress = MutableStateFlow<String?>(null)
-    val yggAddress = _yggAddress.asStateFlow()
 
-    private val _yggPeers = MutableStateFlow<List<String>>(emptyList())
-    val yggPeers = _yggPeers.asStateFlow()
 
-    private val _yggPeersAlive = MutableStateFlow<List<org.ratatosk.core.FfiYggPeer>?>(null)
-    val yggPeersAlive = _yggPeersAlive.asStateFlow()
 
     private val _onionAddress = MutableStateFlow<String?>(null)
     val onionAddress = _onionAddress.asStateFlow()
@@ -1371,9 +1340,7 @@ class RatatoskViewModel private constructor(
         models.pairing.reset()
         _myAvatar.value = null
         _contactAvatars.value = emptyMap()
-        _torStatus.value = null
-        _mailStatus.value = null
-        _mailAccount.value = null
+        models.transports.reset()
         
         // Остальное состояние прошлого аккаунта: оно принадлежит человеку,
         // который уже вышел, и всплывать у следующего ему незачем.
@@ -2043,220 +2010,19 @@ class RatatoskViewModel private constructor(
         }
     }
     
-    fun refreshTransportStatus() {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val client = RatatoskCore.getClient()
-                val en = FfiTransport.values().associateWith { client.transportEnabled(it) }
-                val re = FfiTransport.values().associateWith { client.transportReady(it) }
-                val ts = client.torStatus()
-                val ms = client.mailStatus()
-                val ma = client.mailAccount()
-                val ym = client.yggMode()
-                val ykBytes = client.yggKey()
-                val ykHex = if (ykBytes.isNotEmpty()) ykBytes.toHexString() else null
-                val ya = if (ykBytes.isNotEmpty()) org.ratatosk.core.yggAddress(ykBytes) else null
-                val yp = client.yggPeers()
-                val ypa = try { client.yggPeersAlive() } catch (e: Exception) { null }
-                val btRadio = RatatoskCore.hasBtRadio()
-                val nr = try { client.nostrRelays() } catch (e: Exception) { emptyList() }
-                val nra = try { client.nostrRelaysAlive() } catch (e: Exception) { null }
-                val npub = try { client.nostrNpub() } catch (e: Exception) { "" }
-                val nd = try { client.nostrDirect() } catch (e: Exception) { false }
-                val nar = try { client.nostrAdvertisedRelays() } catch (e: Exception) { emptyList() }
-                
-                withContext(Dispatchers.Main) {
-                    _transportsEnabled.value = en
-                    _transportsReady.value = re
-                    _torStatus.value = ts
-                    _mailStatus.value = ms
-                    _mailAccount.value = ma
-                    _yggMode.value = ym
-                    _yggKey.value = ykHex
-                    _yggAddress.value = ya
-                    _yggPeers.value = yp
-                    _yggPeersAlive.value = ypa
-                    _btHasRadio.value = btRadio
-                    _nostrRelays.value = nr
-                    _nostrRelaysAlive.value = nra
-                    _nostrNpub.value = if (npub.isNotBlank()) npub else null
-                    _nostrDirect.value = nd
-                    _nostrAdvertisedRelays.value = nar
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to refresh transport status", e)
-            }
-        }
-    }
 
-    fun setTransportEnabled(transport: FfiTransport, enabled: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val client = RatatoskCore.getClient()
-                client.setTransportEnabled(transport, enabled)
-                client.networkChanged()
-                refreshTransportStatus()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to toggle transport", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_transport_switch_failed)
-                }
-            }
-        }
-    }
 
-    fun setMailAccount(address: String, password: String, imapHost: String, imapPort: Int, smtpHost: String, smtpPort: Int, viaTor: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                RatatoskCore.getClient().setMailAccount(address, password, imapHost, imapPort.toUShort(), smtpHost, smtpPort.toUShort(), viaTor)
-                refreshTransportStatus()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to set mail account", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_mail_setup_failed)
-                }
-            }
-        }
-    }
 
-    fun createMailAccount(url: String, viaTor: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                RatatoskCore.getClient().createMailAccount(url, viaTor)
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to create mail account", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_mail_register_failed)
-                }
-            }
-        }
-    }
 
-    fun clearMailAccount() {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                RatatoskCore.getClient().clearMailAccount()
-                refreshTransportStatus()
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to clear mail account", e)
-            }
-        }
-    }
 
-    fun setLanEnabled(enabled: Boolean) {
-        setTransportEnabled(FfiTransport.LAN, enabled)
-    }
 
-    fun setTorEnabled(enabled: Boolean) {
-        setTransportEnabled(FfiTransport.ONION, enabled)
-    }
 
-    fun setYggEnabled(enabled: Boolean) {
-        setTransportEnabled(FfiTransport.YGG, enabled)
-    }
 
-    fun setYggMode(mode: FfiYggMode) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val client = RatatoskCore.getClient()
-                client.setYggMode(mode)
-                client.setTransportEnabled(FfiTransport.YGG, mode != FfiYggMode.OFF)
-                client.networkChanged()
-                refreshTransportStatus()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to set Yggdrasil mode", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_ygg_settings_failed)
-                }
-            }
-        }
-    }
 
-    fun setYggKey(keyHex: String) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val clean = keyHex.trim().replace(" ", "").replace(":", "")
-                val bytes = if (clean.isEmpty()) byteArrayOf() else clean.hexToByteArray()
-                val client = RatatoskCore.getClient()
-                client.setYggKey(bytes)
-                client.networkChanged()
-                refreshTransportStatus()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to set Yggdrasil key", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_ygg_key_invalid)
-                }
-            }
-        }
-    }
 
-    fun setYggPeers(peers: List<String>) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val cleanedPeers = peers.map { it.trim() }.filter { it.isNotEmpty() }
-                val client = RatatoskCore.getClient()
-                client.setYggPeers(cleanedPeers)
-                client.networkChanged()
-                refreshTransportStatus()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to set Yggdrasil peers", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_ygg_settings_failed)
-                }
-            }
-        }
-    }
 
-    fun setNostrRelays(relays: List<String>) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val cleanedRelays = relays.map { it.trim() }.filter { it.isNotEmpty() }
-                val client = RatatoskCore.getClient()
-                client.setNostrRelays(cleanedRelays)
-                client.networkChanged()
-                refreshTransportStatus()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to set Nostr relays", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_nostr_settings_failed)
-                }
-            }
-        }
-    }
 
-    fun setNostrDirect(direct: Boolean) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val client = RatatoskCore.getClient()
-                client.setNostrDirect(direct)
-                client.networkChanged()
-                refreshTransportStatus()
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to set Nostr direct mode", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_nostr_settings_failed)
-                }
-            }
-        }
-    }
 
-    fun getNostrWarning(): String = try { org.ratatosk.core.nostrWarning() } catch (e: Exception) { "" }
-    fun getNostrDirectWarning(): String = try { org.ratatosk.core.nostrDirectWarning() } catch (e: Exception) { "" }
-    fun getNostrNoFilesNotice(): String = try { org.ratatosk.core.nostrNoFilesNotice() } catch (e: Exception) { "" }
 
     fun addContact(uri: String, metInPerson: Boolean) {
         if (RatatoskCore.isCompanionMode()) return
@@ -3060,7 +2826,7 @@ class RatatoskViewModel private constructor(
             }
             is FfiEvent.TorStatus -> {
                 android.util.Log.i("RatatoskVM", "TorStatus event: fraction=${event.fraction}, note=${event.note}, blocked=${event.blocked}")
-                _torStatus.value = FfiTorStatus(event.fraction, event.note, event.blocked)
+                models.transports.onTorStatus(FfiTorStatus(event.fraction, event.note, event.blocked))
                 if (event.fraction >= 1.0f && _onionAddress.value == null && !isAnnouncingTor) {
                     // Tor is up, announce addresses if Tor is enabled
                     isAnnouncingTor = true
