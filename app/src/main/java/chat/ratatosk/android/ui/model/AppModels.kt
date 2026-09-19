@@ -30,6 +30,10 @@ class AppModels(application: Application) {
     val backup: BackupModel = BackupModel(session) { onAccountsChanged() }
     val pairing: PairingModel = PairingModel(session)
     val transports: TransportsModel = TransportsModel(session)
+    /** Перечитать контакты и группы; ставит `RatatoskViewModel`. */
+    var onContactsChanged: () -> Unit = {}
+
+    val groups: GroupsModel = GroupsModel(session) { onContactsChanged() }
 
     fun close() {
         modelScope.cancel()

@@ -32,12 +32,14 @@ class RatatoskViewModel private constructor(
     // по-прежнему зовут `viewModel.x` — интерфейсы моделей делегируются.
     chat.ratatosk.android.ui.model.BackupApi by models.backup,
     chat.ratatosk.android.ui.model.PairingApi by models.pairing,
-    chat.ratatosk.android.ui.model.TransportsApi by models.transports {
+    chat.ratatosk.android.ui.model.TransportsApi by models.transports,
+    chat.ratatosk.android.ui.model.GroupsApi by models.groups {
 
     constructor(application: Application) : this(application, chat.ratatosk.android.ui.model.AppModels(application))
 
     init {
         models.onAccountsChanged = { refreshAccounts() }
+        models.onContactsChanged = { refreshContacts() }
     }
 
     override fun onCleared() {
@@ -53,8 +55,6 @@ class RatatoskViewModel private constructor(
     private val _contacts = MutableStateFlow<List<FfiContact>>(emptyList())
     val contacts = _contacts.asStateFlow()
 
-    private val _groups = MutableStateFlow<List<FfiGroup>>(emptyList())
-    val groups = _groups.asStateFlow()
 
     private val _messages = MutableStateFlow<Map<String, List<FfiMessage>>>(emptyMap())
     val messages = _messages.asStateFlow()
@@ -531,11 +531,11 @@ class RatatoskViewModel private constructor(
                 val mappedContacts = contactChats.map { mapCompanionChat(it) }
                 _contacts.value = mappedContacts
 
-                val existingGroupsMap = _groups.value.associateBy { it.chatId.toHexString() }
+                val existingGroupsMap = models.groups.currentGroups().associateBy { it.chatId.toHexString() }
                 val mappedGroups = groupChats.map { chat ->
                     mapCompanionGroup(chat, existingGroupsMap[chat.chatId.toHexString()])
                 }
-                _groups.value = mappedGroups
+                models.groups.setGroups(mappedGroups)
 
                 event.chats.forEach { chat ->
                     val hex = chat.chatId.toHexString()
@@ -561,7 +561,7 @@ class RatatoskViewModel private constructor(
                     )
                 }
                 val isOwnerMine = event.members.any { it.mine && it.owner }
-                _groups.update { currentGroups ->
+                models.groups.updateGroups { currentGroups ->
                     currentGroups.map { grp ->
                         if (grp.chatId.toHexString() == hex) {
                             grp.copy(
@@ -821,7 +821,7 @@ class RatatoskViewModel private constructor(
     }
 
     private fun mapCompanionMessage(msg: FfiCompanionMessage): FfiMessage {
-        val grp = _groups.value.find { it.chatId.contentEquals(msg.chatId) }
+        val grp = models.groups.currentGroups().find { it.chatId.contentEquals(msg.chatId) }
         val member = if (grp != null && !msg.author.isNullOrBlank()) {
             grp.members.find { m ->
                 m.name == msg.author ||
@@ -972,7 +972,7 @@ class RatatoskViewModel private constructor(
                         val currentGroups = client.groups()
                         withContext(Dispatchers.Main) {
                             _contacts.value = currentContacts
-                            _groups.value = currentGroups
+                            models.groups.setGroups(currentGroups)
                         }
                         
                         (currentContacts.map { it.chatId } + currentGroups.map { it.chatId }).forEach { chatId ->
@@ -1014,7 +1014,7 @@ class RatatoskViewModel private constructor(
                     val groupList = RatatoskCore.getClient().groups()
                     withContext(Dispatchers.Main) {
                         _contacts.value = contactList
-                        _groups.value = groupList
+                        models.groups.setGroups(groupList)
                     }
                     (contactList.map { it.chatId } + groupList.map { it.chatId }).forEach { chatId ->
                         launch(Dispatchers.IO) {
@@ -1344,7 +1344,7 @@ class RatatoskViewModel private constructor(
         
         // Остальное состояние прошлого аккаунта: оно принадлежит человеку,
         // который уже вышел, и всплывать у следующего ему незачем.
-        _groups.value = emptyList()
+        models.groups.reset()
         _isSearching.value = false
         _activeMediaFile.value = null
         _mediaExportedPath.value = null
@@ -2048,7 +2048,7 @@ class RatatoskViewModel private constructor(
 
                 withContext(Dispatchers.Main) {
                     _contacts.value = contactList
-                    _groups.value = groupList
+                    models.groups.setGroups(groupList)
                     if (addedContact != null) {
                         setActiveContact(addedContact.chatId)
                     }
@@ -2069,127 +2069,13 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    fun createGroup(title: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().createGroup(title)
-                } else {
-                    RatatoskCore.getClient().createGroup(title)
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to create group", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_group_create_failed)
-                }
-            }
-        }
-    }
 
-    fun renameGroup(chatId: ByteArray, title: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().renameGroup(chatId, title)
-                } else {
-                    RatatoskCore.getClient().renameGroup(chatId, title)
-                    refreshContacts()
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to rename group", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_group_rename_failed)
-                }
-            }
-        }
-    }
 
-    fun inviteToGroup(chatId: ByteArray, peerIk: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().inviteToGroup(chatId, peerIk)
-                    RatatoskCore.getCompanion().members(chatId)
-                } else {
-                    RatatoskCore.getClient().inviteToGroup(chatId, peerIk)
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to invite to group", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_group_invite_failed)
-                }
-            }
-        }
-    }
 
-    fun evictFromGroup(chatId: ByteArray, peerIk: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().evictFromGroup(chatId, peerIk)
-                    RatatoskCore.getCompanion().members(chatId)
-                } else {
-                    RatatoskCore.getClient().evictFromGroup(chatId, peerIk)
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to evict from group", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_group_evict_failed)
-                }
-            }
-        }
-    }
 
-    fun leaveGroup(chatId: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().leaveGroup(chatId)
-                } else {
-                    RatatoskCore.getClient().leaveGroup(chatId)
-                    refreshContacts()
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to leave group", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_group_leave_failed)
-                }
-            }
-        }
-    }
 
-    fun loadCompanionMembers(chatId: ByteArray) {
-        if (RatatoskCore.isCompanionMode()) {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    RatatoskCore.getCompanion().members(chatId)
-                } catch (e: Exception) {
-                    android.util.Log.e("RatatoskVM", "Failed to load companion members", e)
-                }
-            }
-        }
-    }
 
-    fun getGroupJoinNotice(): String {
-        return try {
-            groupJoinNotice()
-        } catch (e: Exception) {
-            ""
-        }
-    }
 
-    fun getEvictionNotice(): String {
-        return try {
-            evictionNotice()
-        } catch (e: Exception) {
-            ""
-        }
-    }
 
     fun getDeletionNotice(): String {
         return try {
@@ -2215,29 +2101,8 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    fun getLeaveNotice(): String {
-        return try {
-            leaveNotice()
-        } catch (e: Exception) {
-            ""
-        }
-    }
 
-    fun getOwnerLeaveNotice(): String {
-        return try {
-            ownerLeaveNotice()
-        } catch (e: Exception) {
-            ""
-        }
-    }
 
-    fun getMaxGroupTitleChars(): UInt {
-        return try {
-            maxGroupTitleChars()
-        } catch (e: Exception) {
-            255u
-        }
-    }
 
     fun addSharedContact(msgId: ByteArray) {
         viewModelScope.launch(Dispatchers.IO) {

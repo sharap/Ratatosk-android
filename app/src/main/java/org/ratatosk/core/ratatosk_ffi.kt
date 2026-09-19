@@ -15036,6 +15036,35 @@ sealed class FfiEvent {
     }
     
     /**
+     * Канал заведён (фаза 2, §6.1).
+     *
+     * Отдельно от [`FfiEvent::GroupCreated`]: у канала нет списка
+     * участников, зато есть ссылка и экран прав, и рисовать их
+     * по одному событию значило бы решать породу догадкой.
+     */
+    data class ChannelCreated(
+        /**
+         * Чат.
+         */
+        val `chatId`: kotlin.ByteArray, 
+        /**
+         * Название.
+         */
+        val `title`: kotlin.String, 
+        /**
+         * Открытый ли канал (§6.1). Порода задана при заведении
+         * и не меняется: «Открытый канал» и «Канал по приглашению» —
+         * два разных обещания, и слово для каждого одно.
+         */
+        val `open`: kotlin.Boolean) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
      * Группу переименовали.
      *
      * Отдельно от [`FfiEvent::GroupMembershipChanged`] по той же причине,
@@ -15486,64 +15515,69 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            13 -> FfiEvent.GroupRenamed(
+            13 -> FfiEvent.ChannelCreated(
+                FfiConverterByteArray.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterBoolean.read(buf),
+                )
+            14 -> FfiEvent.GroupRenamed(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            14 -> FfiEvent.GroupMembershipChanged(
+            15 -> FfiEvent.GroupMembershipChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            15 -> FfiEvent.GroupAvatarChanged(
+            16 -> FfiEvent.GroupAvatarChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            16 -> FfiEvent.FileWaitsForChannel(
+            17 -> FfiEvent.FileWaitsForChannel(
                 FfiConverterByteArray.read(buf),
                 FfiConverterTypeFfiFileWaitReason.read(buf),
                 )
-            17 -> FfiEvent.FileProgress(
+            18 -> FfiEvent.FileProgress(
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            18 -> FfiEvent.FileSending(
+            19 -> FfiEvent.FileSending(
                 FfiConverterByteArray.read(buf),
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            19 -> FfiEvent.FileGone(
+            20 -> FfiEvent.FileGone(
                 FfiConverterByteArray.read(buf),
                 )
-            20 -> FfiEvent.HonestNotice(
+            21 -> FfiEvent.HonestNotice(
                 FfiConverterString.read(buf),
                 )
-            21 -> FfiEvent.CommandRefused(
+            22 -> FfiEvent.CommandRefused(
                 FfiConverterString.read(buf),
                 )
-            22 -> FfiEvent.MailAccountReady(
+            23 -> FfiEvent.MailAccountReady(
                 FfiConverterString.read(buf),
                 )
-            23 -> FfiEvent.MailAccountFailed(
+            24 -> FfiEvent.MailAccountFailed(
                 FfiConverterString.read(buf),
                 )
-            24 -> FfiEvent.MailLoginFailed(
+            25 -> FfiEvent.MailLoginFailed(
                 FfiConverterString.read(buf),
                 )
-            25 -> FfiEvent.MailLimits(
+            26 -> FfiEvent.MailLimits(
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterBoolean.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            26 -> FfiEvent.PairingReady(
+            27 -> FfiEvent.PairingReady(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            27 -> FfiEvent.PairingRevoked(
+            28 -> FfiEvent.PairingRevoked(
                 FfiConverterByteArray.read(buf),
                 )
-            28 -> FfiEvent.DeviceLink(
+            29 -> FfiEvent.DeviceLink(
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
@@ -15644,6 +15678,15 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 4UL
                 + FfiConverterByteArray.allocationSize(value.`chatId`)
                 + FfiConverterString.allocationSize(value.`title`)
+            )
+        }
+        is FfiEvent.ChannelCreated -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
+                + FfiConverterString.allocationSize(value.`title`)
+                + FfiConverterBoolean.allocationSize(value.`open`)
             )
         }
         is FfiEvent.GroupRenamed -> {
@@ -15845,37 +15888,44 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterString.write(value.`title`, buf)
                 Unit
             }
-            is FfiEvent.GroupRenamed -> {
+            is FfiEvent.ChannelCreated -> {
                 buf.putInt(13)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                FfiConverterString.write(value.`title`, buf)
+                FfiConverterBoolean.write(value.`open`, buf)
+                Unit
+            }
+            is FfiEvent.GroupRenamed -> {
+                buf.putInt(14)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterString.write(value.`title`, buf)
                 Unit
             }
             is FfiEvent.GroupMembershipChanged -> {
-                buf.putInt(14)
-                FfiConverterByteArray.write(value.`chatId`, buf)
-                Unit
-            }
-            is FfiEvent.GroupAvatarChanged -> {
                 buf.putInt(15)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
-            is FfiEvent.FileWaitsForChannel -> {
+            is FfiEvent.GroupAvatarChanged -> {
                 buf.putInt(16)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                Unit
+            }
+            is FfiEvent.FileWaitsForChannel -> {
+                buf.putInt(17)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterTypeFfiFileWaitReason.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.FileProgress -> {
-                buf.putInt(17)
+                buf.putInt(18)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterULong.write(value.`received`, buf)
                 FfiConverterULong.write(value.`total`, buf)
                 Unit
             }
             is FfiEvent.FileSending -> {
-                buf.putInt(18)
+                buf.putInt(19)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterByteArray.write(value.`peerIk`, buf)
                 FfiConverterULong.write(value.`sent`, buf)
@@ -15883,37 +15933,37 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.FileGone -> {
-                buf.putInt(19)
+                buf.putInt(20)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 Unit
             }
             is FfiEvent.HonestNotice -> {
-                buf.putInt(20)
+                buf.putInt(21)
                 FfiConverterString.write(value.`text`, buf)
                 Unit
             }
             is FfiEvent.CommandRefused -> {
-                buf.putInt(21)
+                buf.putInt(22)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.MailAccountReady -> {
-                buf.putInt(22)
+                buf.putInt(23)
                 FfiConverterString.write(value.`address`, buf)
                 Unit
             }
             is FfiEvent.MailAccountFailed -> {
-                buf.putInt(23)
-                FfiConverterString.write(value.`reason`, buf)
-                Unit
-            }
-            is FfiEvent.MailLoginFailed -> {
                 buf.putInt(24)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
-            is FfiEvent.MailLimits -> {
+            is FfiEvent.MailLoginFailed -> {
                 buf.putInt(25)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is FfiEvent.MailLimits -> {
+                buf.putInt(26)
                 FfiConverterOptionalULong.write(value.`letterBytes`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxUsed`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxLimit`, buf)
@@ -15922,18 +15972,18 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.PairingReady -> {
-                buf.putInt(26)
+                buf.putInt(27)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterString.write(value.`uri`, buf)
                 Unit
             }
             is FfiEvent.PairingRevoked -> {
-                buf.putInt(27)
+                buf.putInt(28)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 Unit
             }
             is FfiEvent.DeviceLink -> {
-                buf.putInt(28)
+                buf.putInt(29)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterBoolean.write(value.`connected`, buf)
                 Unit
