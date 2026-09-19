@@ -34,7 +34,8 @@ class RatatoskViewModel private constructor(
     chat.ratatosk.android.ui.model.PairingApi by models.pairing,
     chat.ratatosk.android.ui.model.TransportsApi by models.transports,
     chat.ratatosk.android.ui.model.GroupsApi by models.groups,
-    chat.ratatosk.android.ui.model.ContactsApi by models.contacts {
+    chat.ratatosk.android.ui.model.ContactsApi by models.contacts,
+    chat.ratatosk.android.ui.model.FilesApi by models.files {
 
     constructor(application: Application) : this(application, chat.ratatosk.android.ui.model.AppModels(application))
 
@@ -69,16 +70,12 @@ class RatatoskViewModel private constructor(
     private val _unreadCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
     val unreadCounts = _unreadCounts.asStateFlow()
 
-    private val _fileProgress = MutableStateFlow<Map<String, Float>>(emptyMap())
-    val fileProgress = _fileProgress.asStateFlow()
 
     // Полоса **у отправителя**: сколько чанков отдано транспорту.
     //
     // Отдельно от fileProgress, и это не дубль: то — ход приёма у нас,
     // это — ход отдачи наружу. Раньше исходящий файл питался чужим
     // событием и потому не двигался вовсе.
-    private val _fileSending = MutableStateFlow<Map<String, Float>>(emptyMap())
-    val fileSending = _fileSending.asStateFlow()
 
     /**
      * Сколько вложения уже легло **на это устройство**, по `fileId` в hex.
@@ -88,42 +85,19 @@ class RatatoskViewModel private constructor(
      * а здесь — ход выкладывания сюда. Событий на каждый кусок ядро не даёт,
      * поэтому доля берётся из растущего файла на диске.
      */
-    private val _saveProgress = MutableStateFlow<Map<String, Float>>(emptyMap())
-    val saveProgress = _saveProgress.asStateFlow()
 
     /** Приём сюда ждёт связи с телефоном, а не сорвался (`FetchPaused`). */
-    private val _fetchPaused = MutableStateFlow(false)
-    val fetchPaused: StateFlow<Boolean> = _fetchPaused.asStateFlow()
 
     // Почему передача файла стоит (§10.3). Состояние, а не происшествие:
     // показывать его надо на самом файле, пока оно держится, а не
     // всплывающей подсказкой — ждать файл может столько, сколько
     // собеседник вне сети.
-    private val _fileWaiting = MutableStateFlow<Map<String, FfiFileWaitReason>>(emptyMap())
-    val fileWaiting = _fileWaiting.asStateFlow()
 
-    /**
-     * Текст для стоящей передачи. Берётся у ядра и переписыванию
-     * не подлежит: он обещает ровно то, что протокол делает. «Ошибка
-     * отправки» и «загрузка…» здесь одинаково неправда.
-     */
-    fun fileWaitingText(reason: FfiFileWaitReason): String =
-        try { org.ratatosk.core.fileWaitingText(reason) } catch (e: Exception) { "" }
 
-    private val _filePreviews = MutableStateFlow<Map<String, ByteArray>>(emptyMap())
-    val filePreviews = _filePreviews.asStateFlow()
 
-    // Превью, которые уже заказаны. Держит от лавины запросов: заказ идёт
-    // из composable, то есть на каждую перерисовку строки.
-    private val previewRequests: MutableSet<String> =
-        java.util.Collections.newSetFromMap(ConcurrentHashMap<String, Boolean>())
-
-    private val activeJobs = ConcurrentHashMap<String, Job>()
 
     // Идущие загрузки истории, по одной на чат. См. loadMessages.
     private val messageLoads = ConcurrentHashMap<String, Job>()
-    private val _activeJobsFlow = MutableStateFlow<Set<String>>(emptySet())
-    val activeJobsFlow = _activeJobsFlow.asStateFlow()
 
     private val _searchResults = MutableStateFlow<List<FfiMessage>>(emptyList())
     val searchResults = _searchResults.asStateFlow()
@@ -186,11 +160,7 @@ class RatatoskViewModel private constructor(
     val activeContactIdFlow = _activeContactIdFlow.asStateFlow()
 
 
-    private val _activeMediaFile = MutableStateFlow<FfiFile?>(null)
-    val activeMediaFile = _activeMediaFile.asStateFlow()
 
-    private val _mediaExportedPath = MutableStateFlow<String?>(null)
-    val mediaExportedPath = _mediaExportedPath.asStateFlow()
 
     /**
      * Показанное приехало с телефона (`true`) или поднято из кэша (`false`).
@@ -201,11 +171,7 @@ class RatatoskViewModel private constructor(
     val isCompanionFresh: StateFlow<Boolean> = _isCompanionFresh.asStateFlow()
 
     /** Наблюдатели за растущими файлами: по одному на сохранение. */
-    private val fetchWatchers = ConcurrentHashMap<String, kotlinx.coroutines.Job>()
 
-    private val pendingCompanionSaves = ConcurrentHashMap<String, (java.io.File) -> Unit>()
-    private val pendingCompanionPaths = ConcurrentHashMap<String, String>()
-    private var currentCompanionSaveFileId: String? = null
 
     private var activeChatId: String? = null
     private var currentCompanionLabel: String? = null
@@ -219,18 +185,7 @@ class RatatoskViewModel private constructor(
     private val _accountExists = MutableStateFlow(false)
     val accountExists: StateFlow<Boolean> = _accountExists.asStateFlow()
     
-    /**
-     * Исходник вложения не читается. `own` — наше отправленное: у него
-     * байты берутся из файла по пути, и путь мог протухнуть.
-     */
-    private class FileSourceGone(val own: Boolean) : Exception()
 
-    private fun fileFailureText(e: Throwable): String = when {
-        // Формулировку последствий даёт ядро (§14) — там она честная и
-        // переведённая, а мы бы сочинили своё.
-        e is FileSourceGone && e.own -> org.ratatosk.core.fileSourceGoneNotice()
-        else -> getApplication<Application>().getString(R.string.file_unavailable)
-    }
 
     /**
      * То, чем с нами поделились из другого приложения, уже сложенное
@@ -287,8 +242,6 @@ class RatatoskViewModel private constructor(
     private val _pendingAvatarChatId = MutableStateFlow<ByteArray?>(null)
     val pendingAvatarChatId = _pendingAvatarChatId.asStateFlow()
 
-    private val _autoAcceptLimit = MutableStateFlow<ULong?>(null)
-    val autoAcceptLimit = _autoAcceptLimit.asStateFlow()
 
     val chatTheme = settingsRepository.chatTheme.stateIn(
         scope = viewModelScope,
@@ -304,9 +257,6 @@ class RatatoskViewModel private constructor(
         if (id == null) flowOf(true) else settingsRepository.getNotificationsShowText(id)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val downloadDirUri = activeAccountId.flatMapLatest { id ->
-        if (id == null) flowOf(null) else settingsRepository.getDownloadDirUri(id)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val lanEnabled = transportsEnabled.map { it[FfiTransport.LAN] ?: false }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -660,49 +610,35 @@ class RatatoskViewModel private constructor(
                 android.util.Log.w("RatatoskVM", "Companion UNLINKED")
                 models.session._isCompanionLinked.value = false
                 // Телефон ушёл со связи — `FileSaved` уже не придёт.
-                failPendingCompanionSaves(getApplication<Application>().getString(R.string.companion_offline))
+                models.files.failPendingSaves(getApplication<Application>().getString(R.string.companion_offline))
             }
             is FfiCompanionEvent.Revoked -> {
                 // Сопряжение отозвано: объект жив, но на любую команду отвечает
                 // отказом. Молчать об этом нельзя — окно иначе вечно «подключается».
                 android.util.Log.w("RatatoskVM", "Companion REVOKED")
                 models.session._isCompanionLinked.value = false
-                failPendingCompanionSaves(getApplication<Application>().getString(R.string.companion_revoked))
+                models.files.failPendingSaves(getApplication<Application>().getString(R.string.companion_revoked))
             }
             is FfiCompanionEvent.FileSaved -> {
-                val hex = event.fileId.toHexString()
-                _saveProgress.update { it + (hex to 1f) }
-                _fetchPaused.value = false
-                stopFetchWatchers(listOf(hex))
-                _activeJobsFlow.update { it - hex }
-                if (currentCompanionSaveFileId == hex) currentCompanionSaveFileId = null
-                pendingCompanionSaves.remove(hex)?.let { callback ->
-                    pendingCompanionPaths.remove(hex)?.let { path ->
-                        viewModelScope.launch(Dispatchers.Main) {
-                            callback(java.io.File(path))
-                        }
-                    }
-                }
+                models.files.finishSave(event.fileId.toHexString(), event.path, deliver = true)
             }
             // Приём сюда не сорвался, а ждёт: записанное лежит на диске
             // и допишется с того же места (FFI, FetchPaused).
             is FfiCompanionEvent.FetchPaused -> {
                 android.util.Log.i("RatatoskVM", "Companion fetch paused")
-                _fetchPaused.value = true
+                models.files.setFetchPaused(true)
             }
             is FfiCompanionEvent.FetchResumed -> {
-                _fetchPaused.value = false
-                val hex = currentCompanionSaveFileId
+                models.files.setFetchPaused(false)
+                val hex = models.files.currentSaveFileId()
                 if (hex != null && event.total > 0uL) {
                     val done = (event.done.toFloat() / event.total.toFloat()).coerceIn(0f, 1f)
-                    _saveProgress.update { it + (hex to done) }
+                    models.files.onSaveProgress(hex, done)
                 }
             }
             is FfiCompanionEvent.FilePreview -> {
                 val hex = event.fileId.toHexString()
-                if (event.bytes != null) {
-                    _filePreviews.update { it + (hex to event.bytes) }
-                }
+                models.files.onFilePreview(hex, event.bytes)
             }
             is FfiCompanionEvent.Avatar -> {
                 val hex = event.chatId?.toHexString() ?: "mine"
@@ -718,19 +654,14 @@ class RatatoskViewModel private constructor(
                 }
             }
             is FfiCompanionEvent.FileGone -> {
-                val hex = event.fileId.toHexString()
-                stopFetchWatchers(listOf(hex))
-                _activeJobsFlow.update { it - hex }
-                if (currentCompanionSaveFileId == hex) currentCompanionSaveFileId = null
-                pendingCompanionSaves.remove(hex)
-                pendingCompanionPaths.remove(hex)
+                models.files.forgetSave(event.fileId.toHexString())
             }
             is FfiCompanionEvent.FileProgress -> {
                 val hex = event.fileId.toHexString()
                 val progress = if (event.chunkTotal > 0uL) {
                     event.haveChunks.toFloat() / event.chunkTotal.toFloat()
                 } else 0f
-                _fileProgress.update { it + (hex to progress) }
+                models.files.onFileProgress(hex, progress)
             }
             is FfiCompanionEvent.FilesSent -> {
                 android.util.Log.i("RatatoskVM", "Companion files sent: ${event.fileIds.size} files")
@@ -747,7 +678,7 @@ class RatatoskViewModel private constructor(
                 }
                 // Отказ мог прийти и на просьбу забрать вложение: тогда ждать
                 // `FileSaved` больше нечего.
-                failPendingCompanionSaves(event.reason)
+                models.files.failPendingSaves(event.reason)
             }
             else -> {}
         }
@@ -948,7 +879,7 @@ class RatatoskViewModel private constructor(
                     try {
                         android.util.Log.d("RatatoskVM", "Engine setup: getting auto accept bytes")
                         val limit = client.autoAcceptBytes()
-                        withContext(Dispatchers.Main) { _autoAcceptLimit.value = limit }
+                        withContext(Dispatchers.Main) { models.files.setAutoAcceptLimitValue(limit) }
                     } catch (e: Exception) {
                         android.util.Log.e("RatatoskVM", "Failed to load auto-accept limit", e)
                     }
@@ -1282,14 +1213,7 @@ class RatatoskViewModel private constructor(
         _messages.value = emptyMap()
         _messageStatuses.value = emptyMap()
         _unreadCounts.value = emptyMap()
-        _fileProgress.value = emptyMap()
-        _saveProgress.value = emptyMap()
-        _fetchPaused.value = false
-        stopFetchWatchers(fetchWatchers.keys.toList())
-        _fileSending.value = emptyMap()
-        _fileWaiting.value = emptyMap()
-        _filePreviews.value = emptyMap()
-        previewRequests.clear()
+        models.files.reset()
         // Расшифрованные копии вложений в кэше — вместе с сессией. Они
         // лежат открытым текстом, и переживать выход из аккаунта им незачем.
         try {
@@ -1298,7 +1222,6 @@ class RatatoskViewModel private constructor(
             android.util.Log.w("RatatoskVM", "Failed to clear decrypted caches: ${e.message}")
         }
         _repliedMessages.value = emptyMap()
-        _activeJobsFlow.value = emptySet()
         _searchResults.value = emptyList()
         models.pairing.reset()
         models.transports.reset()
@@ -1307,22 +1230,16 @@ class RatatoskViewModel private constructor(
         // который уже вышел, и всплывать у следующего ему незачем.
         models.groups.reset()
         _isSearching.value = false
-        _activeMediaFile.value = null
-        _mediaExportedPath.value = null
         _sharedDraft.value = null
         models.contacts.setFingerprint(null)
         _pendingScrollToMsgId.value = null
         _pendingAvatarUri.value = null
         _pendingAvatarChatId.value = null
-        _autoAcceptLimit.value = null
         _honestNotices.value = emptyList()
         _cardVersion.value = null
         _error.value = null
 
         
-        pendingCompanionSaves.clear()
-        pendingCompanionPaths.clear()
-        currentCompanionSaveFileId = null
     }
 
     fun clearError() {
@@ -1512,20 +1429,6 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    fun acceptFile(chatId: ByteArray, fileId: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().acceptFile(fileId)
-                } else {
-                    RatatoskCore.getClient().acceptFile(fileId)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to accept file", e)
-            }
-        }
-    }
 
     /**
      * Останавливает приём файла, **не отказываясь** от него.
@@ -1534,35 +1437,7 @@ class RatatoskViewModel private constructor(
      * с того же места. Это не отмена: отказ (`declineFile`) выбрасывает
      * принятое, а здесь человек говорит «не сейчас».
      */
-    fun pauseFile(chatId: ByteArray, fileId: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().pauseFile(fileId)
-                } else {
-                    RatatoskCore.getClient().pauseFile(fileId)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to pause file", e)
-            }
-        }
-    }
 
-    fun declineFile(chatId: ByteArray, fileId: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().declineFile(fileId)
-                } else {
-                    RatatoskCore.getClient().declineFile(fileId)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to decline file", e)
-            }
-        }
-    }
 
     // Просит превью вложения. Ответ кладётся в [filePreviews] — читать надо
     // оттуда, а не из возвращаемого значения: у компаньона байты приезжают
@@ -1573,35 +1448,6 @@ class RatatoskViewModel private constructor(
     // и звалась прямо из composable — экран читал снимок `.value`,
     // на который Compose не подписан, и превью не появлялось до тех пор,
     // пока что-нибудь другое не перерисует строку.
-    fun requestFilePreview(fileId: ByteArray) {
-        val hex = fileId.toHexString()
-        if (_filePreviews.value.containsKey(hex)) return
-        // Заказ уже в пути — второй ни к чему: composable зовёт нас
-        // на каждую перерисовку.
-        if (!previewRequests.add(hex)) return
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    // Это запрос, а не чтение: байты приедут событием
-                    // FfiCompanionEvent.FilePreview и лягут в _filePreviews.
-                    RatatoskCore.getCompanion().preview(fileId)
-                } else {
-                    val bytes = RatatoskCore.getClient().previewOf(fileId)
-                    if (bytes != null) {
-                        _filePreviews.update { it + (hex to bytes) }
-                    }
-                    // bytes == null означает «превью у этого файла нет».
-                    // Отметку заказа не снимаем: спрашивать снова незачем.
-                }
-            } catch (e: Exception) {
-                // Отметку снимаем, чтобы следующая попытка состоялась:
-                // ядро могло быть ещё не поднято.
-                previewRequests.remove(hex)
-                android.util.Log.w("RatatoskVM", "Failed to fetch preview for $hex: ${e.message}")
-            }
-        }
-    }
 
     /**
      * Роняет ожидание выкладывания: ядро отказало или телефон ушёл со связи.
@@ -1616,334 +1462,16 @@ class RatatoskViewModel private constructor(
      * о ходе не сообщает: его события говорят только о том, сколько собрал
      * телефон, — а это давно сто процентов.
      */
-    private fun watchFetchProgress(fileIdHex: String, destination: java.io.File, sizeBytes: ULong) {
-        val total = sizeBytes.toLong()
-        if (total <= 0L) return
-        val part = java.io.File(destination.parentFile, destination.name + ".part")
-        fetchWatchers.remove(fileIdHex)?.cancel()
-        fetchWatchers[fileIdHex] = viewModelScope.launch(Dispatchers.IO) {
-            while (isActive && pendingCompanionSaves.containsKey(fileIdHex)) {
-                val written = when {
-                    destination.isFile -> destination.length()
-                    part.isFile -> part.length()
-                    else -> 0L
-                }
-                _saveProgress.update { it + (fileIdHex to (written.toFloat() / total).coerceIn(0f, 1f)) }
-                kotlinx.coroutines.delay(400)
-            }
-        }
-    }
 
-    private fun stopFetchWatchers(fileIds: Collection<String>) {
-        fileIds.forEach { fetchWatchers.remove(it)?.cancel() }
-    }
 
     private fun resetCompanionFreshness() {
         _isCompanionFresh.value = false
     }
 
-    private fun failPendingCompanionSaves(reason: String?) {
-        if (pendingCompanionSaves.isEmpty() && currentCompanionSaveFileId == null) return
-        val waiting = pendingCompanionSaves.keys.toList()
-        stopFetchWatchers(waiting)
-        pendingCompanionSaves.clear()
-        pendingCompanionPaths.clear()
-        currentCompanionSaveFileId = null
-        _activeJobsFlow.update { it - waiting.toSet() }
-        val text = reason?.takeIf { it.isNotBlank() }
-            ?: getApplication<Application>().getString(R.string.file_unavailable)
-        _error.value = text
-    }
 
-    fun saveFile(file: FfiFile, destination: java.io.File, onComplete: (java.io.File) -> Unit) {
-        val fileIdHex = file.fileId.toHexString()
-        
-        if (RatatoskCore.isCompanionMode()) {
-            if (currentCompanionSaveFileId != null && currentCompanionSaveFileId != fileIdHex) {
-                // Automatically cancel previous save if a new one is requested
-                cancelFileJob(currentCompanionSaveFileId!!.hexToByteArray())
-            }
 
-            // Без нарезки куски лягут врастопырку, и это не отказ:
-            // файл сохранится, будет выглядеть сохранённым и окажется
-            // битым, раздувшись в сотни раз (FFI.md к save_file). Лучше
-            // честно не начать, чем отдать человеку такое.
-            if (file.chunkBytes == 0u) {
-                android.util.Log.e("RatatoskVM", "No chunk_bytes for $fileIdHex, refusing save")
-                _error.value = getApplication<Application>().getString(R.string.file_unavailable)
-                return
-            }
 
-            currentCompanionSaveFileId = fileIdHex
-            pendingCompanionSaves[fileIdHex] = onComplete
-            pendingCompanionPaths[fileIdHex] = destination.absolutePath
-            _activeJobsFlow.update { it + fileIdHex }
-            // Прошлая доля того же файла ввела бы в заблуждение.
-            _saveProgress.update { it - fileIdHex }
-            _fetchPaused.value = false
-            watchFetchProgress(fileIdHex, destination, file.sizeBytes)
 
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    destination.parentFile?.mkdirs()
-                    RatatoskCore.getCompanion().saveFile(
-                        file.fileId,
-                        file.chunkTotal,
-                        file.chunkBytes.toULong(),
-                        destination.absolutePath
-                    )
-                } catch (e: Exception) {
-                    android.util.Log.e("RatatoskVM", "Failed companion save", e)
-                    pendingCompanionSaves.remove(fileIdHex)
-                    pendingCompanionPaths.remove(fileIdHex)
-                    _activeJobsFlow.update { it - fileIdHex }
-                    if (currentCompanionSaveFileId == fileIdHex) currentCompanionSaveFileId = null
-                }
-            }
-            return
-        }
-
-        // start = LAZY, потому что регистрация обязана произойти раньше, чем
-        // задача успеет закончиться. При DEFAULT корутина уже бежала, и на
-        // быстром отказе её finally снимал отметку до того, как строки ниже
-        // её поставят: вложение навсегда оставалось с крутилкой «отменить».
-        val job = viewModelScope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
-            var reader: FfiFileReader? = null
-            try {
-                destination.parentFile?.mkdirs()
-                
-                reader = RatatoskCore.getClient().openFile(file.fileId)
-                if (reader == null) {
-                    withContext(Dispatchers.Main) {
-                        _error.value = getApplication<Application>().getString(R.string.file_unavailable)
-                    }
-                    return@launch
-                }
-
-                destination.outputStream().use { output ->
-                    val total = reader.chunkTotal()
-                    for (i in 0UL until total) {
-                        ensureActive()
-                        val chunk = reader.chunk(i)
-                        if (chunk != null) {
-                            output.write(chunk)
-                            output.flush()
-                            _saveProgress.update { it + (fileIdHex to (i.toFloat() / total.toFloat())) }
-                        } else {
-                            // Своё вложение ядро читает из исходника по
-                            // пути, а не из принятого: отправитель ничего
-                            // у себя не запечатывал. Человек удалил или
-                            // перенёс файл — и это не обрыв загрузки,
-                            // а исчезнувший исходник.
-                            throw FileSourceGone(reader.own())
-                        }
-                    }
-                }
-                _fileProgress.update { it + (fileIdHex to 1f) }
-                viewModelScope.launch { onComplete(destination) }
-            } catch (e: Exception) {
-                if (e !is kotlinx.coroutines.CancellationException) {
-                    // Имя файла приходит от собеседника — в журнал его класть нельзя.
-                    android.util.Log.e("RatatoskVM", "Failed to save file", e)
-                    withContext(Dispatchers.Main) { _error.value = fileFailureText(e) }
-                }
-            } finally {
-                reader?.destroy()
-                // По ключу **и значению**: по одному ключу нас могла уже
-                // сменить следующая задача, и remove(key) снёс бы её
-                // регистрацию — она качала бы дальше, но без прогресса
-                // и без возможности отмены.
-                if (activeJobs.remove(fileIdHex, coroutineContext[Job])) {
-                    _activeJobsFlow.update { it - fileIdHex }
-                }
-            }
-        }
-        
-        // Прежнюю задачу снимаем и **ждать её finally не нужно**: удаление
-        // идёт по совпадению значения (см. ниже), так что её уборка нашу
-        // регистрацию не затрёт.
-        activeJobs.put(fileIdHex, job)?.cancel()
-        _activeJobsFlow.update { it + fileIdHex }
-        job.start()
-    }
-
-    fun downloadFile(file: FfiFile, onComplete: (String) -> Unit) {
-        val fileIdHex = file.fileId.toHexString()
-
-        if (RatatoskCore.isCompanionMode()) {
-            val tempFile = java.io.File(getApplication<Application>().cacheDir, "downloads/${file.fileId.toHexString()}_${file.name}")
-            saveFile(file, tempFile) { savedFile ->
-                viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        val dirUriString = downloadDirUri.value
-                        val dirUri = dirUriString?.let { android.net.Uri.parse(it) }
-                        
-                        if (dirUri != null) {
-                            val root = DocumentFile.fromTreeUri(getApplication(), dirUri)
-                            if (root != null && root.canWrite()) {
-                                val target = root.createFile("*/*", file.name)
-                                if (target != null) {
-                                    getApplication<Application>().contentResolver.openOutputStream(target.uri)?.use { output ->
-                                        savedFile.inputStream().use { input ->
-                                            input.copyTo(output)
-                                        }
-                                    }
-                                    viewModelScope.launch { onComplete(file.name) }
-                                    savedFile.delete()
-                                    return@launch
-                                }
-                            }
-                        }
-                        
-                        // Запасной путь, когда каталог через SAF не выбран.
-                        // Через MediaStore: прямая запись в публичные
-                        // «Загрузки» на Android 10+ запрещена без разрешений.
-                        val sink = FileUtils.openDownloadSink(getApplication(), file.name)
-                        if (sink == null) {
-                            withContext(Dispatchers.Main) {
-                                _error.value = getApplication<Application>().getString(R.string.error_save_to_downloads)
-                            }
-                            savedFile.delete()
-                            return@launch
-                        }
-                        sink.stream.use { output ->
-                            savedFile.inputStream().use { input -> input.copyTo(output) }
-                        }
-                        savedFile.delete()
-                        viewModelScope.launch { onComplete(sink.displayPath) }
-                    } catch (e: Exception) {
-                        android.util.Log.e("RatatoskVM", "Failed companion download copy", e)
-                    }
-                }
-            }
-            return
-        }
-
-        // start = LAZY, потому что регистрация обязана произойти раньше, чем
-        // задача успеет закончиться. При DEFAULT корутина уже бежала, и на
-        // быстром отказе её finally снимал отметку до того, как строки ниже
-        // её поставят: вложение навсегда оставалось с крутилкой «отменить».
-        val job = viewModelScope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
-            var reader: FfiFileReader? = null
-            try {
-                reader = RatatoskCore.getClient().openFile(file.fileId)
-                if (reader == null) {
-                    withContext(Dispatchers.Main) {
-                        _error.value = getApplication<Application>().getString(R.string.file_unavailable)
-                    }
-                    return@launch
-                }
-
-                val dirUriString = downloadDirUri.value
-                val dirUri = dirUriString?.let { android.net.Uri.parse(it) }
-                
-                if (dirUri != null) {
-                    val root = DocumentFile.fromTreeUri(getApplication(), dirUri)
-                    if (root != null && root.canWrite()) {
-                        val target = root.createFile("*/*", file.name)
-                        if (target != null) {
-                            getApplication<Application>().contentResolver.openOutputStream(target.uri)?.use { output ->
-                                val total = reader.chunkTotal()
-                                for (i in 0UL until total) {
-                                    ensureActive()
-                                    val chunk = reader.chunk(i)
-                                    // Пропустить кусок молча значило бы
-                                    // записать в «Загрузки» обрезанный файл
-                                    // и назвать это успехом.
-                                    if (chunk == null) throw FileSourceGone(reader.own())
-                                    output.write(chunk)
-                                    output.flush()
-                                    _fileProgress.update { it + (fileIdHex to (i.toFloat() / total.toFloat())) }
-                                }
-                            }
-                            _fileProgress.update { it + (fileIdHex to 1f) }
-                            viewModelScope.launch { onComplete(file.name) }
-                            return@launch
-                        }
-                    }
-                }
-                
-                // См. пояснение выше: только через MediaStore.
-                val sink = FileUtils.openDownloadSink(getApplication(), file.name)
-                if (sink == null) {
-                    withContext(Dispatchers.Main) {
-                        _error.value = getApplication<Application>().getString(R.string.error_save_to_downloads)
-                    }
-                    return@launch
-                }
-
-                sink.stream.use { output ->
-                    val total = reader.chunkTotal()
-                    for (i in 0UL until total) {
-                        ensureActive()
-                        val chunk = reader.chunk(i)
-                        if (chunk == null) throw FileSourceGone(reader.own())
-                        output.write(chunk)
-                        output.flush()
-                        _fileProgress.update { it + (fileIdHex to (i.toFloat() / total.toFloat())) }
-                    }
-                }
-                _fileProgress.update { it + (fileIdHex to 1f) }
-                viewModelScope.launch { onComplete(sink.displayPath) }
-            } catch (e: Exception) {
-                if (e !is kotlinx.coroutines.CancellationException) {
-                    android.util.Log.e("RatatoskVM", "Failed to download file", e)
-                    withContext(Dispatchers.Main) { _error.value = fileFailureText(e) }
-                }
-            } finally {
-                reader?.destroy()
-                // По ключу **и значению**: по одному ключу нас могла уже
-                // сменить следующая задача, и remove(key) снёс бы её
-                // регистрацию — она качала бы дальше, но без прогресса
-                // и без возможности отмены.
-                if (activeJobs.remove(fileIdHex, coroutineContext[Job])) {
-                    _activeJobsFlow.update { it - fileIdHex }
-                }
-            }
-        }
-        
-        // Прежнюю задачу снимаем и **ждать её finally не нужно**: удаление
-        // идёт по совпадению значения (см. ниже), так что её уборка нашу
-        // регистрацию не затрёт.
-        activeJobs.put(fileIdHex, job)?.cancel()
-        _activeJobsFlow.update { it + fileIdHex }
-        job.start()
-    }
-
-    fun cancelFileJob(fileId: ByteArray) {
-        val hex = fileId.toHexString()
-        if (RatatoskCore.isCompanionMode()) {
-            if (currentCompanionSaveFileId == hex) {
-                viewModelScope.launch(Dispatchers.IO) {
-                    try {
-                        RatatoskCore.getCompanion().cancelSave()
-                    } catch (e: Exception) {
-                        android.util.Log.e("RatatoskVM", "Failed to cancel companion save", e)
-                    }
-                }
-                currentCompanionSaveFileId = null
-                pendingCompanionSaves.remove(hex)
-                pendingCompanionPaths.remove(hex)
-                _activeJobsFlow.update { it - hex }
-            }
-            return
-        }
-        activeJobs[hex]?.cancel()
-        activeJobs.remove(hex)
-        _activeJobsFlow.update { it - hex }
-    }
-
-    fun sweepOrphanFiles(onResult: (FfiSwept) -> Unit) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val result = RatatoskCore.getClient().sweepOrphanFiles()
-                viewModelScope.launch { onResult(result) }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to sweep orphan files", e)
-            }
-        }
-    }
 
     fun resendMessage(chatId: ByteArray, body: String) {
         sendMessage(chatId, body)
@@ -1963,12 +1491,6 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    fun setDownloadDirUri(uri: android.net.Uri?) {
-        val id = activeAccountId.value ?: return
-        viewModelScope.launch {
-            settingsRepository.setDownloadDirUri(id, uri?.toString())
-        }
-    }
     
 
 
@@ -2193,17 +1715,6 @@ class RatatoskViewModel private constructor(
         return null
     }
 
-    fun setAutoAcceptLimit(limit: ULong?) {
-        if (RatatoskCore.isCompanionMode()) return
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                RatatoskCore.getClient().setAutoAcceptBytes(limit)
-                _autoAcceptLimit.value = limit
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to set auto-accept limit", e)
-            }
-        }
-    }
 
 
 
@@ -2231,38 +1742,8 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    fun setActiveMediaFile(file: FfiFile?) {
-        _activeMediaFile.value = file
-    }
 
-    fun openMedia(file: FfiFile, cacheDir: java.io.File) {
-        _activeMediaFile.value = file
-        _mediaExportedPath.value = null
-        
-        val mediaDir = java.io.File(cacheDir, "media_viewer")
-        mediaDir.mkdirs()
-        val dest = java.io.File(mediaDir, "${file.fileId.toHexString()}_${file.name}")
-        
-        if (dest.exists() && dest.length() == file.sizeBytes.toLong()) {
-            _mediaExportedPath.value = dest.absolutePath
-            return
-        }
-        
-        saveFile(file, dest) { savedFile ->
-            if (_activeMediaFile.value?.fileId?.contentEquals(file.fileId) == true) {
-                _mediaExportedPath.value = savedFile.absolutePath
-            }
-        }
-    }
 
-    fun closeMedia() {
-        val fileId = _activeMediaFile.value?.fileId
-        if (fileId != null && RatatoskCore.isCompanionMode()) {
-            cancelFileJob(fileId)
-        }
-        _activeMediaFile.value = null
-        _mediaExportedPath.value = null
-    }
 
     fun updateChatTheme(updater: (ChatThemeData) -> ChatThemeData) {
         viewModelScope.launch {
@@ -2339,14 +1820,12 @@ class RatatoskViewModel private constructor(
                 }
             }
             is FfiEvent.FileWaitsForChannel -> {
-                _fileWaiting.update { it + (event.fileId.toHexString() to event.reason) }
+                models.files.onFileWaiting(event.fileId.toHexString(), event.reason)
             }
             is FfiEvent.FileGone -> {
                 val hex = event.fileId.toHexString()
                 // Вложения больше нет — и ожидания вместе с ним.
-                _fileWaiting.update { it - hex }
-                _fileProgress.update { it - hex }
-                _fileSending.update { it - hex }
+                models.files.forgetFile(hex)
                 // Строку вложения надо **убрать**, а не обнулить в ней
                 // числа: само сообщение остаётся, текст к отвергнутой
                 // картинке никуда не делся. Список сообщений об этом
@@ -2360,19 +1839,19 @@ class RatatoskViewModel private constructor(
                 val progress = if (event.total > 0UL) {
                     event.sent.toFloat() / event.total.toFloat()
                 } else 0f
-                _fileSending.update { it + (hex to progress) }
+                models.files.onFileSending(hex, progress)
                 // Ядро называет снимающим ожидание только FileProgress,
                 // но он про приём. У отдачи движение видно отсюда, и
                 // держать «стоит» поверх идущей отправки было бы враньём.
-                _fileWaiting.update { it - hex }
+                models.files.onFileWaiting(hex, null)
             }
             is FfiEvent.FileProgress -> {
                 val hex = event.fileId.toHexString()
                 // Ход передачи и означает, что она пошла: ядро прямо
                 // говорит, что это событие снимает ожидание.
-                _fileWaiting.update { it - hex }
+                models.files.onFileWaiting(hex, null)
                 val progress = if (event.total > 0UL) event.received.toFloat() / event.total.toFloat() else 0f
-                _fileProgress.update { it + (hex to progress) }
+                models.files.onFileProgress(hex, progress)
                 
                 if (event.received == event.total) {
                     // Перечитываем чат, чтобы у FfiFile обновился `complete`.

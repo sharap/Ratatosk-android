@@ -33,10 +33,12 @@ class AppModels(application: Application) {
     /** Перечитать контакты и группы; ставит `RatatoskViewModel`. */
     var onContactsChanged: () -> Unit = {}
 
-    val groups: GroupsModel = GroupsModel(session) { onContactsChanged() }
     /** Историю чата и карточку человека держит `RatatoskViewModel` — пока. */
     var onLoadMessages: (ByteArray) -> Unit = {}
     var onOpenContact: (ByteArray) -> Unit = {}
+
+    val groups: GroupsModel = GroupsModel(session) { onContactsChanged() }
+    val files: FilesModel = FilesModel(session) { onLoadMessages(it) }
 
     val contacts: ContactsModel = ContactsModel(
         session = session,
