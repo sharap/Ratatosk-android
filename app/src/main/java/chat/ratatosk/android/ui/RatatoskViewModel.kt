@@ -35,15 +35,17 @@ class RatatoskViewModel private constructor(
     chat.ratatosk.android.ui.model.TransportsApi by models.transports,
     chat.ratatosk.android.ui.model.GroupsApi by models.groups,
     chat.ratatosk.android.ui.model.ContactsApi by models.contacts,
-    chat.ratatosk.android.ui.model.FilesApi by models.files {
+    chat.ratatosk.android.ui.model.FilesApi by models.files,
+    chat.ratatosk.android.ui.model.ChatsApi by models.chats {
 
     constructor(application: Application) : this(application, chat.ratatosk.android.ui.model.AppModels(application))
 
     init {
         models.onAccountsChanged = { refreshAccounts() }
         models.onContactsChanged = { refreshContacts() }
-        models.onLoadMessages = { loadMessages(it) }
         models.onOpenContact = { setActiveContact(it) }
+        models.onPreviewFor = { generatePreview(it) }
+        models.onChatOpened = { _activeContactIdFlow.value = null }
     }
 
     override fun onCleared() {
@@ -58,17 +60,9 @@ class RatatoskViewModel private constructor(
 
 
 
-    private val _messages = MutableStateFlow<Map<String, List<FfiMessage>>>(emptyMap())
-    val messages = _messages.asStateFlow()
 
-    private val _messageStatuses = MutableStateFlow<Map<String, FfiDeliveryStatus>>(emptyMap())
-    val messageStatuses = _messageStatuses.asStateFlow()
 
-    private val _repliedMessages = MutableStateFlow<Map<String, FfiMessage?>>(emptyMap())
-    val repliedMessages = _repliedMessages.asStateFlow()
 
-    private val _unreadCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
-    val unreadCounts = _unreadCounts.asStateFlow()
 
 
     // Полоса **у отправителя**: сколько чанков отдано транспорту.
@@ -97,18 +91,13 @@ class RatatoskViewModel private constructor(
 
 
     // Идущие загрузки истории, по одной на чат. См. loadMessages.
-    private val messageLoads = ConcurrentHashMap<String, Job>()
-
-    private val _searchResults = MutableStateFlow<List<FfiMessage>>(emptyList())
-    val searchResults = _searchResults.asStateFlow()
 
 
 
 
 
 
-    private val _isSearching = MutableStateFlow(false)
-    val isSearching = _isSearching.asStateFlow()
+
 
     /** Идёт открытие аккаунта: вывод ключа из PIN занимает заметные секунды. */
     private val _isOpening = MutableStateFlow(false)
@@ -143,9 +132,7 @@ class RatatoskViewModel private constructor(
         initialValue = emptyList()
     )
 
-    val totalUnreadCount: StateFlow<Int> = _unreadCounts
-        .map { it.values.sum() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+    val totalUnreadCount = models.chats.totalUnreadCount
 
     val lastAccountId = settingsRepository.lastAccountId.stateIn(
         scope = viewModelScope,
@@ -153,8 +140,6 @@ class RatatoskViewModel private constructor(
         initialValue = null
     )
 
-    private val _activeChatIdFlow = MutableStateFlow<ByteArray?>(null)
-    val activeChatIdFlow = _activeChatIdFlow.asStateFlow()
 
     private val _activeContactIdFlow = MutableStateFlow<ByteArray?>(null)
     val activeContactIdFlow = _activeContactIdFlow.asStateFlow()
@@ -173,7 +158,6 @@ class RatatoskViewModel private constructor(
     /** Наблюдатели за растущими файлами: по одному на сохранение. */
 
 
-    private var activeChatId: String? = null
     private var currentCompanionLabel: String? = null
 
     private val _honestNotices = MutableStateFlow<List<String>>(emptyList())
@@ -225,16 +209,8 @@ class RatatoskViewModel private constructor(
     // сам экран чата, когда доскроллил. Через ViewModel, а не через аргумент
     // экрана, потому что чат к моменту нажатия может быть уже открыт:
     // тогда менять нечего, нужен именно сигнал.
-    private val _pendingScrollToMsgId = MutableStateFlow<String?>(null)
-    val pendingScrollToMsgId = _pendingScrollToMsgId.asStateFlow()
 
-    fun requestScrollToMessage(msgIdHex: String?) {
-        _pendingScrollToMsgId.value = msgIdHex
-    }
 
-    fun consumeScrollRequest() {
-        _pendingScrollToMsgId.value = null
-    }
 
     private val _pendingAvatarUri = MutableStateFlow<android.net.Uri?>(null)
     val pendingAvatarUri = _pendingAvatarUri.asStateFlow()
@@ -486,7 +462,7 @@ class RatatoskViewModel private constructor(
                             } catch (e: Exception) { /* ignore */ }
                         }
                     }
-                    if (_messages.value[hex].isNullOrEmpty() || hex == activeChatId) {
+                    if (models.chats.currentMessages(hex).isNullOrEmpty() || hex == models.chats.activeChatIdHex) {
                         loadMessages(chat.chatId)
                     }
                 }
@@ -591,7 +567,7 @@ class RatatoskViewModel private constructor(
                 _isCompanionFresh.value = event.fresh
                 val mappedMessages = event.page.map { mapCompanionMessage(it) }
                 val chatIdHex = event.chatId.toHexString()
-                _messages.update { it + (chatIdHex to mappedMessages) }
+                models.chats.setMessages(chatIdHex, mappedMessages)
             }
             is FfiCompanionEvent.Arrived -> {
                 loadMessages(event.message.chatId)
@@ -665,7 +641,7 @@ class RatatoskViewModel private constructor(
             }
             is FfiCompanionEvent.FilesSent -> {
                 android.util.Log.i("RatatoskVM", "Companion files sent: ${event.fileIds.size} files")
-                val activeId = activeChatId
+                val activeId = models.chats.activeChatIdHex
                 if (activeId != null) {
                     loadMessages(activeId.hexToByteArray())
                 }
@@ -926,58 +902,6 @@ class RatatoskViewModel private constructor(
     }
 
 
-    fun loadMessages(chatId: ByteArray, limit: Int? = null) {
-        if (RatatoskCore.isCompanionMode()) {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    RatatoskCore.getCompanion().history(chatId, limit?.toUInt() ?: 100u, null)
-                } catch (e: Exception) {
-                    android.util.Log.e("RatatoskVM", "Failed to load companion messages", e)
-                }
-            }
-            return
-        }
-        val chatIdHex = chatId.toHexString()
-        val currentSize = _messages.value[chatIdHex]?.size ?: 0
-        
-        val targetLimit = when {
-            limit != null -> limit
-            currentSize > 0 -> maxOf(currentSize, 100)
-            else -> 100
-        }
-        
-        android.util.Log.d("RatatoskVM", "loadMessages for $chatIdHex, current: $currentSize, target: $targetLimit")
-        
-        // Одна загрузка на чат. Прежде каждый вызов запускал свою корутину,
-        // и две наложившиеся приходили в произвольном порядке: медленная
-        // выборка на 100 сообщений перезаписывала уже приехавшие 500,
-        // и список на экране схлопывался. Зовут её часто — из событий,
-        // из открытия чата, из «загрузить ещё».
-        val load = viewModelScope.launch(Dispatchers.IO, start = kotlinx.coroutines.CoroutineStart.LAZY) {
-            try {
-                if (!RatatoskCore.isInitialized()) {
-                    android.util.Log.w("RatatoskVM", "loadMessages called but core not initialized")
-                    return@launch
-                }
-                val msgs = RatatoskCore.getClient().messages(chatId, maxOf(targetLimit, 1).toUInt())
-                android.util.Log.d("RatatoskVM", "Fetched ${msgs.size} messages for $chatIdHex")
-
-                _messages.update { currentMap ->
-                    currentMap + (chatIdHex to msgs)
-                }
-            } catch (e: Exception) {
-                if (e !is kotlinx.coroutines.CancellationException) {
-                    android.util.Log.e("RatatoskVM", "Failed to load messages for $chatIdHex", e)
-                }
-            } finally {
-                messageLoads.remove(chatIdHex, coroutineContext[Job])
-            }
-        }
-        // Регистрируем до запуска и снимаем прежнюю — по тем же причинам,
-        // что и у файловых задач.
-        messageLoads.put(chatIdHex, load)?.cancel()
-        load.start()
-    }
 
     fun refreshAccounts() {
         _availableAccounts.value = RatatoskCore.listAccounts()
@@ -1206,13 +1130,9 @@ class RatatoskViewModel private constructor(
         _isCreatingNewAccount.value = false
         
         // Clear all session state
-        _activeChatIdFlow.value = null
-        chat.ratatosk.android.util.VisibleChat.clear()
+        models.chats.reset()
         _activeContactIdFlow.value = null
         models.contacts.reset()
-        _messages.value = emptyMap()
-        _messageStatuses.value = emptyMap()
-        _unreadCounts.value = emptyMap()
         models.files.reset()
         // Расшифрованные копии вложений в кэше — вместе с сессией. Они
         // лежат открытым текстом, и переживать выход из аккаунта им незачем.
@@ -1221,18 +1141,14 @@ class RatatoskViewModel private constructor(
         } catch (e: Exception) {
             android.util.Log.w("RatatoskVM", "Failed to clear decrypted caches: ${e.message}")
         }
-        _repliedMessages.value = emptyMap()
-        _searchResults.value = emptyList()
         models.pairing.reset()
         models.transports.reset()
         
         // Остальное состояние прошлого аккаунта: оно принадлежит человеку,
         // который уже вышел, и всплывать у следующего ему незачем.
         models.groups.reset()
-        _isSearching.value = false
         _sharedDraft.value = null
         models.contacts.setFingerprint(null)
-        _pendingScrollToMsgId.value = null
         _pendingAvatarUri.value = null
         _pendingAvatarChatId.value = null
         _honestNotices.value = emptyList()
@@ -1272,110 +1188,10 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    private var searchJob: Job? = null
-    fun searchMessages(chatId: ByteArray?, query: String) {
-        searchJob?.cancel()
-        if (query.isBlank()) {
-            _searchResults.value = emptyList()
-            _isSearching.value = false
-            return
-        }
 
-        _isSearching.value = true
-        searchJob = viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    // Search not supported in companion mode yet
-                    _searchResults.value = emptyList()
-                } else {
-                    val results = RatatoskCore.getClient().search(chatId, query, 50u)
-                    _searchResults.value = results
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Search failed", e)
-            } finally {
-                _isSearching.value = false
-            }
-        }
-    }
 
-    fun clearSearch() {
-        searchJob?.cancel()
-        _searchResults.value = emptyList()
-        _isSearching.value = false
-    }
 
-    fun sendMessage(chatId: ByteArray, text: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    if (!models.session._isCompanionLinked.value) {
-                        withContext(Dispatchers.Main) {
-                            _error.value = getApplication<Application>().getString(R.string.connecting_to_phone_cached)
-                        }
-                        return@launch
-                    }
-                    RatatoskCore.getCompanion().sendText(chatId, text)
-                    loadMessages(chatId)
-                } else {
-                    RatatoskCore.getClient().sendText(chatId, text)
-                    loadMessages(chatId)
-                    delay(150)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to send text", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_send_failed)
-                }
-            }
-        }
-    }
 
-    fun sendText(chatId: ByteArray, text: String) {
-        sendMessage(chatId, text)
-    }
-
-    fun sendFiles(chatId: ByteArray, files: List<java.io.File>, text: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    if (!models.session._isCompanionLinked.value) {
-                        withContext(Dispatchers.Main) {
-                            _error.value = getApplication<Application>().getString(R.string.connecting_to_phone_cached)
-                        }
-                        return@launch
-                    }
-                    val companionFiles = files.map { file ->
-                        val preview = if (file.extension.lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
-                            generatePreview(file)
-                        } else null
-                        FfiCompanionOutgoing(file.absolutePath, preview)
-                    }
-                    RatatoskCore.getCompanion().sendFiles(chatId, companionFiles, text)
-                    loadMessages(chatId)
-                } else {
-                    val outgoingFiles = files.map { file ->
-                        val preview = if (file.extension.lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
-                            generatePreview(file)
-                        } else null
-                        FfiOutgoingFile(file.absolutePath, preview)
-                    }
-                    RatatoskCore.getClient().sendFiles(chatId, outgoingFiles, text)
-                    loadMessages(chatId)
-                    delay(150)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to send files", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_send_files_failed)
-                }
-            }
-        }
-    }
 
     /**
      * Принимает «поделиться» в выбранный чат: копирует вложения к себе
@@ -1473,9 +1289,6 @@ class RatatoskViewModel private constructor(
 
 
 
-    fun resendMessage(chatId: ByteArray, body: String) {
-        sendMessage(chatId, body)
-    }
 
     fun setNotificationsShowName(show: Boolean) {
         val id = activeAccountId.value ?: return
@@ -1515,29 +1328,6 @@ class RatatoskViewModel private constructor(
 
 
 
-    fun getDeletionNotice(): String {
-        return try {
-            deletionNotice()
-        } catch (e: Exception) {
-            ""
-        }
-    }
-
-    fun getEditNotice(): String {
-        return try {
-            editNotice()
-        } catch (e: Exception) {
-            ""
-        }
-    }
-
-    fun getForwardNotice(): String {
-        return try {
-            forwardNotice()
-        } catch (e: Exception) {
-            ""
-        }
-    }
 
 
 
@@ -1550,145 +1340,17 @@ class RatatoskViewModel private constructor(
 
 
 
-    fun clearChat(chatId: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().clearChat(chatId)
-                } else {
-                    RatatoskCore.getClient().clearChat(chatId)
-                }
-                _messages.update { it + (chatId.toHexString() to emptyList()) }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to clear chat", e)
-            }
-        }
-    }
-
-    fun deleteMessages(chatId: ByteArray, msgIds: List<ByteArray>) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().deleteMessages(chatId, msgIds)
-                } else {
-                    RatatoskCore.getClient().deleteMessages(chatId, msgIds)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to delete messages", e)
-            }
-        }
-    }
-
-    fun retractMessages(chatId: ByteArray, msgIds: List<ByteArray>) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().retractMessages(chatId, msgIds)
-                } else {
-                    RatatoskCore.getClient().retractMessages(chatId, msgIds)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to retract messages", e)
-            }
-        }
-    }
-
-    fun editMessage(chatId: ByteArray, msgId: ByteArray, text: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().editMessage(chatId, msgId, text)
-                } else {
-                    RatatoskCore.getClient().editMessage(chatId, msgId, text)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to edit message", e)
-            }
-        }
-    }
-
-    fun reply(chatId: ByteArray, replyTo: ByteArray, text: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    if (!models.session._isCompanionLinked.value) {
-                        withContext(Dispatchers.Main) {
-                            _error.value = getApplication<Application>().getString(R.string.connecting_to_phone_cached)
-                        }
-                        return@launch
-                    }
-                    RatatoskCore.getCompanion().sendReply(chatId, replyTo, text)
-                    loadMessages(chatId)
-                } else {
-                    RatatoskCore.getClient().reply(chatId, replyTo, text)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to reply", e)
-            }
-        }
-    }
-
-    fun forwardMessages(chatId: ByteArray, msgIds: List<ByteArray>) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    if (!models.session._isCompanionLinked.value) {
-                        withContext(Dispatchers.Main) {
-                            _error.value = getApplication<Application>().getString(R.string.connecting_to_phone_cached)
-                        }
-                        return@launch
-                    }
-                    RatatoskCore.getCompanion().forwardMessages(chatId, msgIds)
-                    loadMessages(chatId)
-                } else {
-                    RatatoskCore.getClient().forwardMessages(chatId, msgIds)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to forward", e)
-                withContext(Dispatchers.Main) {
-                    _error.value = e.message?.takeIf { it.isNotBlank() }
-                        ?: getApplication<Application>().getString(R.string.error_forward_failed)
-                }
-            }
-        }
-    }
-
-    fun markRead(chatId: ByteArray, upTo: ByteArray) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().markRead(chatId, upTo)
-                } else {
-                    RatatoskCore.getClient().markRead(chatId, upTo)
-                }
-                _unreadCounts.update { it + (chatId.toHexString() to 0) }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to mark read", e)
-            }
-        }
-    }
 
 
 
-    fun setReaction(chatId: ByteArray, msgId: ByteArray, emoji: String?) {
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                if (RatatoskCore.isCompanionMode()) {
-                    RatatoskCore.getCompanion().setReaction(chatId, msgId, emoji ?: "")
-                } else {
-                    RatatoskCore.getClient().setReaction(chatId, msgId, emoji)
-                    loadMessages(chatId)
-                }
-            } catch (e: Exception) {
-                android.util.Log.e("RatatoskVM", "Failed to set reaction", e)
-            }
-        }
-    }
+
+
+
+
+
+
+
+
 
 
 
@@ -1700,45 +1362,18 @@ class RatatoskViewModel private constructor(
         _pendingAvatarChatId.value = chatId
     }
 
-    fun getMessage(msgId: ByteArray): FfiMessage? {
-        val hex = msgId.toHexString()
-        _repliedMessages.value[hex]?.let { return it }
-        
-        if (RatatoskCore.isCompanionMode()) return null
-
-        viewModelScope.launch(Dispatchers.IO) {
-            try {
-                val msg = RatatoskCore.getClient().message(msgId)
-                _repliedMessages.update { it + (hex to msg) }
-            } catch (e: Exception) { /* ignore */ }
-        }
-        return null
-    }
 
 
 
 
 
 
-    fun setActiveChat(chatId: ByteArray?) {
-        _activeChatIdFlow.value = chatId
-        // Сервису уведомлений это нужно, а общей модели у них с экраном нет.
-        chat.ratatosk.android.util.VisibleChat.setOpenChat(chatId?.toHexString())
-        if (chatId != null) {
-            _activeContactIdFlow.value = null
-            activeChatId = chatId.toHexString()
-            _unreadCounts.update { it + (chatId.toHexString() to 0) }
-            loadMessages(chatId)
-        } else {
-            activeChatId = null
-        }
-    }
 
     fun setActiveContact(chatId: ByteArray?) {
         _activeContactIdFlow.value = chatId
         if (chatId != null) {
-            _activeChatIdFlow.value = null
-            activeChatId = null
+            models.chats.clearActiveChat()
+            models.chats.clearActiveChat()
         }
     }
 
@@ -1752,21 +1387,7 @@ class RatatoskViewModel private constructor(
         }
     }
 
-    fun getRetractionNotice(): String {
-        return try {
-            retractionNotice()
-        } catch (e: Exception) {
-            "This message will be deleted for everyone."
-        }
-    }
 
-    fun getWaitingNotice(): String {
-        return try {
-            waitingNotice()
-        } catch (e: Exception) {
-            "Waiting for peer to come online..."
-        }
-    }
 
     private var isAnnouncingTor = false
 
@@ -1774,17 +1395,15 @@ class RatatoskViewModel private constructor(
         when (event) {
             is FfiEvent.MessageReceived -> {
                 loadMessages(event.chatId)
-                if (activeChatId != event.chatId.toHexString()) {
-                    _unreadCounts.update { it + (event.chatId.toHexString() to (it[event.chatId.toHexString()] ?: 0) + 1) }
+                if (models.chats.activeChatIdHex != event.chatId.toHexString()) {
+                    models.chats.bumpUnread(event.chatId.toHexString())
                 }
             }
             is FfiEvent.StatusChanged -> {
                 val hex = event.msgId.toHexString()
-                _messageStatuses.update { it + (hex to event.status) }
+                models.chats.onStatusChanged(hex, event.status)
                 
-                val targetChatHex = _messages.value.entries.find { entry ->
-                    entry.value.any { it.msgId.contentEquals(event.msgId) }
-                }?.key ?: activeChatId
+                val targetChatHex = models.chats.chatIdHexOf(event.msgId) ?: models.chats.activeChatIdHex
 
                 if (targetChatHex != null) {
                     loadMessages(targetChatHex.hexToByteArray())
@@ -1830,7 +1449,7 @@ class RatatoskViewModel private constructor(
                 // числа: само сообщение остаётся, текст к отвергнутой
                 // картинке никуда не делся. Список сообщений об этом
                 // не знает, поэтому перечитываем открытый чат.
-                activeChatId?.let { loadMessages(it.hexToByteArray()) }
+                models.chats.activeChatIdHex?.let { loadMessages(it.hexToByteArray()) }
             }
             is FfiEvent.FileSending -> {
                 // «Отдано транспорту», а не «доставлено»: говорить про
@@ -1869,7 +1488,7 @@ class RatatoskViewModel private constructor(
                     //
                     // Условие `received == total` нарочно без `total > 0`:
                     // у пустого файла оба нуля, и это тоже завершение.
-                    activeChatId?.let { loadMessages(it.hexToByteArray()) }
+                    models.chats.activeChatIdHex?.let { loadMessages(it.hexToByteArray()) }
                 }
             }
             is FfiEvent.TorStatus -> {

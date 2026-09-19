@@ -33,17 +33,27 @@ class AppModels(application: Application) {
     /** Перечитать контакты и группы; ставит `RatatoskViewModel`. */
     var onContactsChanged: () -> Unit = {}
 
-    /** Историю чата и карточку человека держит `RatatoskViewModel` — пока. */
-    var onLoadMessages: (ByteArray) -> Unit = {}
+    /** Карточку человека открывает `RatatoskViewModel` — пока. */
     var onOpenContact: (ByteArray) -> Unit = {}
 
     val groups: GroupsModel = GroupsModel(session) { onContactsChanged() }
-    val files: FilesModel = FilesModel(session) { onLoadMessages(it) }
+    /** Превью исходящей картинки; ставит `RatatoskViewModel`. */
+    var onPreviewFor: (java.io.File) -> ByteArray? = { null }
+
+    /** Карточку человека закрывает `RatatoskViewModel` — она ещё у него. */
+    var onChatOpened: () -> Unit = {}
+
+    val chats: ChatsModel = ChatsModel(
+        session = session,
+        previewFor = { onPreviewFor(it) },
+        onChatOpened = { onChatOpened() },
+    )
+    val files: FilesModel = FilesModel(session) { chats.loadMessages(it) }
 
     val contacts: ContactsModel = ContactsModel(
         session = session,
         groups = groups,
-        loadMessages = { onLoadMessages(it) },
+        loadMessages = { chats.loadMessages(it) },
         openContact = { onOpenContact(it) },
     )
 
