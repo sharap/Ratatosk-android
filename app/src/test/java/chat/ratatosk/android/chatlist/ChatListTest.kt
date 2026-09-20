@@ -43,6 +43,8 @@ class ChatListTest {
         mine = false,
         joined = joined,
         avatarMs = 0UL,
+        freeSlots = 8u,
+        channel = null,
     )
 
     private fun message(wallMs: ULong) = FfiMessage(

@@ -769,6 +769,10 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
         uniffiCheckApiChecksums(this)
     }
+    external fun uniffi_ratatosk_ffi_checksum_func_admitter_grant_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_channel_refusal_text(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_chunk_bytes(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_default_auto_accept_bytes(
@@ -794,6 +798,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_func_honest_notices(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_import_archive(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_key_rotation_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_lan_warning(
     ): Int
@@ -829,15 +835,23 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_nostr_warning(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_open_channel_notice(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_owner_leave_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_peek_archive(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_private_channel_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_quote_unavailable_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_retraction_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_revocation_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_seeding_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_sharing_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_waiting_notice(
     ): Int
@@ -887,6 +901,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_add_shared_contact(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_admit_to_channel(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_announce_addresses(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_auto_accept_bytes(
@@ -895,6 +911,16 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_bluetooth(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_channel_admits(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_channel_grants(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_channel_link(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_channel_requests(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_channel_seeds(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_chat_id_for(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_clear_chat(
@@ -902,6 +928,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_clear_mail_account(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_contacts(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_channel(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_group(
     ): Int
@@ -985,7 +1013,13 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_revoke_verification(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_rotate_channel_key(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_search(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_seeding(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_seeding_mode(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_send_files(
     ): Int
@@ -994,6 +1028,10 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_auto_accept_bytes(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_avatar(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_channel_pow(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_channel_right(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground(
     ): Int
@@ -1011,6 +1049,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_reaction(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_seeding(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_transport_enabled(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_key(
@@ -1021,6 +1061,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_share_contact(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_subscribe_to_channel(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_sweep_orphan_files(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_tor_status(
@@ -1028,6 +1070,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_transport_enabled(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_transport_ready(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_unsubscribe_from_channel(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_key(
     ): Int
@@ -1230,6 +1274,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_add_shared_contact(`ptr`: Long,`msgId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_admit_to_channel(`ptr`: Long,`chatId`: RustBuffer.ByValue,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_announce_addresses(`ptr`: Long,`onion`: RustBuffer.ByValue,`chatmail`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_auto_accept_bytes(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1238,6 +1284,16 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_bluetooth(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_channel_admits(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_channel_grants(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_channel_link(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_channel_requests(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_channel_seeds(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_chat_id_for(`ptr`: Long,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_clear_chat(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1246,6 +1302,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_contacts(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_channel(`ptr`: Long,`title`: RustBuffer.ByValue,`open`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_group(`ptr`: Long,`title`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_mail_account(`ptr`: Long,`url`: RustBuffer.ByValue,`viaTor`: Byte,uniffi_out_err: UniffiRustCallStatus, 
@@ -1328,7 +1386,13 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_revoke_verification(`ptr`: Long,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_rotate_channel_key(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_search(`ptr`: Long,`chatId`: RustBuffer.ByValue,`query`: RustBuffer.ByValue,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_seeding(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_seeding_mode(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_send_files(`ptr`: Long,`chatId`: RustBuffer.ByValue,`files`: RustBuffer.ByValue,`text`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1337,6 +1401,10 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_auto_accept_bytes(`ptr`: Long,`limit`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_avatar(`ptr`: Long,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_channel_pow(`ptr`: Long,`chatId`: RustBuffer.ByValue,`bits`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_channel_right(`ptr`: Long,`chatId`: RustBuffer.ByValue,`who`: RustBuffer.ByValue,`rights`: RustBuffer.ByValue,`untilMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_foreground(`ptr`: Long,`front`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1354,6 +1422,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_reaction(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgId`: RustBuffer.ByValue,`emoji`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_seeding(`ptr`: Long,`chatId`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_transport_enabled(`ptr`: Long,`transport`: RustBuffer.ByValue,`enabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_key(`ptr`: Long,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1364,6 +1434,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_share_contact(`ptr`: Long,`chatId`: RustBuffer.ByValue,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_subscribe_to_channel(`ptr`: Long,`uri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_sweep_orphan_files(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_tor_status(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1372,6 +1444,8 @@ internal object UniffiLib {
     ): Byte
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_transport_ready(`ptr`: Long,`transport`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_unsubscribe_from_channel(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_key(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_mode(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1508,6 +1582,10 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_share_contact(`ptr`: Long,`chatId`: RustBuffer.ByValue,`whoChatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_func_admitter_grant_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_channel_refusal_text(`reason`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_chunk_bytes(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     external fun uniffi_ratatosk_ffi_fn_func_default_auto_accept_bytes(uniffi_out_err: UniffiRustCallStatus, 
@@ -1533,6 +1611,8 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_func_honest_notices(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_import_archive(`archive`: RustBuffer.ByValue,`unlock`: RustBuffer.ByValue,`destination`: RustBuffer.ByValue,`filesDir`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_key_rotation_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_lan_warning(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1568,15 +1648,23 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_nostr_warning(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_open_channel_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_owner_leave_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_peek_archive(`archive`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_private_channel_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_quote_unavailable_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_retraction_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_revocation_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_seeding_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_sharing_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_waiting_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1707,6 +1795,12 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
 }
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
+    if (lib.uniffi_ratatosk_ffi_checksum_func_admitter_grant_notice() != 8868) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_channel_refusal_text() != 26785) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_chunk_bytes() != 36065) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -1744,6 +1838,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_import_archive() != 18200) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_key_rotation_notice() != 10185) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_lan_warning() != 33547) {
@@ -1797,10 +1894,16 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_nostr_warning() != 2261) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_open_channel_notice() != 14390) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_owner_leave_notice() != 58740) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_peek_archive() != 53342) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_private_channel_notice() != 22064) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_quote_unavailable_notice() != 20199) {
@@ -1810,6 +1913,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_revocation_notice() != 30367) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_seeding_notice() != 10400) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_sharing_notice() != 36491) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_waiting_notice() != 48657) {
@@ -1884,7 +1993,10 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_add_shared_contact() != 268) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_announce_addresses() != 14405) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_admit_to_channel() != 7443) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_announce_addresses() != 24272) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_auto_accept_bytes() != 45747) {
@@ -1894,6 +2006,21 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_bluetooth() != 57893) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_channel_admits() != 36715) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_channel_grants() != 29945) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_channel_link() != 6302) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_channel_requests() != 26763) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_channel_seeds() != 48823) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_chat_id_for() != 27868) {
@@ -1906,6 +2033,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_contacts() != 31413) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_channel() != 57050) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_group() != 15828) {
@@ -2031,7 +2161,16 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_revoke_verification() != 37291) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_rotate_channel_key() != 64148) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_search() != 4454) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_seeding() != 64224) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_seeding_mode() != 8791) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_send_files() != 64314) {
@@ -2044,6 +2183,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_avatar() != 63479) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_channel_pow() != 12332) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_channel_right() != 24987) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground() != 48471) {
@@ -2070,6 +2215,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_reaction() != 42931) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_seeding() != 56402) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_transport_enabled() != 64975) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2085,6 +2233,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_share_contact() != 14077) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_subscribe_to_channel() != 1675) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_sweep_orphan_files() != 48344) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2095,6 +2246,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_transport_ready() != 48477) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_unsubscribe_from_channel() != 30119) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_key() != 40206) {
@@ -2160,7 +2314,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_companionobserver_on_event() != 21474) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_accept_file() != 59625) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_accept_file() != 15464) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskcompanion_add_shared_contact() != 5336) {
@@ -5700,6 +5854,23 @@ public interface RatatoskClientInterface {
     fun `addSharedContact`(`msgId`: kotlin.ByteArray)
     
     /**
+     * Впускает человека в канал (фаза 2, §6.5, §10.4).
+     *
+     * Не то же, что пригласить в группу: впуск спрашивает право
+     * «впускать», отдаёт впущенному **поколение ключа чтения** и
+     * оставляет подписанную запись о себе. Поэтому
+     * [`RatatoskClient::invite_to_group`] в канале отказывает.
+     *
+     * Впускаемый обязан быть контактом: без карточки ему нечем
+     * запечатать ключ.
+     *
+     * **Впущенные остаются впущенными** после снятия права у того, кто
+     * впускал (§6.5). Сказать это надо при **назначении** права —
+     * [`admitter_grant_notice`], — а не при снятии.
+     */
+    fun `admitToChannel`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray)
+    
+    /**
      * Объявляет свои адреса контактам (§4.3).
      *
      * Зовётся, когда поднялся onion-сервис (§5.2) или завёлся почтовый ящик
@@ -5724,7 +5895,7 @@ public interface RatatoskClientInterface {
      * при каждом старте не только можно, но и нужно.
      *
      * **Версия карточки при этом растёт**, поэтому своя ссылка и QR
-     * меняются: клиенту стоит перечитать [`RatatoskClient::contact_uri`],
+     * меняются: клиенту стоит перечитать [`RatatoskClient::my_contact_uri`],
      * если он показывает их на экране.
      */
     fun `announceAddresses`(`onion`: kotlin.String?, `chatmail`: kotlin.String?)
@@ -5761,6 +5932,67 @@ public interface RatatoskClientInterface {
     fun `bluetooth`(): FfiBluetooth
     
     /**
+     * Кто кого впустил в канал — учёт владельца (фаза 2, §6.5).
+     *
+     * Показывает тех, кто действовал **по правилам**, и ничего не говорит
+     * про остальных: впускающий держит ключ и может передать его мимо
+     * протокола — следа не останется. Чинится это не записью, а поворотом
+     * ключа.
+     */
+    fun `channelAdmits`(`chatId`: kotlin.ByteArray): List<FfiChannelAdmit>
+    
+    /**
+     * Кому что выдано в канале (фаза 2, §6.2).
+     *
+     * Отдельным чтением, а не полем в [`FfiGroup`]: до шестидесяти
+     * четырёх строк с именами на канал, а список чатов читается
+     * на каждый показ экрана.
+     *
+     * Истёкшие выдачи остаются в списке до следующей версии документа
+     * и помечены `live = false`: снятие выражается отсутствием строки,
+     * а не надгробием (§6.2).
+     */
+    fun `channelGrants`(`chatId`: kotlin.ByteArray): List<FfiChannelGrant>
+    
+    /**
+     * Ссылка на канал — для QR и пересылки (фаза 2, §10.1, §10.2).
+     *
+     * **Собирает её тот, кто делится**, поэтому ссылки на один канал
+     * у двух людей — разные строки, и сравнивать их как строки нельзя
+     * нигде: тождество канала — это `chat_id`.
+     *
+     * **Перед показом обязателен [`sharing_notice`]** (§15): в ссылку
+     * попадает наш адрес, и всякий, к кому она попадёт дальше, узнает,
+     * что мы этот канал читаем.
+     *
+     * У открытого канала ссылка несёт **ключ чтения**. Сокращать её
+     * сторонним сервисом нельзя — ключ уедет сокращателю (§10.1).
+     */
+    fun `channelLink`(`chatId`: kotlin.ByteArray): kotlin.String
+    
+    /**
+     * Кто просится в канал (фаза 2, §10.4).
+     *
+     * Приходит владельцу и только ему. Заявка ложится на диск и ждёт:
+     * §10.4 прямо говорит «владелец офлайн — заявка ждёт», и ждать она
+     * может сутками.
+     *
+     * Отвеченная заявка исчезает сама: впуск и есть ответ.
+     */
+    fun `channelRequests`(`chatId`: kotlin.ByteArray): List<FfiChannelRequest>
+    
+    /**
+     * Кто раздаёт этот канал (фаза 2, §7.5).
+     *
+     * Протухшие записи не показываются: «перестал продлевать — выпал».
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    fun `channelSeeds`(`chatId`: kotlin.ByteArray): List<FfiChannelSeed>
+    
+    /**
      * Идентификатор чата 1:1 с контактом.
      */
     fun `chatIdFor`(`peerIk`: kotlin.ByteArray): kotlin.ByteArray
@@ -5786,6 +6018,30 @@ public interface RatatoskClientInterface {
      * Список контактов.
      */
     fun `contacts`(): List<FfiContact>
+    
+    /**
+     * Заводит канал (фаза 2, §6.1).
+     *
+     * Отдельной командой от [`RatatoskClient::create_group`], а не флагом
+     * у неё: порода задаётся при заведении и **не меняется** (§6.1),
+     * а флаг у общей команды допускал бы умолчание там, где умолчания
+     * быть не должно.
+     *
+     * **Перед заведением открытого канала обязателен
+     * [`open_channel_notice`]** (§15): ключ чтения уедет в ссылку,
+     * и закрыть доступ обратно нельзя никогда.
+     *
+     * **А [`private_channel_notice`] здесь показывать нечего** — он
+     * обращён к тому, кто **подписывается** («впустить вас должен
+     * владелец»), и место ему перед
+     * [`RatatoskClient::subscribe_to_channel`]. Текста «завожу канал
+     * по приглашению» в §15 нет, и придумывать его клиенту нельзя: §14
+     * держит тексты связанными со свойствами протокола.
+     *
+     * Идентификатор придёт событием [`FfiEvent::ChannelCreated`] —
+     * и только им: он случаен.
+     */
+    fun `createChannel`(`title`: kotlin.String, `open`: kotlin.Boolean)
     
     /**
      * Заводит группу (§11).
@@ -6331,6 +6587,22 @@ public interface RatatoskClientInterface {
     fun `revokeVerification`(`peerIk`: kotlin.ByteArray)
     
     /**
+     * Поворачивает ключ чтения канала (фаза 2, §6.4).
+     *
+     * **Перед вызовом обязателен [`key_rotation_notice`]** (§15): кнопка
+     * называется последствием — все, кого нет в составе, теряют доступ
+     * к будущему. Прочитанное они сохранят: поколения сосуществуют,
+     * и архив не теряется.
+     *
+     * Показывать кнопку стоит по [`FfiChannel::may_rotate`]: там уже
+     * учтены порода, право и нижний предел в неделю.
+     *
+     * Раз в месяц ядро поворачивает ключ **само** (§6.4); эта команда —
+     * «повернуть сейчас», то есть исключение читателя.
+     */
+    fun `rotateChannelKey`(`chatId`: kotlin.ByteArray)
+    
+    /**
      * Ищет сообщения по словам (§12). Новые первыми.
      *
      * `chat_id = None` — по всей переписке.
@@ -6350,6 +6622,24 @@ public interface RatatoskClientInterface {
      * ответ на «прив» он прочтёт как «ничего не нашлось».
      */
     fun `search`(`chatId`: kotlin.ByteArray?, `query`: kotlin.String, `limit`: kotlin.UInt): List<FfiMessage>
+    
+    /**
+     * Объявлен ли наш адрес в каталоге этого канала (фаза 2, §7.5.1).
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    fun `seeding`(`chatId`: kotlin.ByteArray): kotlin.Boolean
+    
+    /**
+     * Наше участие в раздаче этого канала (фаза 2, §7.5.1).
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    fun `seedingMode`(`chatId`: kotlin.ByteArray): FfiSeeding
     
     /**
      * Отправляет файлы одним сообщением — с подписью или без (§10).
@@ -6402,6 +6692,38 @@ public interface RatatoskClientInterface {
      * про эту возможность.
      */
     fun `setAvatar`(`bytes`: kotlin.ByteArray?)
+    
+    /**
+     * Назначает цену слова в канале (фаза 2, §11).
+     *
+     * Уезжает новой версией представления: подписчик обязан знать цену
+     * **до** того, как заплатит.
+     *
+     * PoW «поднимает пол против тривиального флуда; против видеокарты
+     * не работает, телефон наказывает всерьёз» (§11) — это фильтр
+     * первого уровня, а не защита, и обещать им больше нельзя.
+     * Слишком большое число отвергается сразу
+     * ([`FfiChannelRefusal::PowTooHard`]), а не превращает канал
+     * в непишущий для всех, у кого телефон.
+     */
+    fun `setChannelPow`(`chatId`: kotlin.ByteArray, `bits`: kotlin.UInt)
+    
+    /**
+     * Выдаёт или снимает право в канале (фаза 2, §6.2, §6.3).
+     *
+     * Одна команда на то и другое: снятие — это выдача с пустым набором,
+     * потому что список в новой версии представления **и есть** всё, что
+     * действует. Подписывает документ владелец, и только он: «раздача
+     * прав не делегируется никогда, иначе это совладение» (§6.2).
+     *
+     * **Срок обязателен.** Не продлил — истекло само (§6.3); право без
+     * срока означало бы отзыв, а отзыв в рое не работает. Продлевать
+     * стоит заранее: [`FfiChannel::grants_expiring`] считает выдачи,
+     * которым осталось меньше месяца.
+     *
+     * Перед выдачей права «впускать» обязателен [`admitter_grant_notice`].
+     */
+    fun `setChannelRight`(`chatId`: kotlin.ByteArray, `who`: kotlin.ByteArray, `rights`: FfiChannelRights, `untilMs`: kotlin.ULong)
     
     /**
      * Этот аккаунт вышел на экран или ушёл с него (§5.1).
@@ -6537,6 +6859,30 @@ public interface RatatoskClientInterface {
     fun `setReaction`(`chatId`: kotlin.ByteArray, `msgId`: kotlin.ByteArray, `emoji`: kotlin.String?)
     
     /**
+     * Раздавать ли этот канал и объявлять ли адрес (фаза 2, §7.5.1).
+     *
+     * Три состояния, а не переключатель: [`FfiSeeding::Off`],
+     * [`FfiSeeding::Quiet`] (умолчание) и [`FfiSeeding::Announced`].
+     * Тихая раздача — середина, ради которой §7.5.1 и написан: рой
+     * не зависит от того, нажмёт ли кто-нибудь кнопку, а адрес при этом
+     * не раскрывается.
+     *
+     * **Перед `Announced` клиент обязан показать [`seeding_notice`]**:
+     * объявленный адрес узнаёт каждый читатель канала, и отказ гасит
+     * объявление не сразу.
+     *
+     * **`Off` — это выключатель раздачи (§9.2), а не отписка.** Канал
+     * продолжает читаться; перестаём мы только отдавать — и отдавать
+     * сразу, включая тех, кто привязался раньше.
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Channel`] — это не канал, или объявлять нечего:
+     * своих адресов нет вовсе.
+     */
+    fun `setSeeding`(`chatId`: kotlin.ByteArray, `mode`: FfiSeeding)
+    
+    /**
      * Включает или выключает транспорт (§5.4).
      *
      * Одна ручка на все транспорты: их станет больше, и по ручке на каждый
@@ -6634,6 +6980,40 @@ public interface RatatoskClientInterface {
     fun `shareContact`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray)
     
     /**
+     * Подписывается на канал по ссылке (фаза 2, §10.3, §10.4).
+     *
+     * **Перед вызовом обязателен текст породы** — [`open_channel_notice`]
+     * либо [`private_channel_notice`] (§15), по тому, что обещает ссылка:
+     * ключ в ней есть у открытого канала и нет у канала по приглашению.
+     * Оба обращены к подписывающемуся и говорят ему разное: там — что
+     * ключ раздаётся дальше вместе со ссылкой, здесь — что до впуска
+     * владельцем канал не откроется.
+     *
+     * **Предпросмотр не бесплатен, и сказать это надо до вызова**
+     * (§10.3): чтобы достать представление, мы соединимся с владельцем
+     * или сидом, и он узнает, что кто-то интересуется каналом, даже
+     * если человек потом откажется.
+     *
+     * Достать представление ядро пока не умеет — это работа транспорта,
+     * — поэтому сразу после подписки у канала **нет названия**: оно
+     * внутри документа. Честная строка в списке чатов — «канал, ссылку
+     * прислал X», и рисует её клиент.
+     *
+     * У канала по приглашению событие придёт с `awaiting = true`:
+     * впустить должен владелец, и до впуска читать будет нечего.
+     *
+     * **Заявка едет обычной очередью §5.4 и вправе ждать.** Ссылка везёт
+     * onion, почту, меш, ключ nostr и реле (§10.2), но не адрес
+     * в локальной сети —
+     * он меняется при каждом подключении. Если в ссылке адресов нет
+     * вовсе, до владельца дотянутся только через эфир, и заявка полежит
+     * в очереди, пока его не станет слышно. Клиенту стоит сказать это
+     * словами: «ждём впуска» без объяснения выглядит обещанием, которого
+     * никто не давал (§14).
+     */
+    fun `subscribeToChannel`(`uri`: kotlin.String)
+    
+    /**
      * Стирает с диска вложения, которых нет в базе (§12).
      *
      * Байты вложений лежат не в базе, а в каталоге рядом с ней, и разойтись
@@ -6674,6 +7054,22 @@ public interface RatatoskClientInterface {
      * «Поднимается» — правда, «не работает» — нет.
      */
     fun `transportReady`(`transport`: FfiTransport): kotlin.Boolean
+    
+    /**
+     * Отписывается от канала (фаза 2, §10.6).
+     *
+     * **Отписка стирает ключи чтения, а с ними и архив.** Вернувшись
+     * по той же ссылке, человек прочтёт только то, что приедет заново:
+     * прежние поколения ключа хранятся у читателя и больше нигде.
+     * Сказать это надо **до** вызова — после будет поздно.
+     *
+     * В открытом канале владелец ничего не узнает: он и о подписке
+     * не знал. У канала по приглашению уедет блок ухода.
+     *
+     * От своего канала отписаться нельзя — придёт
+     * [`FfiChannelRefusal::OwnChannel`].
+     */
+    fun `unsubscribeFromChannel`(`chatId`: kotlin.ByteArray)
     
     /**
      * Ключ нашего узла в меше, если он назван (0.2). Пусто — меша нет.
@@ -6915,6 +7311,36 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Впускает человека в канал (фаза 2, §6.5, §10.4).
+     *
+     * Не то же, что пригласить в группу: впуск спрашивает право
+     * «впускать», отдаёт впущенному **поколение ключа чтения** и
+     * оставляет подписанную запись о себе. Поэтому
+     * [`RatatoskClient::invite_to_group`] в канале отказывает.
+     *
+     * Впускаемый обязан быть контактом: без карточки ему нечем
+     * запечатать ключ.
+     *
+     * **Впущенные остаются впущенными** после снятия права у того, кто
+     * впускал (§6.5). Сказать это надо при **назначении** права —
+     * [`admitter_grant_notice`], — а не при снятии.
+     */
+    @Throws(RatatoskException::class)override fun `admitToChannel`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_admit_to_channel(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterByteArray.lower(`peerIk`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Объявляет свои адреса контактам (§4.3).
      *
      * Зовётся, когда поднялся onion-сервис (§5.2) или завёлся почтовый ящик
@@ -6939,7 +7365,7 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
      * при каждом старте не только можно, но и нужно.
      *
      * **Версия карточки при этом растёт**, поэтому своя ссылка и QR
-     * меняются: клиенту стоит перечитать [`RatatoskClient::contact_uri`],
+     * меняются: клиенту стоит перечитать [`RatatoskClient::my_contact_uri`],
      * если он показывает их на экране.
      */
     @Throws(RatatoskException::class)override fun `announceAddresses`(`onion`: kotlin.String?, `chatmail`: kotlin.String?)
@@ -7025,6 +7451,132 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Кто кого впустил в канал — учёт владельца (фаза 2, §6.5).
+     *
+     * Показывает тех, кто действовал **по правилам**, и ничего не говорит
+     * про остальных: впускающий держит ключ и может передать его мимо
+     * протокола — следа не останется. Чинится это не записью, а поворотом
+     * ключа.
+     */
+    @Throws(RatatoskException::class)override fun `channelAdmits`(`chatId`: kotlin.ByteArray): List<FfiChannelAdmit> {
+            return FfiConverterSequenceTypeFfiChannelAdmit.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_channel_admits(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Кому что выдано в канале (фаза 2, §6.2).
+     *
+     * Отдельным чтением, а не полем в [`FfiGroup`]: до шестидесяти
+     * четырёх строк с именами на канал, а список чатов читается
+     * на каждый показ экрана.
+     *
+     * Истёкшие выдачи остаются в списке до следующей версии документа
+     * и помечены `live = false`: снятие выражается отсутствием строки,
+     * а не надгробием (§6.2).
+     */
+    @Throws(RatatoskException::class)override fun `channelGrants`(`chatId`: kotlin.ByteArray): List<FfiChannelGrant> {
+            return FfiConverterSequenceTypeFfiChannelGrant.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_channel_grants(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Ссылка на канал — для QR и пересылки (фаза 2, §10.1, §10.2).
+     *
+     * **Собирает её тот, кто делится**, поэтому ссылки на один канал
+     * у двух людей — разные строки, и сравнивать их как строки нельзя
+     * нигде: тождество канала — это `chat_id`.
+     *
+     * **Перед показом обязателен [`sharing_notice`]** (§15): в ссылку
+     * попадает наш адрес, и всякий, к кому она попадёт дальше, узнает,
+     * что мы этот канал читаем.
+     *
+     * У открытого канала ссылка несёт **ключ чтения**. Сокращать её
+     * сторонним сервисом нельзя — ключ уедет сокращателю (§10.1).
+     */
+    @Throws(RatatoskException::class)override fun `channelLink`(`chatId`: kotlin.ByteArray): kotlin.String {
+            return FfiConverterString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_channel_link(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Кто просится в канал (фаза 2, §10.4).
+     *
+     * Приходит владельцу и только ему. Заявка ложится на диск и ждёт:
+     * §10.4 прямо говорит «владелец офлайн — заявка ждёт», и ждать она
+     * может сутками.
+     *
+     * Отвеченная заявка исчезает сама: впуск и есть ответ.
+     */
+    @Throws(RatatoskException::class)override fun `channelRequests`(`chatId`: kotlin.ByteArray): List<FfiChannelRequest> {
+            return FfiConverterSequenceTypeFfiChannelRequest.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_channel_requests(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Кто раздаёт этот канал (фаза 2, §7.5).
+     *
+     * Протухшие записи не показываются: «перестал продлевать — выпал».
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    @Throws(RatatoskException::class)override fun `channelSeeds`(`chatId`: kotlin.ByteArray): List<FfiChannelSeed> {
+            return FfiConverterSequenceTypeFfiChannelSeed.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_channel_seeds(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Идентификатор чата 1:1 с контактом.
      */
     @Throws(RatatoskException::class)override fun `chatIdFor`(`peerIk`: kotlin.ByteArray): kotlin.ByteArray {
@@ -7096,6 +7648,43 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
     }
     )
     }
+    
+
+    
+    /**
+     * Заводит канал (фаза 2, §6.1).
+     *
+     * Отдельной командой от [`RatatoskClient::create_group`], а не флагом
+     * у неё: порода задаётся при заведении и **не меняется** (§6.1),
+     * а флаг у общей команды допускал бы умолчание там, где умолчания
+     * быть не должно.
+     *
+     * **Перед заведением открытого канала обязателен
+     * [`open_channel_notice`]** (§15): ключ чтения уедет в ссылку,
+     * и закрыть доступ обратно нельзя никогда.
+     *
+     * **А [`private_channel_notice`] здесь показывать нечего** — он
+     * обращён к тому, кто **подписывается** («впустить вас должен
+     * владелец»), и место ему перед
+     * [`RatatoskClient::subscribe_to_channel`]. Текста «завожу канал
+     * по приглашению» в §15 нет, и придумывать его клиенту нельзя: §14
+     * держит тексты связанными со свойствами протокола.
+     *
+     * Идентификатор придёт событием [`FfiEvent::ChannelCreated`] —
+     * и только им: он случаен.
+     */
+    @Throws(RatatoskException::class)override fun `createChannel`(`title`: kotlin.String, `open`: kotlin.Boolean)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_channel(
+        it,
+        
+        FfiConverterString.lower(`title`),
+        FfiConverterBoolean.lower(`open`),_status)
+}
+    }
+    
     
 
     
@@ -8160,6 +8749,34 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Поворачивает ключ чтения канала (фаза 2, §6.4).
+     *
+     * **Перед вызовом обязателен [`key_rotation_notice`]** (§15): кнопка
+     * называется последствием — все, кого нет в составе, теряют доступ
+     * к будущему. Прочитанное они сохранят: поколения сосуществуют,
+     * и архив не теряется.
+     *
+     * Показывать кнопку стоит по [`FfiChannel::may_rotate`]: там уже
+     * учтены порода, право и нижний предел в неделю.
+     *
+     * Раз в месяц ядро поворачивает ключ **само** (§6.4); эта команда —
+     * «повернуть сейчас», то есть исключение читателя.
+     */
+    @Throws(RatatoskException::class)override fun `rotateChannelKey`(`chatId`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_rotate_channel_key(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Ищет сообщения по словам (§12). Новые первыми.
      *
      * `chat_id = None` — по всей переписке.
@@ -8188,6 +8805,50 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         FfiConverterOptionalByteArray.lower(`chatId`),
         FfiConverterString.lower(`query`),
         FfiConverterUInt.lower(`limit`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Объявлен ли наш адрес в каталоге этого канала (фаза 2, §7.5.1).
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    @Throws(RatatoskException::class)override fun `seeding`(`chatId`: kotlin.ByteArray): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_seeding(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Наше участие в раздаче этого канала (фаза 2, §7.5.1).
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    @Throws(RatatoskException::class)override fun `seedingMode`(`chatId`: kotlin.ByteArray): FfiSeeding {
+            return FfiConverterTypeFfiSeeding.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_seeding_mode(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
 }
     }
     )
@@ -8292,6 +8953,66 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         it,
         
         FfiConverterOptionalByteArray.lower(`bytes`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Назначает цену слова в канале (фаза 2, §11).
+     *
+     * Уезжает новой версией представления: подписчик обязан знать цену
+     * **до** того, как заплатит.
+     *
+     * PoW «поднимает пол против тривиального флуда; против видеокарты
+     * не работает, телефон наказывает всерьёз» (§11) — это фильтр
+     * первого уровня, а не защита, и обещать им больше нельзя.
+     * Слишком большое число отвергается сразу
+     * ([`FfiChannelRefusal::PowTooHard`]), а не превращает канал
+     * в непишущий для всех, у кого телефон.
+     */
+    @Throws(RatatoskException::class)override fun `setChannelPow`(`chatId`: kotlin.ByteArray, `bits`: kotlin.UInt)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_channel_pow(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterUInt.lower(`bits`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Выдаёт или снимает право в канале (фаза 2, §6.2, §6.3).
+     *
+     * Одна команда на то и другое: снятие — это выдача с пустым набором,
+     * потому что список в новой версии представления **и есть** всё, что
+     * действует. Подписывает документ владелец, и только он: «раздача
+     * прав не делегируется никогда, иначе это совладение» (§6.2).
+     *
+     * **Срок обязателен.** Не продлил — истекло само (§6.3); право без
+     * срока означало бы отзыв, а отзыв в рое не работает. Продлевать
+     * стоит заранее: [`FfiChannel::grants_expiring`] считает выдачи,
+     * которым осталось меньше месяца.
+     *
+     * Перед выдачей права «впускать» обязателен [`admitter_grant_notice`].
+     */
+    @Throws(RatatoskException::class)override fun `setChannelRight`(`chatId`: kotlin.ByteArray, `who`: kotlin.ByteArray, `rights`: FfiChannelRights, `untilMs`: kotlin.ULong)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_channel_right(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterByteArray.lower(`who`),
+        FfiConverterTypeFfiChannelRights.lower(`rights`),
+        FfiConverterULong.lower(`untilMs`),_status)
 }
     }
     
@@ -8537,6 +9258,43 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Раздавать ли этот канал и объявлять ли адрес (фаза 2, §7.5.1).
+     *
+     * Три состояния, а не переключатель: [`FfiSeeding::Off`],
+     * [`FfiSeeding::Quiet`] (умолчание) и [`FfiSeeding::Announced`].
+     * Тихая раздача — середина, ради которой §7.5.1 и написан: рой
+     * не зависит от того, нажмёт ли кто-нибудь кнопку, а адрес при этом
+     * не раскрывается.
+     *
+     * **Перед `Announced` клиент обязан показать [`seeding_notice`]**:
+     * объявленный адрес узнаёт каждый читатель канала, и отказ гасит
+     * объявление не сразу.
+     *
+     * **`Off` — это выключатель раздачи (§9.2), а не отписка.** Канал
+     * продолжает читаться; перестаём мы только отдавать — и отдавать
+     * сразу, включая тех, кто привязался раньше.
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Channel`] — это не канал, или объявлять нечего:
+     * своих адресов нет вовсе.
+     */
+    @Throws(RatatoskException::class)override fun `setSeeding`(`chatId`: kotlin.ByteArray, `mode`: FfiSeeding)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_seeding(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterTypeFfiSeeding.lower(`mode`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Включает или выключает транспорт (§5.4).
      *
      * Одна ручка на все транспорты: их станет больше, и по ручке на каждый
@@ -8696,6 +9454,52 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Подписывается на канал по ссылке (фаза 2, §10.3, §10.4).
+     *
+     * **Перед вызовом обязателен текст породы** — [`open_channel_notice`]
+     * либо [`private_channel_notice`] (§15), по тому, что обещает ссылка:
+     * ключ в ней есть у открытого канала и нет у канала по приглашению.
+     * Оба обращены к подписывающемуся и говорят ему разное: там — что
+     * ключ раздаётся дальше вместе со ссылкой, здесь — что до впуска
+     * владельцем канал не откроется.
+     *
+     * **Предпросмотр не бесплатен, и сказать это надо до вызова**
+     * (§10.3): чтобы достать представление, мы соединимся с владельцем
+     * или сидом, и он узнает, что кто-то интересуется каналом, даже
+     * если человек потом откажется.
+     *
+     * Достать представление ядро пока не умеет — это работа транспорта,
+     * — поэтому сразу после подписки у канала **нет названия**: оно
+     * внутри документа. Честная строка в списке чатов — «канал, ссылку
+     * прислал X», и рисует её клиент.
+     *
+     * У канала по приглашению событие придёт с `awaiting = true`:
+     * впустить должен владелец, и до впуска читать будет нечего.
+     *
+     * **Заявка едет обычной очередью §5.4 и вправе ждать.** Ссылка везёт
+     * onion, почту, меш, ключ nostr и реле (§10.2), но не адрес
+     * в локальной сети —
+     * он меняется при каждом подключении. Если в ссылке адресов нет
+     * вовсе, до владельца дотянутся только через эфир, и заявка полежит
+     * в очереди, пока его не станет слышно. Клиенту стоит сказать это
+     * словами: «ждём впуска» без объяснения выглядит обещанием, которого
+     * никто не давал (§14).
+     */
+    @Throws(RatatoskException::class)override fun `subscribeToChannel`(`uri`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_subscribe_to_channel(
+        it,
+        
+        FfiConverterString.lower(`uri`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Стирает с диска вложения, которых нет в базе (§12).
      *
      * Байты вложений лежат не в базе, а в каталоге рядом с ней, и разойтись
@@ -8784,6 +9588,34 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
     }
     )
     }
+    
+
+    
+    /**
+     * Отписывается от канала (фаза 2, §10.6).
+     *
+     * **Отписка стирает ключи чтения, а с ними и архив.** Вернувшись
+     * по той же ссылке, человек прочтёт только то, что приедет заново:
+     * прежние поколения ключа хранятся у читателя и больше нигде.
+     * Сказать это надо **до** вызова — после будет поздно.
+     *
+     * В открытом канале владелец ничего не узнает: он и о подписке
+     * не знал. У канала по приглашению уедет блок ухода.
+     *
+     * От своего канала отписаться нельзя — придёт
+     * [`FfiChannelRefusal::OwnChannel`].
+     */
+    @Throws(RatatoskException::class)override fun `unsubscribeFromChannel`(`chatId`: kotlin.ByteArray)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_unsubscribe_from_channel(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    
     
 
     
@@ -9085,7 +9917,7 @@ public interface RatatoskCompanionInterface {
      *
      * Порядок обязателен и его надо объяснять человеку: сперва телефон
      * забирает файл у собеседника, и только потом
-     * [`RatatoskCompanion::save_file`] переносит его сюда. До `accept_file`
+     * [`crate::companion::RatatoskCompanion::save_file`] переносит его сюда. До `accept_file`
      * забирать нечего.
      *
      * # Errors
@@ -9713,7 +10545,7 @@ open class RatatoskCompanion: Disposable, AutoCloseable, RatatoskCompanionInterf
      *
      * Порядок обязателен и его надо объяснять человеку: сперва телефон
      * забирает файл у собеседника, и только потом
-     * [`RatatoskCompanion::save_file`] переносит его сюда. До `accept_file`
+     * [`crate::companion::RatatoskCompanion::save_file`] переносит его сюда. До `accept_file`
      * забирать нечего.
      *
      * # Errors
@@ -10952,10 +11784,562 @@ public object FfiConverterTypeFfiArchivePeek: FfiConverterRustBuffer<FfiArchiveP
 
 
 /**
+ * Что клиент знает о канале сверх того, что знает о группе (фаза 2).
+ *
+ * Плоская, как и всё здесь: правила §6 посчитаны ядром, наружу едет
+ * то, что рисуют.
+ */
+data class FfiChannel (
+    /**
+     * Принятая версия представления. `0` — документа ещё нет.
+     *
+     * Ноль обычен и законен: по ссылке чат заводится сразу, а документ
+     * едет отдельно и вправе опоздать (§10.3). Рисовать тогда нечего,
+     * кроме ожидания, — названия у канала в этот момент тоже нет.
+     */
+    val `version`: kotlin.ULong
+    , 
+    /**
+     * Порода (§6.1): `true` — открытый, `false` — по приглашению.
+     *
+     * `null` — документа нет, и **обещание ссылки сюда не едет
+     * нарочно**: ссылка ничем не подписана (§10.2). Показать обещанное
+     * установленным значило бы сказать «открытый канал» там, где
+     * владелец обещал другое.
+     */
+    val `open`: kotlin.Boolean?
+    , 
+    /**
+     * Владелец: чья подпись здесь действительна (§10.3, шаг 3).
+     */
+    val `ownerIk`: kotlin.ByteArray
+    , 
+    /**
+     * Что вправе делать **мы** прямо сейчас (§6.2, §6.3).
+     *
+     * Считается с учётом срока и правила «владельцу всё» — тем же
+     * местом, каким права спрашивает отправка. Поле ввода стоит гасить
+     * по `rights.write`, а не по составу: в канале состоять и мочь
+     * говорить — разные вещи.
+     */
+    val `rights`: FfiChannelRights
+    , 
+    /**
+     * До какого момента действует наша выдача, мс. `0` — срока нет:
+     * мы владелец либо прав нам не давали.
+     *
+     * Показывать стоит заранее: §6.3 обещает, что отказ не наступает
+     * внезапно.
+     */
+    val `rightsUntilMs`: kotlin.ULong
+    , 
+    /**
+     * Сколько бит работы стоит слово (§11). `0` — работа не требуется.
+     *
+     * Цену назначает владелец, и отказ [`FfiChannelRefusal::PowTooHard`]
+     * приходит **до** отправки, а не после.
+     */
+    val `powBits`: kotlin.UInt
+    , 
+    /**
+     * Ждём впуска владельцем (§10.4, §10.5).
+     *
+     * Показывать надо именно ожидание, а не пустой чат: §10.5 требует
+     * различать «заявка отправлена» и «впустили» — и после перезапуска
+     * тоже.
+     */
+    val `awaiting`: kotlin.Boolean
+    , 
+    /**
+     * Есть ли чем читать: хоть одно поколение ключа чтения (§6.4).
+     *
+     * `false` означает, что сообщения приедут и не откроются. Рисовать
+     * тогда надо ожидание, а не пустую ленту.
+     */
+    val `readable`: kotlin.Boolean
+    , 
+    /**
+     * Номер новейшего известного нам поколения ключа (§6.4).
+     */
+    val `generation`: kotlin.ULong
+    , 
+    /**
+     * Показывать ли кнопку «повернуть ключ» (§6.4).
+     *
+     * Считает ядро по трём правилам разом: порода, право «исключать»
+     * и нижний предел в неделю. Отдаётся затем же, зачем
+     * [`FfiGroup::free_slots`], — чтобы отказ не понадобился.
+     */
+    val `mayRotate`: kotlin.Boolean
+    , 
+    /**
+     * Сколько миллисекунд от владельца ничего не приходило (§6.3).
+     *
+     * `null` — не приходило ни разу; это не «давно», а «считать ещё
+     * нечего»: у свежей подписки владелец просто не успел ничего
+     * сказать. У своего канала тоже `null`.
+     *
+     * **Утверждение — «от владельца ничего не приходило», а не
+     * «владелец не выходил на связь».** §6.3 выводит метку из записи
+     * пира со сроком годности, а каталога пиров в ядре нет; здесь
+     * считается наш приём. Текст обязан говорить именно это.
+     */
+    val `ownerQuietMs`: kotlin.ULong?
+    , 
+    /**
+     * Молчание перешло порог §6.3 (два месяца).
+     *
+     * Порог задан спекой и живёт в ядре: вычитание дат на этой стороне
+     * границы означало бы второе место, где он записан.
+     */
+    val `ownerUnseen`: kotlin.Boolean
+    , 
+    /**
+     * Сколько наших выдач истекает меньше чем через месяц (§6.3).
+     *
+     * **Только у владельца**, у остальных `0`: продлевать чужое нечем,
+     * и число, которое не к чему применить, на экране только пугает.
+     * §6.3 велит продлевать заранее — иначе требование превращается
+     * в «зайти строго на третий месяц».
+     */
+    val `grantsExpiring`: kotlin.UInt
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiChannel: FfiConverterRustBuffer<FfiChannel> {
+    override fun read(buf: ByteBuffer): FfiChannel {
+        return FfiChannel(
+            FfiConverterULong.read(buf),
+            FfiConverterOptionalBoolean.read(buf),
+            FfiConverterByteArray.read(buf),
+            FfiConverterTypeFfiChannelRights.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterOptionalULong.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterUInt.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiChannel) = (
+            FfiConverterULong.allocationSize(value.`version`) +
+            FfiConverterOptionalBoolean.allocationSize(value.`open`) +
+            FfiConverterByteArray.allocationSize(value.`ownerIk`) +
+            FfiConverterTypeFfiChannelRights.allocationSize(value.`rights`) +
+            FfiConverterULong.allocationSize(value.`rightsUntilMs`) +
+            FfiConverterUInt.allocationSize(value.`powBits`) +
+            FfiConverterBoolean.allocationSize(value.`awaiting`) +
+            FfiConverterBoolean.allocationSize(value.`readable`) +
+            FfiConverterULong.allocationSize(value.`generation`) +
+            FfiConverterBoolean.allocationSize(value.`mayRotate`) +
+            FfiConverterOptionalULong.allocationSize(value.`ownerQuietMs`) +
+            FfiConverterBoolean.allocationSize(value.`ownerUnseen`) +
+            FfiConverterUInt.allocationSize(value.`grantsExpiring`)
+    )
+
+    override fun write(value: FfiChannel, buf: ByteBuffer) {
+            FfiConverterULong.write(value.`version`, buf)
+            FfiConverterOptionalBoolean.write(value.`open`, buf)
+            FfiConverterByteArray.write(value.`ownerIk`, buf)
+            FfiConverterTypeFfiChannelRights.write(value.`rights`, buf)
+            FfiConverterULong.write(value.`rightsUntilMs`, buf)
+            FfiConverterUInt.write(value.`powBits`, buf)
+            FfiConverterBoolean.write(value.`awaiting`, buf)
+            FfiConverterBoolean.write(value.`readable`, buf)
+            FfiConverterULong.write(value.`generation`, buf)
+            FfiConverterBoolean.write(value.`mayRotate`, buf)
+            FfiConverterOptionalULong.write(value.`ownerQuietMs`, buf)
+            FfiConverterBoolean.write(value.`ownerUnseen`, buf)
+            FfiConverterUInt.write(value.`grantsExpiring`, buf)
+    }
+}
+
+
+
+/**
+ * Запись о впуске — учёт владельца (фаза 2, §6.5).
+ *
+ * **Учёт, а не состав.** «Кто кого впустил» и «кто в канале» — разные
+ * вопросы с разными источниками. Впущенный мимо учёта здесь не виден
+ * вовсе: впускающий держит ключ и может передать его мимо протокола,
+ * и обещать обратное значило бы обещать невыполнимое (§6.5).
+ */
+data class FfiChannelAdmit (
+    /**
+     * Кого впустили.
+     */
+    val `who`: kotlin.ByteArray
+    , 
+    /**
+     * Как его назвать.
+     */
+    val `name`: kotlin.String
+    , 
+    /**
+     * Кто впустил.
+     */
+    val `admittedBy`: kotlin.ByteArray
+    , 
+    /**
+     * Как назвать впустившего.
+     */
+    val `admittedByName`: kotlin.String
+    , 
+    /**
+     * Какое поколение ключа чтения ему тогда отдали.
+     *
+     * Именно выданное, а не нынешнее: поворот случится, номера
+     * разойдутся, и запись останется утверждением о прошлом.
+     */
+    val `generation`: kotlin.ULong
+    , 
+    /**
+     * Когда запись легла к нам, мс.
+     */
+    val `createdMs`: kotlin.ULong
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiChannelAdmit: FfiConverterRustBuffer<FfiChannelAdmit> {
+    override fun read(buf: ByteBuffer): FfiChannelAdmit {
+        return FfiChannelAdmit(
+            FfiConverterByteArray.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterByteArray.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiChannelAdmit) = (
+            FfiConverterByteArray.allocationSize(value.`who`) +
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterByteArray.allocationSize(value.`admittedBy`) +
+            FfiConverterString.allocationSize(value.`admittedByName`) +
+            FfiConverterULong.allocationSize(value.`generation`) +
+            FfiConverterULong.allocationSize(value.`createdMs`)
+    )
+
+    override fun write(value: FfiChannelAdmit, buf: ByteBuffer) {
+            FfiConverterByteArray.write(value.`who`, buf)
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterByteArray.write(value.`admittedBy`, buf)
+            FfiConverterString.write(value.`admittedByName`, buf)
+            FfiConverterULong.write(value.`generation`, buf)
+            FfiConverterULong.write(value.`createdMs`, buf)
+    }
+}
+
+
+
+/**
+ * Выдача права, как её рисуют владельцу (фаза 2, §6.2, §6.3).
+ */
+data class FfiChannelGrant (
+    /**
+     * Кому выдано.
+     */
+    val `who`: kotlin.ByteArray
+    , 
+    /**
+     * Как его назвать. Пустым не бывает: у безымянного — начало отпечатка.
+     */
+    val `name`: kotlin.String
+    , 
+    /**
+     * Что выдано.
+     */
+    val `rights`: FfiChannelRights
+    , 
+    /**
+     * До какого момента, мс.
+     */
+    val `untilMs`: kotlin.ULong
+    , 
+    /**
+     * Действует ли прямо сейчас (§6.3).
+     *
+     * Истёкшая выдача остаётся в документе до следующей версии — снятие
+     * выражается отсутствием строки, а не надгробием, — и показывать её
+     * действующей нельзя.
+     */
+    val `live`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiChannelGrant: FfiConverterRustBuffer<FfiChannelGrant> {
+    override fun read(buf: ByteBuffer): FfiChannelGrant {
+        return FfiChannelGrant(
+            FfiConverterByteArray.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterTypeFfiChannelRights.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiChannelGrant) = (
+            FfiConverterByteArray.allocationSize(value.`who`) +
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterTypeFfiChannelRights.allocationSize(value.`rights`) +
+            FfiConverterULong.allocationSize(value.`untilMs`) +
+            FfiConverterBoolean.allocationSize(value.`live`)
+    )
+
+    override fun write(value: FfiChannelGrant, buf: ByteBuffer) {
+            FfiConverterByteArray.write(value.`who`, buf)
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterTypeFfiChannelRights.write(value.`rights`, buf)
+            FfiConverterULong.write(value.`untilMs`, buf)
+            FfiConverterBoolean.write(value.`live`, buf)
+    }
+}
+
+
+
+/**
+ * Заявка на подписку — то, что видит владелец (фаза 2, §10.4).
+ *
+ * Ответ на неё один — впуск ([`RatatoskClient::admit_to_channel`]).
+ * Отказа как сообщения не бывает: §10.4 знает только впуск, а молчание
+ * владельца и есть отказ. Рисовать поэтому надо список и кнопку
+ * «впустить», а не пару «принять/отклонить»: вторая обещала бы
+ * просящему ответ, которого он не получит.
+ */
+data class FfiChannelRequest (
+    /**
+     * Кто просится.
+     */
+    val `who`: kotlin.ByteArray
+    , 
+    /**
+     * Как его назвать. Карточка приехала рукопожатием (§8.2), и он
+     * **непроверенный контакт**, как всякий, кто написал первым.
+     */
+    val `name`: kotlin.String
+    , 
+    /**
+     * Когда попросил впервые, мс. Повтор заявки время не двигает:
+     * §10.5 меряет ожидание от первой просьбы.
+     */
+    val `receivedMs`: kotlin.ULong
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiChannelRequest: FfiConverterRustBuffer<FfiChannelRequest> {
+    override fun read(buf: ByteBuffer): FfiChannelRequest {
+        return FfiChannelRequest(
+            FfiConverterByteArray.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterULong.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiChannelRequest) = (
+            FfiConverterByteArray.allocationSize(value.`who`) +
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterULong.allocationSize(value.`receivedMs`)
+    )
+
+    override fun write(value: FfiChannelRequest, buf: ByteBuffer) {
+            FfiConverterByteArray.write(value.`who`, buf)
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterULong.write(value.`receivedMs`, buf)
+    }
+}
+
+
+
+/**
+ * Права в канале, как их рисуют (фаза 2, §6.2).
+ *
+ * Четыре булевых вместо битовой маски: маска на границе §13.3 означала бы,
+ * что клиент знает номера битов, то есть кусок протокола. Порядок полей —
+ * порядок §6.2.
+ *
+ * **Незнакомое право сюда не попадает.** Биты, выданные сборкой новее
+ * нашей, переживают чтение и запись документа (`channel::Rights`), но
+ * показать их нечем: слова для них у нас нет. Выдавая права этой
+ * записью, клиент выданное незнакомое **снимет** — и это честно:
+ * он и правда не знает, что выдаёт.
+ */
+data class FfiChannelRights (
+    /**
+     * Публиковать в канал.
+     */
+    val `write`: kotlin.Boolean
+    , 
+    /**
+     * Впускать: выдавать ключ чтения (§6.5).
+     */
+    val `admit`: kotlin.Boolean
+    , 
+    /**
+     * Поворачивать ключ чтения, отсекая невписанных (§6.4).
+     *
+     * Это и есть исключение читателя; другого в канале нет.
+     */
+    val `evict`: kotlin.Boolean
+    , 
+    /**
+     * Править описательные поля представления.
+     */
+    val `edit`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiChannelRights: FfiConverterRustBuffer<FfiChannelRights> {
+    override fun read(buf: ByteBuffer): FfiChannelRights {
+        return FfiChannelRights(
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiChannelRights) = (
+            FfiConverterBoolean.allocationSize(value.`write`) +
+            FfiConverterBoolean.allocationSize(value.`admit`) +
+            FfiConverterBoolean.allocationSize(value.`evict`) +
+            FfiConverterBoolean.allocationSize(value.`edit`)
+    )
+
+    override fun write(value: FfiChannelRights, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`write`, buf)
+            FfiConverterBoolean.write(value.`admit`, buf)
+            FfiConverterBoolean.write(value.`evict`, buf)
+            FfiConverterBoolean.write(value.`edit`, buf)
+    }
+}
+
+
+
+/**
+ * Кто раздаёт канал — строка каталога (фаза 2, §7.5).
+ *
+ * Адреса наружу **не едут**: набирает ядро (§13.3), а на экране это
+ * строка «такой-то раздаёт».
+ */
+data class FfiChannelSeed (
+    /**
+     * Чей адрес объявлен.
+     */
+    val `who`: kotlin.ByteArray
+    , 
+    /**
+     * До какого момента запись годна, мс (§7.5).
+     *
+     * Показывать стоит: «раздаёт» с истекающим сроком означает
+     * «раздавал», и разница видна только по нему.
+     */
+    val `validUntilMs`: kotlin.ULong
+    , 
+    /**
+     * Сошлась ли подпись записи.
+     *
+     * Ложь означает «проверить было нечем» — карточки сида у читателя
+     * может не быть вовсе (§3.2), — а не «подделка». Поддельную отсеет
+     * владелец, который карточки знает.
+     */
+    val `verified`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiChannelSeed: FfiConverterRustBuffer<FfiChannelSeed> {
+    override fun read(buf: ByteBuffer): FfiChannelSeed {
+        return FfiChannelSeed(
+            FfiConverterByteArray.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiChannelSeed) = (
+            FfiConverterByteArray.allocationSize(value.`who`) +
+            FfiConverterULong.allocationSize(value.`validUntilMs`) +
+            FfiConverterBoolean.allocationSize(value.`verified`)
+    )
+
+    override fun write(value: FfiChannelSeed, buf: ByteBuffer) {
+            FfiConverterByteArray.write(value.`who`, buf)
+            FfiConverterULong.write(value.`validUntilMs`, buf)
+            FfiConverterBoolean.write(value.`verified`, buf)
+    }
+}
+
+
+
+/**
  * Вложение в сообщении, показанном на десктопе.
  *
  * Байтов здесь нет и быть не может: страница возит сотню сообщений.
- * Содержимое забирается отдельно — [`RatatoskCompanion::save_file`].
+ * Содержимое забирается отдельно — [`crate::companion::RatatoskCompanion::save_file`].
  */
 data class FfiCompanionAttachment (
     /**
@@ -10976,14 +12360,14 @@ data class FfiCompanionAttachment (
     , 
     /**
      * Сколько всего кусков — столько же понадобится
-     * [`RatatoskCompanion::save_file`].
+     * [`crate::companion::RatatoskCompanion::save_file`].
      */
     val `chunkTotal`: kotlin.ULong
     , 
     /**
      * Нарезка этого вложения — сколько байт в куске (§10.2).
      *
-     * **Отдавать её обратно в [`RatatoskCompanion::save_file`]
+     * **Отдавать её обратно в [`crate::companion::RatatoskCompanion::save_file`]
      * обязательно.** Нарезка у файла своя: у приехавшего эфиром кусок
      * четыре килобайта, у приехавшего по сети — мебибайт. Без неё куски
      * не сложить, и складывались они врастопырку — файл на диске
@@ -12146,6 +13530,35 @@ data class FfiGroup (
      * означало бы «картинки почти никогда нет».
      */
     val `avatarMs`: kotlin.ULong
+    , 
+    /**
+     * Сколько **новых** человек ещё поместится (§18.4).
+     *
+     * Отдаётся затем, чтобы отказ не понадобился: с этим числом клиент
+     * гасит «добавить» заранее и говорит, сколько мест осталось, вместо
+     * того чтобы объясняться после неудачной попытки. Упёршемуся всё
+     * равно ответит [`RatatoskError::GroupFull`] — но это ответ на гонку,
+     * а не обычный путь: состав меняется и у соседа.
+     *
+     * `0` у полной группы и у той, из которой мы вышли: звать оттуда
+     * мы всё равно не вправе.
+     */
+    val `freeSlots`: kotlin.UInt
+    , 
+    /**
+     * Всё, чем канал отличается от группы (фаза 2, §6, §10).
+     *
+     * `null` у обычной группы. Признак «это канал» выражен **наличием
+     * записи**, а не отдельным булевым полем: рисовать канальный экран
+     * не по чему, если записи нет, и два источника одного ответа
+     * однажды разошлись бы.
+     *
+     * Всё групповое при этом остаётся верным: у канала есть состав,
+     * название и создатель, потому что канал **и есть** группа со вторым
+     * профилем (§3.2). Разница не в том, что это, а в том, что с этим
+     * можно.
+     */
+    val `channel`: FfiChannel?
     
 ){
     
@@ -12169,6 +13582,8 @@ public object FfiConverterTypeFfiGroup: FfiConverterRustBuffer<FfiGroup> {
             FfiConverterBoolean.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterULong.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterOptionalTypeFfiChannel.read(buf),
         )
     }
 
@@ -12179,7 +13594,9 @@ public object FfiConverterTypeFfiGroup: FfiConverterRustBuffer<FfiGroup> {
             FfiConverterSequenceTypeFfiGroupMember.allocationSize(value.`members`) +
             FfiConverterBoolean.allocationSize(value.`mine`) +
             FfiConverterBoolean.allocationSize(value.`joined`) +
-            FfiConverterULong.allocationSize(value.`avatarMs`)
+            FfiConverterULong.allocationSize(value.`avatarMs`) +
+            FfiConverterUInt.allocationSize(value.`freeSlots`) +
+            FfiConverterOptionalTypeFfiChannel.allocationSize(value.`channel`)
     )
 
     override fun write(value: FfiGroup, buf: ByteBuffer) {
@@ -12190,6 +13607,8 @@ public object FfiConverterTypeFfiGroup: FfiConverterRustBuffer<FfiGroup> {
             FfiConverterBoolean.write(value.`mine`, buf)
             FfiConverterBoolean.write(value.`joined`, buf)
             FfiConverterULong.write(value.`avatarMs`, buf)
+            FfiConverterUInt.write(value.`freeSlots`, buf)
+            FfiConverterOptionalTypeFfiChannel.write(value.`channel`, buf)
     }
 }
 
@@ -12199,7 +13618,7 @@ public object FfiConverterTypeFfiGroup: FfiConverterRustBuffer<FfiGroup> {
  * Участник группы в том виде, в каком его рисуют (§11).
  *
  * Три поля, и по отдельности ни одного не хватает: по ключу берётся лицо
- * ([`RatatoskClient::avatar`]) и открывается карточка, имя считает ядро
+ * ([`RatatoskClient::avatar_of`]) и открывается карточка, имя считает ядро
  * по §4.1, а «это я» из ключа выводится сравнением с собственным — то
  * самое протокольное знание, которое §13.3 держит ниже границы.
  */
@@ -12666,7 +14085,7 @@ data class FfiMessage (
      * Ключ автора — рядом с именем и по тому же правилу.
      *
      * Нужен не для подписи, а для всего, что к автору привязано:
-     * лицо ([`RatatoskClient::avatar`] спрашивает по ключу), переход
+     * лицо ([`RatatoskClient::avatar_of`] спрашивает по ключу), переход
      * к карточке, склейка подряд идущих сообщений одного человека.
      * Без него клиент умел бы только напечатать имя.
      *
@@ -13718,6 +15137,111 @@ public object FfiConverterTypeFfiArchiveUnlock : FfiConverterRustBuffer<FfiArchi
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
+/**
+ * Почему канал отказал (фаза 2, §6, §10).
+ *
+ * Каждая причина — отдельное действие человека, и в этом весь смысл
+ * их различать. Причина, по которой делать нечего, сюда не попадает:
+ * она остаётся [`RatatoskError::Internal`].
+ */
+
+enum class FfiChannelRefusal {
+    
+    /**
+     * В канале нет такого права (§6.2), либо выдача истекла (§6.3).
+     *
+     * Отличить «не давали» от «истекло» можно по представлению, и это
+     * дело показывающего экрана, а не отказа: делать человеку в обоих
+     * случаях одно — просить владельца.
+     */
+    NO_RIGHT,
+    /**
+     * В звезде публикует только владелец (§3.2, §7.5.2).
+     *
+     * **Право «писать» при этом есть, и отказ не про него.** Слово
+     * развозит сказавший, по своему составу, а состав канала §3.2
+     * оставляет владельцу: читатели друг друга не знают, и держателю
+     * права развозить некому. Доставку делегату вернёт рой (§7).
+     *
+     * Клиенту: поле ввода в канале стоит гасить всем, кроме владельца
+     * (`FfiChannel::owner_ik` против своего ключа), а не по
+     * `rights.write` — право может быть, а доставка нет.
+     */
+    ONLY_OWNER_PUBLISHES_YET,
+    /**
+     * Права выдают кому угодно, кроме владельца (§6.2).
+     *
+     * **Отдельно от [`FfiChannelRefusal::NoRight`], и разница
+     * содержательная:** там права нет, здесь оно есть и потому выдача
+     * бессмысленна. Свалив их в один ответ, клиент сказал бы владельцу,
+     * что ему самому в своём канале ничего не разрешено.
+     */
+    OWNER_NEEDS_NO_GRANT,
+    /**
+     * Команда про канал пришла в обычную группу — или наоборот (§3.2).
+     */
+    WRONG_PROFILE,
+    /**
+     * В открытом канале ключ чтения не поворачивается (§6.1, §10.7).
+     */
+    OPEN_HAS_NO_ROTATION,
+    /**
+     * Ключ чтения поворачивали меньше недели назад (§6.4).
+     */
+    ROTATED_TOO_RECENTLY,
+    /**
+     * У канала ещё нет ни одного поколения ключа чтения (§6.4).
+     */
+    NO_READ_KEY_YET,
+    /**
+     * Работа, которую требует канал, этому устройству не по силам (§11).
+     */
+    POW_TOO_HARD,
+    /**
+     * Это не ссылка на канал (§10.3, шаг 1).
+     */
+    BAD_LINK,
+    /**
+     * На этот канал мы уже подписаны.
+     */
+    ALREADY_SUBSCRIBED,
+    /**
+     * Канал наш собственный: от своего не отписываются (§10.6).
+     */
+    OWN_CHANNEL,
+    /**
+     * Выдач больше, чем помещается в одно представление (§6.2).
+     */
+    TOO_MANY_GRANTS;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiChannelRefusal: FfiConverterRustBuffer<FfiChannelRefusal> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiChannelRefusal.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiChannelRefusal) = 4UL
+
+    override fun write(value: FfiChannelRefusal, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
     }
 }
 
@@ -15136,6 +16660,96 @@ sealed class FfiEvent {
     }
     
     /**
+     * Кто-то просится в канал (фаза 2, §10.4).
+     *
+     * Приходит **владельцу**. Ответ на заявку один — впуск
+     * ([`RatatoskClient::admit_to_channel`]); отказа как сообщения
+     * не бывает, и молчание и есть отказ. Показывать это надо так же:
+     * список просящих и кнопка «впустить», а не «принять/отклонить».
+     *
+     * Карточка просящего уже приехала: заявка везёт только канал.
+     */
+    data class ChannelRequested(
+        /**
+         * Чат.
+         */
+        val `chatId`: kotlin.ByteArray, 
+        /**
+         * Кто просится.
+         */
+        val `who`: kotlin.ByteArray) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Наше участие в раздаче канала изменилось (фаза 2, §7.5.1).
+     *
+     * Признак «объявлено», а не всё состояние: человеку важно одно —
+     * раскрыт ли его адрес. Тихая раздача и отказ снаружи отличаются
+     * не событием, а экраном настроек.
+     */
+    data class SeedingChanged(
+        /**
+         * Чат.
+         */
+        val `chatId`: kotlin.ByteArray, 
+        /**
+         * Объявлен ли наш адрес в каталоге.
+         */
+        val `announced`: kotlin.Boolean) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Кто-то вызвался раздавать наш канал (фаза 2, §7.5).
+     *
+     * Приходит **владельцу**: каталог развозит он. Клиенту это повод
+     * перечитать список раздающих
+     * ([`RatatoskClient::channel_seeds`]), а не строка в чате.
+     */
+    data class SeedAnnounced(
+        /**
+         * Чат.
+         */
+        val `chatId`: kotlin.ByteArray, 
+        /**
+         * Кто вызвался.
+         */
+        val `who`: kotlin.ByteArray) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
+     * Отписались от канала (фаза 2, §10.6).
+     *
+     * Чата больше нет: ни истории, ни ключей чтения, ни представления.
+     * Клиенту по нему делать ровно одно — убрать строку из списка чатов.
+     */
+    data class ChannelUnsubscribed(
+        /**
+         * Чат.
+         */
+        val `chatId`: kotlin.ByteArray) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
      * Канал заведён (фаза 2, §6.1).
      *
      * Отдельно от [`FfiEvent::GroupCreated`]: у канала нет списка
@@ -15148,15 +16762,22 @@ sealed class FfiEvent {
          */
         val `chatId`: kotlin.ByteArray, 
         /**
-         * Название.
+         * Название. У впущенного — из вводного блока; подписанным оно
+         * доедет в представлении.
          */
         val `title`: kotlin.String, 
         /**
          * Открытый ли канал (§6.1). Порода задана при заведении
          * и не меняется: «Открытый канал» и «Канал по приглашению» —
          * два разных обещания, и слово для каждого одно.
+         *
+         * `null` — **породу ещё не знаем**: так приходит событие тому,
+         * кого впустили. Вводный блок говорит «это канал», а порода
+         * живёт в подписанном представлении и приедет следом
+         * ([`FfiEvent::ChannelChanged`]). До тех пор слова для неё нет,
+         * и выдумывать его нельзя: порода решает, у кого ключ чтения.
          */
-        val `open`: kotlin.Boolean) : FfiEvent()
+        val `open`: kotlin.Boolean?) : FfiEvent()
         
     {
         
@@ -15633,69 +17254,84 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterULong.read(buf),
                 FfiConverterString.read(buf),
                 )
-            17 -> FfiEvent.ChannelCreated(
+            17 -> FfiEvent.ChannelRequested(
                 FfiConverterByteArray.read(buf),
-                FfiConverterString.read(buf),
+                FfiConverterByteArray.read(buf),
+                )
+            18 -> FfiEvent.SeedingChanged(
+                FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            18 -> FfiEvent.GroupRenamed(
+            19 -> FfiEvent.SeedAnnounced(
+                FfiConverterByteArray.read(buf),
+                FfiConverterByteArray.read(buf),
+                )
+            20 -> FfiEvent.ChannelUnsubscribed(
+                FfiConverterByteArray.read(buf),
+                )
+            21 -> FfiEvent.ChannelCreated(
+                FfiConverterByteArray.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterOptionalBoolean.read(buf),
+                )
+            22 -> FfiEvent.GroupRenamed(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            19 -> FfiEvent.GroupMembershipChanged(
+            23 -> FfiEvent.GroupMembershipChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            20 -> FfiEvent.GroupAvatarChanged(
+            24 -> FfiEvent.GroupAvatarChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            21 -> FfiEvent.FileWaitsForChannel(
+            25 -> FfiEvent.FileWaitsForChannel(
                 FfiConverterByteArray.read(buf),
                 FfiConverterTypeFfiFileWaitReason.read(buf),
                 )
-            22 -> FfiEvent.FileProgress(
+            26 -> FfiEvent.FileProgress(
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            23 -> FfiEvent.FileSending(
+            27 -> FfiEvent.FileSending(
                 FfiConverterByteArray.read(buf),
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            24 -> FfiEvent.FileGone(
+            28 -> FfiEvent.FileGone(
                 FfiConverterByteArray.read(buf),
                 )
-            25 -> FfiEvent.HonestNotice(
+            29 -> FfiEvent.HonestNotice(
                 FfiConverterString.read(buf),
                 )
-            26 -> FfiEvent.CommandRefused(
+            30 -> FfiEvent.CommandRefused(
                 FfiConverterString.read(buf),
                 )
-            27 -> FfiEvent.MailAccountReady(
+            31 -> FfiEvent.MailAccountReady(
                 FfiConverterString.read(buf),
                 )
-            28 -> FfiEvent.MailAccountFailed(
+            32 -> FfiEvent.MailAccountFailed(
                 FfiConverterString.read(buf),
                 )
-            29 -> FfiEvent.MailLoginFailed(
+            33 -> FfiEvent.MailLoginFailed(
                 FfiConverterString.read(buf),
                 )
-            30 -> FfiEvent.MailLimits(
+            34 -> FfiEvent.MailLimits(
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterBoolean.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            31 -> FfiEvent.PairingReady(
+            35 -> FfiEvent.PairingReady(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            32 -> FfiEvent.PairingRevoked(
+            36 -> FfiEvent.PairingRevoked(
                 FfiConverterByteArray.read(buf),
                 )
-            33 -> FfiEvent.DeviceLink(
+            37 -> FfiEvent.DeviceLink(
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
@@ -15832,13 +17468,44 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 + FfiConverterString.allocationSize(value.`title`)
             )
         }
+        is FfiEvent.ChannelRequested -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
+                + FfiConverterByteArray.allocationSize(value.`who`)
+            )
+        }
+        is FfiEvent.SeedingChanged -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
+                + FfiConverterBoolean.allocationSize(value.`announced`)
+            )
+        }
+        is FfiEvent.SeedAnnounced -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
+                + FfiConverterByteArray.allocationSize(value.`who`)
+            )
+        }
+        is FfiEvent.ChannelUnsubscribed -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
+            )
+        }
         is FfiEvent.ChannelCreated -> {
             // Add the size for the Int that specifies the variant plus the size needed for all fields
             (
                 4UL
                 + FfiConverterByteArray.allocationSize(value.`chatId`)
                 + FfiConverterString.allocationSize(value.`title`)
-                + FfiConverterBoolean.allocationSize(value.`open`)
+                + FfiConverterOptionalBoolean.allocationSize(value.`open`)
             )
         }
         is FfiEvent.GroupRenamed -> {
@@ -16066,44 +17733,67 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterString.write(value.`title`, buf)
                 Unit
             }
-            is FfiEvent.ChannelCreated -> {
+            is FfiEvent.ChannelRequested -> {
                 buf.putInt(17)
                 FfiConverterByteArray.write(value.`chatId`, buf)
+                FfiConverterByteArray.write(value.`who`, buf)
+                Unit
+            }
+            is FfiEvent.SeedingChanged -> {
+                buf.putInt(18)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                FfiConverterBoolean.write(value.`announced`, buf)
+                Unit
+            }
+            is FfiEvent.SeedAnnounced -> {
+                buf.putInt(19)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                FfiConverterByteArray.write(value.`who`, buf)
+                Unit
+            }
+            is FfiEvent.ChannelUnsubscribed -> {
+                buf.putInt(20)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                Unit
+            }
+            is FfiEvent.ChannelCreated -> {
+                buf.putInt(21)
+                FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterString.write(value.`title`, buf)
-                FfiConverterBoolean.write(value.`open`, buf)
+                FfiConverterOptionalBoolean.write(value.`open`, buf)
                 Unit
             }
             is FfiEvent.GroupRenamed -> {
-                buf.putInt(18)
+                buf.putInt(22)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterString.write(value.`title`, buf)
                 Unit
             }
             is FfiEvent.GroupMembershipChanged -> {
-                buf.putInt(19)
+                buf.putInt(23)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
             is FfiEvent.GroupAvatarChanged -> {
-                buf.putInt(20)
+                buf.putInt(24)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
             is FfiEvent.FileWaitsForChannel -> {
-                buf.putInt(21)
+                buf.putInt(25)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterTypeFfiFileWaitReason.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.FileProgress -> {
-                buf.putInt(22)
+                buf.putInt(26)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterULong.write(value.`received`, buf)
                 FfiConverterULong.write(value.`total`, buf)
                 Unit
             }
             is FfiEvent.FileSending -> {
-                buf.putInt(23)
+                buf.putInt(27)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterByteArray.write(value.`peerIk`, buf)
                 FfiConverterULong.write(value.`sent`, buf)
@@ -16111,37 +17801,37 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.FileGone -> {
-                buf.putInt(24)
+                buf.putInt(28)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 Unit
             }
             is FfiEvent.HonestNotice -> {
-                buf.putInt(25)
+                buf.putInt(29)
                 FfiConverterString.write(value.`text`, buf)
                 Unit
             }
             is FfiEvent.CommandRefused -> {
-                buf.putInt(26)
+                buf.putInt(30)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.MailAccountReady -> {
-                buf.putInt(27)
+                buf.putInt(31)
                 FfiConverterString.write(value.`address`, buf)
                 Unit
             }
             is FfiEvent.MailAccountFailed -> {
-                buf.putInt(28)
+                buf.putInt(32)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.MailLoginFailed -> {
-                buf.putInt(29)
+                buf.putInt(33)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.MailLimits -> {
-                buf.putInt(30)
+                buf.putInt(34)
                 FfiConverterOptionalULong.write(value.`letterBytes`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxUsed`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxLimit`, buf)
@@ -16150,18 +17840,18 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.PairingReady -> {
-                buf.putInt(31)
+                buf.putInt(35)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterString.write(value.`uri`, buf)
                 Unit
             }
             is FfiEvent.PairingRevoked -> {
-                buf.putInt(32)
+                buf.putInt(36)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 Unit
             }
             is FfiEvent.DeviceLink -> {
-                buf.putInt(33)
+                buf.putInt(37)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterBoolean.write(value.`connected`, buf)
                 Unit
@@ -16362,6 +18052,70 @@ public object FfiConverterTypeFfiMailState: FfiConverterRustBuffer<FfiMailState>
 
 
 /**
+ * Наше участие в раздаче канала — три состояния (§7.5.1).
+ *
+ * Своё перечисление по той же причине, что у меша: типы протокола
+ * наружу не отдаются.
+ *
+ * Наружу едут **все три**, и это изменение против прежней границы.
+ * Раньше ехали два (`announced: bool`): «тихо» и «не раздаём»
+ * различались только тем, отдаём ли мы по своим исходящим соединениям,
+ * а отдавать было нечего — дерева раздачи не существовало. Теперь оно
+ * есть, и выключатель §9.2 стал кнопкой, у которой есть последствие.
+ */
+
+enum class FfiSeeding {
+    
+    /**
+     * Не раздаём: никому и ничего.
+     *
+     * Канал при этом читается по-прежнему: выключается раздача,
+     * а не подписка.
+     */
+    OFF,
+    /**
+     * Тихо — **умолчание**. Адрес не объявлен, набрать нас нельзя,
+     * но тем сидам, к кому мы подключились сами, мы отдаём наравне
+     * со всеми.
+     */
+    QUIET,
+    /**
+     * Объявленный сид: адрес в каталоге, набирают незнакомые,
+     * отдаём всякому, кто спросил (§7.6).
+     *
+     * Перед включением клиент обязан показать `seeding_notice`.
+     */
+    ANNOUNCED;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiSeeding: FfiConverterRustBuffer<FfiSeeding> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiSeeding.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiSeeding) = 4UL
+
+    override fun write(value: FfiSeeding, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
  * Транспорт на границе §13.3.
  *
  * Своё перечисление, а не `ratatosk_proto::Transport`: типы протокола
@@ -16513,6 +18267,49 @@ sealed class RatatoskException: kotlin.Exception() {
     }
     
     /**
+     * В группе больше нет мест (§18.4).
+     *
+     * **Отдельно от [`RatatoskError::Internal`] по той же причине, по какой
+     * отдельно «не тот PIN»:** это не сбой, а обычный ответ, и человеку
+     * есть что с ним сделать — завести вторую группу или кого-то убрать.
+     * Показанный как внутренняя ошибка, он толкает переустанавливать
+     * клиент ради того, что работает правильно.
+     */
+    class GroupFull(
+        
+        /**
+         * Предел, в который упёрлись, — чтобы клиенту не хранить его у себя.
+         */
+        val `limit`: kotlin.UInt
+        ) : RatatoskException() {
+        override val message
+            get() = "limit=${ `limit` }"
+    }
+    
+    /**
+     * Канал отказал, и человеку есть что с этим сделать (фаза 2).
+     *
+     * **Одним вариантом с причиной, а не десятью вариантами.** Все они
+     * про один экран и все требуют от человека действия — попросить
+     * право, подождать, вставить другую ссылку. Развернув их в десять
+     * вариантов, мы заставили бы клиент разбирать десять веток там,
+     * где ему нужен один текст; свалив в [`RatatoskError::Internal`] —
+     * посоветовали бы переустановить работающее.
+     *
+     * Текст к причине — [`channel_refusal_text`]; писать свой не надо.
+     */
+    class Channel(
+        
+        /**
+         * Что именно не дало команде пройти.
+         */
+        val `reason`: FfiChannelRefusal
+        ) : RatatoskException() {
+        override val message
+            get() = "reason=${ `reason` }"
+    }
+    
+    /**
      * Внутренняя ошибка.
      */
     class Internal(
@@ -16546,7 +18343,13 @@ public object FfiConverterTypeRatatoskError : FfiConverterRustBuffer<RatatoskExc
 
         return when(buf.getInt()) {
             1 -> RatatoskException.Locked()
-            2 -> RatatoskException.Internal(
+            2 -> RatatoskException.GroupFull(
+                FfiConverterUInt.read(buf),
+                )
+            3 -> RatatoskException.Channel(
+                FfiConverterTypeFfiChannelRefusal.read(buf),
+                )
+            4 -> RatatoskException.Internal(
                 FfiConverterString.read(buf),
                 )
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
@@ -16558,6 +18361,16 @@ public object FfiConverterTypeRatatoskError : FfiConverterRustBuffer<RatatoskExc
             is RatatoskException.Locked -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
+            )
+            is RatatoskException.GroupFull -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterUInt.allocationSize(value.`limit`)
+            )
+            is RatatoskException.Channel -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterTypeFfiChannelRefusal.allocationSize(value.`reason`)
             )
             is RatatoskException.Internal -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
@@ -16573,8 +18386,18 @@ public object FfiConverterTypeRatatoskError : FfiConverterRustBuffer<RatatoskExc
                 buf.putInt(1)
                 Unit
             }
-            is RatatoskException.Internal -> {
+            is RatatoskException.GroupFull -> {
                 buf.putInt(2)
+                FfiConverterUInt.write(value.`limit`, buf)
+                Unit
+            }
+            is RatatoskException.Channel -> {
+                buf.putInt(3)
+                FfiConverterTypeFfiChannelRefusal.write(value.`reason`, buf)
+                Unit
+            }
+            is RatatoskException.Internal -> {
+                buf.putInt(4)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
@@ -16643,6 +18466,38 @@ public object FfiConverterOptionalULong: FfiConverterRustBuffer<kotlin.ULong?> {
         } else {
             buf.put(1)
             FfiConverterULong.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalBoolean: FfiConverterRustBuffer<kotlin.Boolean?> {
+    override fun read(buf: ByteBuffer): kotlin.Boolean? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterBoolean.read(buf)
+    }
+
+    override fun allocationSize(value: kotlin.Boolean?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterBoolean.allocationSize(value)
+        }
+    }
+
+    override fun write(value: kotlin.Boolean?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterBoolean.write(value, buf)
         }
     }
 }
@@ -16739,6 +18594,38 @@ public object FfiConverterOptionalTypeFfiFileReader: FfiConverterRustBuffer<FfiF
         } else {
             buf.put(1)
             FfiConverterTypeFfiFileReader.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeFfiChannel: FfiConverterRustBuffer<FfiChannel?> {
+    override fun read(buf: ByteBuffer): FfiChannel? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeFfiChannel.read(buf)
+    }
+
+    override fun allocationSize(value: FfiChannel?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeFfiChannel.allocationSize(value)
+        }
+    }
+
+    override fun write(value: FfiChannel?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeFfiChannel.write(value, buf)
         }
     }
 }
@@ -17111,6 +18998,118 @@ public object FfiConverterSequenceTypeFfiAccount: FfiConverterRustBuffer<List<Ff
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeFfiAccount.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFfiChannelAdmit: FfiConverterRustBuffer<List<FfiChannelAdmit>> {
+    override fun read(buf: ByteBuffer): List<FfiChannelAdmit> {
+        val len = buf.getInt()
+        return List<FfiChannelAdmit>(len) {
+            FfiConverterTypeFfiChannelAdmit.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiChannelAdmit>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiChannelAdmit.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiChannelAdmit>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiChannelAdmit.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFfiChannelGrant: FfiConverterRustBuffer<List<FfiChannelGrant>> {
+    override fun read(buf: ByteBuffer): List<FfiChannelGrant> {
+        val len = buf.getInt()
+        return List<FfiChannelGrant>(len) {
+            FfiConverterTypeFfiChannelGrant.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiChannelGrant>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiChannelGrant.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiChannelGrant>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiChannelGrant.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFfiChannelRequest: FfiConverterRustBuffer<List<FfiChannelRequest>> {
+    override fun read(buf: ByteBuffer): List<FfiChannelRequest> {
+        val len = buf.getInt()
+        return List<FfiChannelRequest>(len) {
+            FfiConverterTypeFfiChannelRequest.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiChannelRequest>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiChannelRequest.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiChannelRequest>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiChannelRequest.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeFfiChannelSeed: FfiConverterRustBuffer<List<FfiChannelSeed>> {
+    override fun read(buf: ByteBuffer): List<FfiChannelSeed> {
+        val len = buf.getInt()
+        return List<FfiChannelSeed>(len) {
+            FfiConverterTypeFfiChannelSeed.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiChannelSeed>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiChannelSeed.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiChannelSeed>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiChannelSeed.write(it, buf)
         }
     }
 }
@@ -17591,6 +19590,41 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     }
 }
         /**
+         * Что означает передача права «впускать» (фаза 2, §15, §6.5).
+         *
+         * Показывается при **назначении** права, а не при снятии, и это
+         * требование §6.5: впущенные остаются впущенными после того, как право
+         * у впускавшего снято. Сказанное при снятии уже ничего не меняет.
+         */ fun `admitterGrantNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_admitter_grant_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Точные слова к отказу канала (§15).
+         *
+         * На границе, а не в клиенте, по той же причине, что [`honest_notices`]:
+         * отказ обязан говорить то, что протокол на самом деле делает, и строка
+         * в Kotlin разошлась бы с поведением на первой же правке.
+         */ fun `channelRefusalText`(`reason`: FfiChannelRefusal): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_channel_refusal_text(
+    
+        
+        FfiConverterTypeFfiChannelRefusal.lower(`reason`),_status)
+}
+    )
+    }
+    
+
+        /**
          * Размер куска файла в байтах — **умолчание провода**, а не правда
          * о конкретном файле.
          *
@@ -17881,6 +19915,23 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     
 
         /**
+         * Что означает поворот ключа чтения (фаза 2, §15, §6.4).
+         *
+         * Показывается до кнопки «повернуть сейчас»: §6.4 требует, чтобы она
+         * называлась последствием. Все, кого нет в составе, теряют будущее;
+         * прочитанное остаётся у них, и обещать обратное нельзя.
+         */ fun `keyRotationNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_key_rotation_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
          * Предупреждение при включении LAN (§5.1).
          */ fun `lanWarning`(): kotlin.String {
             return FfiConverterString.lift(
@@ -18149,6 +20200,28 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     
 
         /**
+         * Что означает открытый канал (фаза 2, §15, §6.1, §10.7).
+         *
+         * Показывается **до** заведения открытого канала, до подписки на него
+         * и до того, как ссылкой поделятся: непоправимое здесь одно и то же
+         * для обеих сторон. Говорит непоправимое: ключ чтения лежит в самой ссылке,
+         * прочтёт её всякий, кому её перешлют, и закрыть доступ обратно нельзя.
+         *
+         * Текст на границе, а не в клиенте, по той же причине, что
+         * [`honest_notices`]: §15 существует затем, чтобы обещания продукта
+         * не разошлись со свойствами протокола.
+         */ fun `openChannelNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_open_channel_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
          * Что добавить, если из группы выходит её создатель.
          *
          * Отдельным текстом, а не припиской ко всем: остальным участникам это
@@ -18192,6 +20265,30 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     
 
         /**
+         * Что означает канал по приглашению (фаза 2, §15, §6.1, §10.4).
+         *
+         * Показывается **подписывающемуся** — при переходе по ссылке на такой
+         * канал, до подписки. Заводящему его показывать нечего: текст обращён
+         * к тому, кого впускают («впустить вас должен владелец»), и владелец
+         * прочёл бы в нём, что его самого кто-то должен впустить.
+         *
+         * **Говорит правду о сегодняшнем дне, а не о спеке.** §15 обещает
+         * «он увидит вашу карточку», но заявки подписчика в ядре нет: переход
+         * по ссылке не отправляет владельцу ничего, и сказать ему о себе надо
+         * другим способом. Появится заявка — изменится и текст, и проверка
+         * при нём падает ровно затем, чтобы это не забылось.
+         */ fun `privateChannelNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_private_channel_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
          * Что показать вместо цитаты, которой нет.
          *
          * Ответ несёт ссылку, а не текст: цитата берётся из своей копии сообщения,
@@ -18228,6 +20325,40 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_func_revocation_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Что означает «объявить себя раздающим» (фаза 2, §15, §7.5.1).
+         *
+         * Показывается **до** включения: адрес узнаёт каждый читатель канала,
+         * набирать по нему будут незнакомые, а отказ гасит объявление не сразу —
+         * оно живёт сроком годности (§7.5).
+         */ fun `seedingNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_seeding_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Что означает «поделиться ссылкой» (фаза 2, §15, §10.2).
+         *
+         * Показывается до показа ссылки: в неё попадает наш адрес, и всякий,
+         * к кому она попадёт дальше, узнает его — и то, что мы этот канал
+         * читаем, — даже если сам подписываться не станет.
+         */ fun `sharingNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_sharing_notice(
     
         _status)
 }

@@ -363,7 +363,13 @@ class CompanionModel(
             members = existingGroup?.members ?: emptyList(),
             mine = existingGroup?.mine ?: false,
             joined = chat.joined,
-            avatarMs = chat.avatarMs
+            avatarMs = chat.avatarMs,
+            // Телефон об этом не рассказывает: у второго экрана нет ни
+            // состава группы, ни канальных документов. Ноль мест — не
+            // «группа полна», а «звать отсюда всё равно нечем»; канала
+            // нет — значит и рисовать канальное нечего.
+            freeSlots = 0u,
+            channel = null,
         )
     }
 
