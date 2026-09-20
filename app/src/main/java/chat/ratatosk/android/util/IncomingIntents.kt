@@ -21,6 +21,9 @@ sealed interface Incoming {
 
     /** `ratatosk:v0:pair:…` — «стань моим терминалом» (§13.3). */
     data class PairDevice(val uri: String) : Incoming
+
+    /** `ratatosk:v0:channel:…` — «читай этот канал» (§10.1). */
+    data class SubscribeChannel(val uri: String) : Incoming
 }
 
 object IncomingIntents {
@@ -31,6 +34,10 @@ object IncomingIntents {
     // значит «добавь меня в контакты», другая — «стань моим терминалом»
     // (FFI.md). Порядок проверок здесь и есть всё различие.
     private const val PAIR_PREFIX = "ratatosk:v0:pair:"
+
+    // И ссылка на канал — тоже с общим началом. Она значит третье:
+    // «читай этот канал» (§10.1), и подписка это не добавление контакта.
+    private const val CHANNEL_PREFIX = "ratatosk:v0:channel:"
 
     fun parse(intent: Intent?): Incoming? {
         intent ?: return null
@@ -53,10 +60,10 @@ object IncomingIntents {
         // трогать нельзя.
         if (!uri.startsWith(SCHEME, ignoreCase = true)) return null
         if (uri.length == SCHEME.length) return null
-        return if (uri.startsWith(PAIR_PREFIX, ignoreCase = true)) {
-            Incoming.PairDevice(uri)
-        } else {
-            Incoming.AddContact(uri)
+        return when {
+            uri.startsWith(PAIR_PREFIX, ignoreCase = true) -> Incoming.PairDevice(uri)
+            uri.startsWith(CHANNEL_PREFIX, ignoreCase = true) -> Incoming.SubscribeChannel(uri)
+            else -> Incoming.AddContact(uri)
         }
     }
 
@@ -79,6 +86,10 @@ object IncomingIntents {
                 state.putString(KEY_KIND, KIND_PAIR)
                 state.putString(KEY_URI, incoming.uri)
             }
+            is Incoming.SubscribeChannel -> {
+                state.putString(KEY_KIND, KIND_CHANNEL)
+                state.putString(KEY_URI, incoming.uri)
+            }
             is Incoming.Share -> {
                 state.putString(KEY_KIND, KIND_SHARE)
                 state.putString(KEY_TEXT, incoming.text)
@@ -95,6 +106,7 @@ object IncomingIntents {
         return when (state.getString(KEY_KIND)) {
             KIND_ADD -> state.getString(KEY_URI)?.let { Incoming.AddContact(it) }
             KIND_PAIR -> state.getString(KEY_URI)?.let { Incoming.PairDevice(it) }
+            KIND_CHANNEL -> state.getString(KEY_URI)?.let { Incoming.SubscribeChannel(it) }
             KIND_SHARE -> Incoming.Share(
                 text = state.getString(KEY_TEXT).orEmpty(),
                 uris = state.getStringArrayList(KEY_STREAMS)?.map { Uri.parse(it) } ?: emptyList()
@@ -108,6 +120,7 @@ object IncomingIntents {
     private const val KEY_TEXT = "ratatosk.incoming.text"
     private const val KEY_STREAMS = "ratatosk.incoming.streams"
     private const val KIND_ADD = "add"
+    private const val KIND_CHANNEL = "channel"
     private const val KIND_PAIR = "pair"
     private const val KIND_SHARE = "share"
 

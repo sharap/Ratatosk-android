@@ -430,4 +430,19 @@
     <string name="channel_pow">Each post costs work: %1$d bits</string>
     <string name="channel_rights_until">Your right to write lasts until %1$s</string>
     <string name="channel_owner_unseen">Nothing has come from the owner for a long time</string>
+    <string name="create_channel">Create a channel</string>
+    <string name="channel_title_hint">Channel name</string>
+    <string name="channel_kind">Who gets in</string>
+    <string name="channel_kind_open">Open: anyone with the link</string>
+    <string name="channel_kind_private">By invitation: you let people in</string>
+    <string name="channel_create_failed">Could not create the channel</string>
+    <string name="channel_subscribe">Subscribe to a channel</string>
+    <string name="channel_subscribe_hint">Channel link</string>
+    <string name="channel_subscribe_action">Subscribe</string>
+    <string name="channel_subscribe_failed">Could not subscribe</string>
+    <string name="channel_subscribe_open_if">If the link is to an open channel:</string>
+    <string name="channel_subscribe_private_if">If the link is by invitation:</string>
+    <string name="channel_unsubscribe">Unsubscribe</string>
+    <string name="channel_unsubscribe_warning">The chat and its archive go with it: the reading keys are kept here and nowhere else. Coming back by the same link, you will only read what arrives anew.</string>
+    <string name="channel_unsubscribe_failed">Could not unsubscribe</string>
 </resources>

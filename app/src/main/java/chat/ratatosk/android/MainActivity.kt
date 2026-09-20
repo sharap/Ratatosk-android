@@ -344,6 +344,13 @@ class MainActivity : ComponentActivity() {
                                     onDismiss = { incoming = null }
                                 )
                             }
+                            is chat.ratatosk.android.util.Incoming.SubscribeChannel -> {
+                                chat.ratatosk.android.ui.components.SubscribeChannelDialog(
+                                    viewModel = appViewModel,
+                                    uri = inc.uri,
+                                    onDismiss = { incoming = null },
+                                )
+                            }
                             is chat.ratatosk.android.util.Incoming.PairDevice -> {
                                 chat.ratatosk.android.ui.components.PairLinkBusyDialog(
                                     onDismiss = { incoming = null }

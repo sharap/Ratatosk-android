@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -41,6 +42,8 @@ fun ChatListScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var showCreateGroupDialog by remember { mutableStateOf(false) }
     var showFabMenu by remember { mutableStateOf(false) }
+    var showCreateChannelDialog by remember { mutableStateOf(false) }
+    var showSubscribeChannelDialog by remember { mutableStateOf(false) }
 
     val contacts by viewModel.contacts.collectAsState()
     val groups by viewModel.groups.collectAsState()
@@ -146,6 +149,24 @@ fun ChatListScreen(
                 } else {
                     Column(horizontalAlignment = androidx.compose.ui.Alignment.End) {
                         if (showFabMenu) {
+                            SmallFloatingActionButton(
+                                onClick = {
+                                    showSubscribeChannelDialog = true
+                                    showFabMenu = false
+                                },
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                Icon(Icons.Default.Link, contentDescription = stringResource(R.string.channel_subscribe))
+                            }
+                            SmallFloatingActionButton(
+                                onClick = {
+                                    showCreateChannelDialog = true
+                                    showFabMenu = false
+                                },
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                Icon(Icons.Default.Campaign, contentDescription = stringResource(R.string.create_channel))
+                            }
                             SmallFloatingActionButton(
                                 onClick = { 
                                     showCreateGroupDialog = true
@@ -304,6 +325,20 @@ fun ChatListScreen(
                 }
             }
         }
+    }
+
+    if (showCreateChannelDialog) {
+        chat.ratatosk.android.ui.components.CreateChannelDialog(
+            viewModel = viewModel,
+            onDismiss = { showCreateChannelDialog = false },
+        )
+    }
+
+    if (showSubscribeChannelDialog) {
+        chat.ratatosk.android.ui.components.SubscribeChannelDialog(
+            viewModel = viewModel,
+            onDismiss = { showSubscribeChannelDialog = false },
+        )
     }
 
     if (showAddDialog) {

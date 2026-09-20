@@ -223,6 +223,10 @@ class FakeBackend(
 
     /** В проверках ядра нет, а текст отказа приходит из него. */
     override fun refusalText(reason: FfiChannelRefusal): String = "отказ:$reason"
+
+    /** Тексты §15 живут в ядре; в проверках хватает их имени. */
+    override fun channelNotice(which: chat.ratatosk.android.ui.model.ChannelNotice): String =
+        "текст:$which"
 }
 
 /**

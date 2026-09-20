@@ -139,6 +139,7 @@ fun ChatScreen(
     var showClearChatDialog by remember { mutableStateOf(false) }
     var showInviteDialog by remember { mutableStateOf(false) }
     var showRenameGroupDialog by remember { mutableStateOf(false) }
+    var showUnsubscribeDialog by remember { mutableStateOf(false) }
     var editGroupTitleText by remember { mutableStateOf("") }
     
     var isSearchMode by remember { mutableStateOf(false) }
@@ -450,6 +451,18 @@ fun ChatScreen(
                                     },
                                     leadingIcon = { Icon(Icons.Default.DeleteSweep, contentDescription = null) }
                                 )
+                                // Из своего канала не отписываются: ядро ответит
+                                // `OwnChannel`, а предлагать заведомый отказ незачем.
+                                if (group?.channel != null && !group.mine) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.channel_unsubscribe)) },
+                                        onClick = {
+                                            showChatMenu = false
+                                            showUnsubscribeDialog = true
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Logout, contentDescription = null) }
+                                    )
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
@@ -817,6 +830,17 @@ fun ChatScreen(
                 }
             }
         }
+    }
+
+    if (showUnsubscribeDialog) {
+        chat.ratatosk.android.ui.components.UnsubscribeChannelDialog(
+            onConfirm = {
+                viewModel.unsubscribeFromChannel(chatId)
+                // Чата больше нет — оставаться в нём некуда.
+                performBack()
+            },
+            onDismiss = { showUnsubscribeDialog = false },
+        )
     }
 
     if (showClearChatDialog) {

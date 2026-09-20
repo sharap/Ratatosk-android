@@ -434,4 +434,19 @@
     <string name="channel_pow">Каждое слово стоит работы: %1$d бит</string>
     <string name="channel_rights_until">Право писать — до %1$s</string>
     <string name="channel_owner_unseen">От владельца давно ничего не приходило</string>
+    <string name="create_channel">Создать канал</string>
+    <string name="channel_title_hint">Название канала</string>
+    <string name="channel_kind">Кто попадёт внутрь</string>
+    <string name="channel_kind_open">Открытый: любой, кому дали ссылку</string>
+    <string name="channel_kind_private">По приглашению: впускаете вы</string>
+    <string name="channel_create_failed">Не удалось завести канал</string>
+    <string name="channel_subscribe">Подписаться на канал</string>
+    <string name="channel_subscribe_hint">Ссылка на канал</string>
+    <string name="channel_subscribe_action">Подписаться</string>
+    <string name="channel_subscribe_failed">Не удалось подписаться</string>
+    <string name="channel_subscribe_open_if">Если ссылка на открытый канал:</string>
+    <string name="channel_subscribe_private_if">Если ссылка по приглашению:</string>
+    <string name="channel_unsubscribe">Отписаться</string>
+    <string name="channel_unsubscribe_warning">Вместе с чатом уйдёт и архив: ключи чтения хранятся здесь и больше нигде. Вернувшись по той же ссылке, вы прочтёте только то, что приедет заново.</string>
+    <string name="channel_unsubscribe_failed">Не удалось отписаться</string>
 </resources>

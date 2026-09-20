@@ -1,5 +1,6 @@
 package chat.ratatosk.android.ui.model
 
+import chat.ratatosk.android.R
 import chat.ratatosk.android.util.toHexString
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,10 +59,35 @@ fun channelInput(group: FfiGroup?): ChannelInput {
     }
 }
 
-/** Что окно знает о каналах. */
+/** Что окно знает о каналах и что с ними делает. */
 interface ChannelsApi {
     /** Заявки на впуск, по каналам; §10.4 обещает, что они ждут. */
     val channelRequests: StateFlow<Map<String, List<FfiChannelRequest>>>
+
+    /** Текст §15 — слова ядра, показываются **до** действия. */
+    fun channelNotice(which: ChannelNotice): String
+
+    /**
+     * Заводит канал. Порода задаётся один раз и не меняется: «открытый»
+     * и «по приглашению» — два разных обещания (§6.1).
+     */
+    fun createChannel(title: String, open: Boolean)
+
+    /** Подписка по ссылке `ratatosk:v0:channel:…` (§10.3, §10.4). */
+    fun subscribeToChannel(uri: String)
+
+    /**
+     * Отписка (§10.6). Уносит и архив: поколения ключа чтения хранятся
+     * у читателя и больше нигде — сказать об этом надо **до**.
+     */
+    fun unsubscribeFromChannel(chatId: ByteArray)
+
+    /**
+     * Ссылка на канал — запросом, а не полем списка: в неё едут нынешняя
+     * версия представления и наши адреса, и положенная в список она
+     * устаревала бы молча (§10.2).
+     */
+    fun channelLink(chatId: ByteArray, onResult: (Result<String>) -> Unit)
 }
 
 /**
@@ -83,6 +109,36 @@ class ChannelsModel(
 
     private val _channelRequests = MutableStateFlow<Map<String, List<FfiChannelRequest>>>(emptyMap())
     override val channelRequests = _channelRequests.asStateFlow()
+
+    override fun channelNotice(which: ChannelNotice): String = session.core.channelNotice(which)
+
+    override fun createChannel(title: String, open: Boolean) {
+        session.io("Failed to create channel", R.string.channel_create_failed) {
+            session.core.client().createChannel(title, open)
+        }
+    }
+
+    override fun subscribeToChannel(uri: String) {
+        session.io("Failed to subscribe to channel", R.string.channel_subscribe_failed) {
+            session.core.client().subscribeToChannel(uri)
+        }
+    }
+
+    override fun unsubscribeFromChannel(chatId: ByteArray) {
+        session.io("Failed to unsubscribe from channel", R.string.channel_unsubscribe_failed) {
+            session.core.client().unsubscribeFromChannel(chatId)
+        }
+    }
+
+    override fun channelLink(chatId: ByteArray, onResult: (Result<String>) -> Unit) {
+        session.scope.launch(Dispatchers.IO) {
+            val result = runCatching { session.core.client().channelLink(chatId) }
+            withContext(Dispatchers.Main) {
+                result.onFailure { session._error.value = session.errorText(it) }
+                onResult(result)
+            }
+        }
+    }
 
     /** Заявки читает только владелец: у остальных ядро их не держит. */
     fun refreshRequests(chatId: ByteArray) {

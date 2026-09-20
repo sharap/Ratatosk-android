@@ -15,6 +15,30 @@ import org.ratatosk.core.RatatoskClientInterface
 import org.ratatosk.core.RatatoskCompanionInterface
 
 /**
+ * Обязательные тексты §15: каждый показывается **до** действия
+ * и своему человеку.
+ */
+enum class ChannelNotice {
+    /** До заведения открытого канала, до подписки на него и до показа ссылки. */
+    OPEN,
+
+    /** Только подписывающемуся, до `subscribe_to_channel`. */
+    PRIVATE,
+
+    /** При выдаче права «впускать» (§6.5), а не при снятии. */
+    ADMITTER_GRANT,
+
+    /** До поворота ключа: кнопка называется последствием (§6.4). */
+    KEY_ROTATION,
+
+    /** До показа ссылки: в неё попадает наш адрес (§10.2). */
+    SHARING,
+
+    /** До объявления себя раздающим (§7.5.1). */
+    SEEDING,
+}
+
+/**
  * Ядро — таким, каким его видят модели.
  *
  * Шов ради проверок: за ним живёт `RatatoskCore` с настоящей библиотекой,
@@ -66,6 +90,9 @@ interface Backend {
      * важен, — «нет права» против «право есть, выдача бессмысленна».
      */
     fun refusalText(reason: org.ratatosk.core.FfiChannelRefusal): String
+
+    /** Текст §15 — слова ядра; свой писать нельзя. */
+    fun channelNotice(which: ChannelNotice): String
 }
 
 /** Настоящее ядро. */
@@ -108,4 +135,13 @@ object CoreBackend : Backend {
 
     override fun refusalText(reason: org.ratatosk.core.FfiChannelRefusal): String =
         org.ratatosk.core.channelRefusalText(reason)
+
+    override fun channelNotice(which: ChannelNotice): String = when (which) {
+        ChannelNotice.OPEN -> org.ratatosk.core.openChannelNotice()
+        ChannelNotice.PRIVATE -> org.ratatosk.core.privateChannelNotice()
+        ChannelNotice.ADMITTER_GRANT -> org.ratatosk.core.admitterGrantNotice()
+        ChannelNotice.KEY_ROTATION -> org.ratatosk.core.keyRotationNotice()
+        ChannelNotice.SHARING -> org.ratatosk.core.sharingNotice()
+        ChannelNotice.SEEDING -> org.ratatosk.core.seedingNotice()
+    }
 }
