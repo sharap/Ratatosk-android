@@ -51,6 +51,20 @@ class SessionContext(
 
     fun string(@StringRes id: Int): String = strings(id)
 
+    /**
+     * Слова к ошибке ядра.
+     *
+     * У отказа канала свой текст — и только он: `RatatoskException.Channel`
+     * несёт причину перечислением, а её `message` выглядит как
+     * `reason=NO_RIGHT`. Показать такое человеку нельзя.
+     */
+    fun errorText(e: Throwable, @StringRes fallback: Int? = null): String? = when {
+        e is org.ratatosk.core.RatatoskException.Channel -> core.refusalText(e.reason)
+        !e.message.isNullOrBlank() -> e.message
+        fallback != null -> string(fallback)
+        else -> null
+    }
+
     fun clearError() {
         _error.value = null
     }
@@ -74,7 +88,7 @@ class SessionContext(
         } catch (e: Exception) {
             android.util.Log.w("RatatoskVM", logLabel, e)
             if (fallback != null) {
-                val text = e.message?.takeIf { it.isNotBlank() } ?: string(fallback)
+                val text = errorText(e, fallback) ?: string(fallback)
                 withContext(Dispatchers.Main) { _error.value = text }
             }
         }

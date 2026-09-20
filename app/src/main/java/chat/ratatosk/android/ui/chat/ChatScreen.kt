@@ -122,6 +122,17 @@ fun ChatScreen(
         contact != null || (group?.joined ?: false)
     }
 
+    // В канале поле ввода гасится не составом, а правом и породой (§6.2):
+    // состоять и мочь говорить — разные вещи.
+    val channelInput = remember(group) { chat.ratatosk.android.ui.model.channelInput(group) }
+    val channelBlockText = when (channelInput) {
+        chat.ratatosk.android.ui.model.ChannelInput.ALLOWED -> null
+        chat.ratatosk.android.ui.model.ChannelInput.OWNER_ONLY -> stringResource(R.string.channel_owner_only)
+        chat.ratatosk.android.ui.model.ChannelInput.NO_RIGHT -> stringResource(R.string.channel_no_write_right)
+        chat.ratatosk.android.ui.model.ChannelInput.AWAITING -> stringResource(R.string.channel_awaiting)
+        chat.ratatosk.android.ui.model.ChannelInput.NOT_READABLE -> stringResource(R.string.channel_not_readable)
+    }
+
     var highlightedMsgId by remember { mutableStateOf<String?>(null) }
     var pendingScrollToId by remember { mutableStateOf<String?>(null) }
     var showChatMenu by remember { mutableStateOf(false) }
@@ -474,7 +485,7 @@ fun ChatScreen(
             },
             bottomBar = {
                 if (!isSearchMode) {
-                    if (isMember) {
+                    if (isMember && channelBlockText == null) {
                         Surface(tonalElevation = 2.dp) {
                             Column {
                                 replyingTo?.let { reply ->
@@ -634,9 +645,10 @@ fun ChatScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = stringResource(R.string.you_left_group),
+                                    text = channelBlockText ?: stringResource(R.string.you_left_group),
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.outline
+                                    color = MaterialTheme.colorScheme.outline,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 )
                             }
                         }

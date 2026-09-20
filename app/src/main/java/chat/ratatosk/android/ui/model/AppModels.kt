@@ -105,6 +105,12 @@ class AppModels(
         startClientEvents = { client.ensureClientEvents() },
     )
 
+    val channels: ChannelsModel = ChannelsModel(
+        session = session,
+        refreshGroups = { onContactsChanged() },
+        loadMessages = { chats.loadMessages(it) },
+    )
+
     val client: ClientModel = ClientModel(
         session = session,
         chats = chats,
@@ -113,6 +119,7 @@ class AppModels(
         files = files,
         transports = transports,
         pairing = pairing,
+        channels = channels,
         openCompanion = { companion.setupCompanionEngine() },
         onCompanionMode = { onCompanionMode(it) },
     )
@@ -121,6 +128,7 @@ class AppModels(
 
     fun resetAll() {
         accounts.reset()
+        channels.reset()
         client.reset()
         share.reset()
         companion.reset()

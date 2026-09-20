@@ -425,4 +425,13 @@
     <string name="merge_refused">Негодных записей: %1$d — стоит проверить, откуда этот архив.</string>
     <string name="merge_foreign">Список чужой: никто из добавленных не сверен, локальные имена не перенесены.</string>
     <string name="merge_failed">Не удалось добавить контакты</string>
+    <string name="channel">Канал</string>
+    <string name="channel_no_title_yet">Канал — его представление ещё не приехало</string>
+    <string name="channel_owner_only">Пока здесь пишет только владелец: слово развозит сказавший, а список читателей — у владельца</string>
+    <string name="channel_no_write_right">Права писать в этом канале нет</string>
+    <string name="channel_awaiting">Ждём, пока владелец впустит</string>
+    <string name="channel_not_readable">Читать пока нечем: ключ ещё не приехал</string>
+    <string name="channel_pow">Каждое слово стоит работы: %1$d бит</string>
+    <string name="channel_rights_until">Право писать — до %1$s</string>
+    <string name="channel_owner_unseen">От владельца давно ничего не приходило</string>
 </resources>

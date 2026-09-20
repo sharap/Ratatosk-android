@@ -12,6 +12,8 @@ internal fun notCalled(name: String): Nothing =
  * Проверка объявляет только то, что ей нужно, — а всё, чего модель звать
  * не должна была, само скажет об этом в отчёте, вместо `NullPointerException`
  * где-то в середине.
+ *
+ * Собрано `tools/gen_fakes.py` — руками не править.
  */
 open class FakeClient : RatatoskClientInterface {
     override fun `acceptFile`(`fileId`: kotlin.ByteArray): Unit = notCalled("acceptFile")
@@ -92,11 +94,13 @@ open class FakeClient : RatatoskClientInterface {
     override fun `setObserver`(`observer`: EventObserver): Unit = notCalled("setObserver")
     override fun `setReaction`(`chatId`: kotlin.ByteArray, `msgId`: kotlin.ByteArray, `emoji`: kotlin.String?): Unit = notCalled("setReaction")
     override fun `setSeeding`(`chatId`: kotlin.ByteArray, `mode`: FfiSeeding): Unit = notCalled("setSeeding")
+    override fun `setSharingLevel`(`chatId`: kotlin.ByteArray?, `level`: FfiSharingLevel?): Unit = notCalled("setSharingLevel")
     override fun `setTransportEnabled`(`transport`: FfiTransport, `enabled`: kotlin.Boolean): Unit = notCalled("setTransportEnabled")
     override fun `setYggKey`(`key`: kotlin.ByteArray): Unit = notCalled("setYggKey")
     override fun `setYggMode`(`mode`: FfiYggMode): Unit = notCalled("setYggMode")
     override fun `setYggPeers`(`peers`: List<kotlin.String>): Unit = notCalled("setYggPeers")
     override fun `shareContact`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray): Unit = notCalled("shareContact")
+    override fun `sharingLevel`(`chatId`: kotlin.ByteArray): FfiSharingLevel = notCalled("sharingLevel")
     override fun `subscribeToChannel`(`uri`: kotlin.String): Unit = notCalled("subscribeToChannel")
     override fun `sweepOrphanFiles`(): FfiSwept = notCalled("sweepOrphanFiles")
     override fun `torStatus`(): FfiTorStatus? = notCalled("torStatus")
@@ -115,6 +119,8 @@ open class FakeClient : RatatoskClientInterface {
  * Проверка объявляет только то, что ей нужно, — а всё, чего модель звать
  * не должна была, само скажет об этом в отчёте, вместо `NullPointerException`
  * где-то в середине.
+ *
+ * Собрано `tools/gen_fakes.py` — руками не править.
  */
 open class FakeCompanion : RatatoskCompanionInterface {
     override fun `acceptFile`(`fileId`: kotlin.ByteArray): Unit = notCalled("acceptFile")
@@ -214,6 +220,9 @@ class FakeBackend(
     override fun ensureBtRadio(context: android.content.Context): Boolean = false
     override fun hasBtRadio(): Boolean = false
     override fun coreLogFile(context: android.content.Context): java.io.File = notCalled("coreLogFile")
+
+    /** В проверках ядра нет, а текст отказа приходит из него. */
+    override fun refusalText(reason: FfiChannelRefusal): String = "отказ:$reason"
 }
 
 /**

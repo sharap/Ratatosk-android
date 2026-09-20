@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material3.*
@@ -199,10 +200,26 @@ fun ChatListScreen(
                         
                         val isSelected = activeChatId?.contentEquals(chatItem.chatId) == true
 
+                        // Канал — это группа со вторым профилем (§3.2), и пока
+                        // представление не приехало, названия у него нет: класть
+                        // в ссылку название нельзя, подписать его там нечем.
+                        val isChannel = (chatItem as? ChatItem.Group)?.group?.channel != null
+                        val shownTitle = chatItem.title.ifBlank {
+                            if (isChannel) stringResource(R.string.channel_no_title_yet) else ""
+                        }
+
                         ListItem(
                             headlineContent = { 
                                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                                    Text(chatItem.title, modifier = Modifier.weight(1f))
+                                    if (isChannel) {
+                                        Icon(
+                                            Icons.Default.Campaign,
+                                            contentDescription = stringResource(R.string.channel),
+                                            modifier = Modifier.size(16.dp).padding(end = 4.dp),
+                                            tint = MaterialTheme.colorScheme.primary,
+                                        )
+                                    }
+                                    Text(shownTitle, modifier = Modifier.weight(1f))
                                     if (chatItem is ChatItem.Contact && chatItem.contact.nearby) {
                                         Surface(
                                             modifier = Modifier.size(8.dp),
@@ -244,7 +261,8 @@ fun ChatListScreen(
                                 } else {
                                     when (chatItem) {
                                         is ChatItem.Contact -> Text(chatItem.contact.fingerprint)
-                                        is ChatItem.Group -> Text(stringResource(R.string.group_chat))
+                                        is ChatItem.Group ->
+                                            Text(stringResource(if (isChannel) R.string.channel else R.string.group_chat))
                                     }
                                 }
                             },
@@ -262,8 +280,8 @@ fun ChatListScreen(
                                         val avatarBytes = contactAvatars[hexId] ?: viewModel.getGroupAvatar(chatItem.chatId)
                                         Avatar(
                                             avatarBytes = avatarBytes,
-                                            name = chatItem.title,
-                                            icon = Icons.Default.Groups
+                                            name = shownTitle,
+                                            icon = if (isChannel) Icons.Default.Campaign else Icons.Default.Groups
                                         )
                                     }
                                 }

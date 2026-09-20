@@ -421,4 +421,13 @@
     <string name="merge_refused">Bad entries: %1$d — worth checking where this archive came from.</string>
     <string name="merge_foreign">The list belongs to someone else: none of the added contacts are verified, and local names were not carried over.</string>
     <string name="merge_failed">Could not add the contacts</string>
+    <string name="channel">Channel</string>
+    <string name="channel_no_title_yet">Channel — its description has not arrived yet</string>
+    <string name="channel_owner_only">Only the owner publishes here for now: a post is delivered by whoever said it, and the reader list belongs to the owner</string>
+    <string name="channel_no_write_right">You have no right to write in this channel</string>
+    <string name="channel_awaiting">Waiting for the owner to let you in</string>
+    <string name="channel_not_readable">Nothing to read it with yet: the key has not arrived</string>
+    <string name="channel_pow">Each post costs work: %1$d bits</string>
+    <string name="channel_rights_until">Your right to write lasts until %1$s</string>
+    <string name="channel_owner_unseen">Nothing has come from the owner for a long time</string>
 </resources>

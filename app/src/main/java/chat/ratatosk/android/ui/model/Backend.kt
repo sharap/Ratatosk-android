@@ -59,6 +59,13 @@ interface Backend {
     fun ensureBtRadio(context: Context): Boolean
     fun hasBtRadio(): Boolean
     fun coreLogFile(context: Context): java.io.File
+
+    /**
+     * Слова к отказу канала (§15). Свой текст писать нельзя: причин
+     * двенадцать, и половина различается оттенком, который человеку
+     * важен, — «нет права» против «право есть, выдача бессмысленна».
+     */
+    fun refusalText(reason: org.ratatosk.core.FfiChannelRefusal): String
 }
 
 /** Настоящее ядро. */
@@ -98,4 +105,7 @@ object CoreBackend : Backend {
     override fun ensureBtRadio(context: Context): Boolean = RatatoskCore.ensureBtRadio(context)
     override fun hasBtRadio(): Boolean = RatatoskCore.hasBtRadio()
     override fun coreLogFile(context: Context): java.io.File = RatatoskCore.coreLogFile(context)
+
+    override fun refusalText(reason: org.ratatosk.core.FfiChannelRefusal): String =
+        org.ratatosk.core.channelRefusalText(reason)
 }

@@ -42,6 +42,7 @@ class ClientModel(
     private val files: FilesModel,
     private val transports: TransportsModel,
     private val pairing: PairingModel,
+    private val channels: ChannelsModel,
     private val openCompanion: () -> Unit,
     private val onCompanionMode: (Boolean) -> Unit,
 ) : ClientApi {
@@ -374,6 +375,14 @@ class ClientModel(
                     }
                 }
             }
+            is FfiEvent.ChannelCreated,
+            is FfiEvent.ChannelChanged,
+            is FfiEvent.ChannelSubscribed,
+            is FfiEvent.ChannelUnsubscribed,
+            is FfiEvent.ChannelAdmitted,
+            is FfiEvent.ChannelKeyRotated,
+            is FfiEvent.ChannelRequested,
+            -> channels.onChannelEvent(event)
             else -> {}
         }
     }

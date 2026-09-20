@@ -221,6 +221,7 @@ class ModelsWithFakeBackendTest {
             files = files,
             transports = TransportsModel(s),
             pairing = PairingModel(s),
+            channels = chat.ratatosk.android.ui.model.ChannelsModel(s, refreshGroups = {}, loadMessages = {}),
             openCompanion = {},
             onCompanionMode = {},
         )
@@ -441,5 +442,26 @@ class ModelsWithFakeBackendTest {
 
         val leftovers = app.cacheDir.listFiles()?.filter { it.name.startsWith("merge-") } ?: emptyList()
         assertTrue("черновик остался на диске: $leftovers", leftovers.isEmpty())
+    }
+
+    /**
+     * Отказ канала показывается словами ядра, а не перечислением.
+     *
+     * `RatatoskException.Channel` несёт причину значением, и его `message`
+     * выглядит как `reason=NO_RIGHT`: показать такое человеку нельзя,
+     * а писать свой текст к двенадцати причинам — тем более (§15).
+     */
+    @Test
+    fun aChannelRefusalIsShownInTheCoreOwnWords() {
+        val s = session(companion = false)
+        val refusal = org.ratatosk.core.RatatoskException.Channel(
+            org.ratatosk.core.FfiChannelRefusal.NO_RIGHT,
+        )
+
+        assertEquals("отказ:NO_RIGHT", s.errorText(refusal))
+        assertTrue(
+            "слова причины не должны утечь как есть",
+            s.errorText(refusal)?.contains("reason=") != true,
+        )
     }
 }

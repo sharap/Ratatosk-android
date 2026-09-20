@@ -851,6 +851,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_seeding_notice(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_sharing_level_notice(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_sharing_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_waiting_notice(
@@ -1051,6 +1053,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_seeding(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_sharing_level(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_transport_enabled(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_key(
@@ -1060,6 +1064,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_peers(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_share_contact(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_sharing_level(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_subscribe_to_channel(
     ): Int
@@ -1424,6 +1430,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_seeding(`ptr`: Long,`chatId`: RustBuffer.ByValue,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_sharing_level(`ptr`: Long,`chatId`: RustBuffer.ByValue,`level`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_transport_enabled(`ptr`: Long,`transport`: RustBuffer.ByValue,`enabled`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_key(`ptr`: Long,`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1434,6 +1442,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_share_contact(`ptr`: Long,`chatId`: RustBuffer.ByValue,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_sharing_level(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_subscribe_to_channel(`ptr`: Long,`uri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_sweep_orphan_files(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1663,6 +1673,8 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_func_revocation_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_seeding_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_sharing_level_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_sharing_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1916,6 +1928,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_seeding_notice() != 10400) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_sharing_level_notice() != 57899) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_sharing_notice() != 36491) {
@@ -2218,6 +2233,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_seeding() != 56402) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_sharing_level() != 13571) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_transport_enabled() != 64975) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2231,6 +2249,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_share_contact() != 14077) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_sharing_level() != 37706) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_subscribe_to_channel() != 1675) {
@@ -6883,6 +6904,23 @@ public interface RatatoskClientInterface {
     fun `setSeeding`(`chatId`: kotlin.ByteArray, `mode`: FfiSeeding)
     
     /**
+     * Кому отдавать блоки этого канала — или всех каналов (§12).
+     *
+     * `chat_id: None` ставит умолчание **аккаунта**; с каналом —
+     * переопределение на него одного. `level: None` при названном
+     * канале снимает переопределение, и канал возвращается
+     * к умолчанию аккаунта.
+     *
+     * **Перед сужением клиент обязан показать [`sharing_level_notice`]**
+     * (§12): платит за него не только тот, кто настраивал.
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Channel`] — названный чат не канал или неизвестен.
+     */
+    fun `setSharingLevel`(`chatId`: kotlin.ByteArray?, `level`: FfiSharingLevel?)
+    
+    /**
      * Включает или выключает транспорт (§5.4).
      *
      * Одна ручка на все транспорты: их станет больше, и по ручке на каждый
@@ -6978,6 +7016,20 @@ public interface RatatoskClientInterface {
      * приватность о ней стоит говорить вслух.
      */
     fun `shareContact`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray)
+    
+    /**
+     * Кому мы отдаём блоки этого канала (§12) — с учётом умолчания.
+     *
+     * Отдаётся **действующий** уровень, а не сырая настройка: у канала
+     * без переопределения это уровень аккаунта. Клиенту нужен ответ
+     * на вопрос «кому сейчас отдаём», а не на вопрос «нажимали ли тут
+     * кнопку».
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    fun `sharingLevel`(`chatId`: kotlin.ByteArray): FfiSharingLevel
     
     /**
      * Подписывается на канал по ссылке (фаза 2, §10.3, §10.4).
@@ -9295,6 +9347,36 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Кому отдавать блоки этого канала — или всех каналов (§12).
+     *
+     * `chat_id: None` ставит умолчание **аккаунта**; с каналом —
+     * переопределение на него одного. `level: None` при названном
+     * канале снимает переопределение, и канал возвращается
+     * к умолчанию аккаунта.
+     *
+     * **Перед сужением клиент обязан показать [`sharing_level_notice`]**
+     * (§12): платит за него не только тот, кто настраивал.
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Channel`] — названный чат не канал или неизвестен.
+     */
+    @Throws(RatatoskException::class)override fun `setSharingLevel`(`chatId`: kotlin.ByteArray?, `level`: FfiSharingLevel?)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_sharing_level(
+        it,
+        
+        FfiConverterOptionalByteArray.lower(`chatId`),
+        FfiConverterOptionalTypeFfiSharingLevel.lower(`level`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Включает или выключает транспорт (§5.4).
      *
      * Одна ручка на все транспорты: их станет больше, и по ручке на каждый
@@ -9450,6 +9532,33 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 }
     }
     
+    
+
+    
+    /**
+     * Кому мы отдаём блоки этого канала (§12) — с учётом умолчания.
+     *
+     * Отдаётся **действующий** уровень, а не сырая настройка: у канала
+     * без переопределения это уровень аккаунта. Клиенту нужен ответ
+     * на вопрос «кому сейчас отдаём», а не на вопрос «нажимали ли тут
+     * кнопку».
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    @Throws(RatatoskException::class)override fun `sharingLevel`(`chatId`: kotlin.ByteArray): FfiSharingLevel {
+            return FfiConverterTypeFfiSharingLevel.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_sharing_level(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
+}
+    }
+    )
+    }
     
 
     
@@ -18116,6 +18225,61 @@ public object FfiConverterTypeFfiSeeding: FfiConverterRustBuffer<FfiSeeding> {
 
 
 /**
+ * Кому отдаём, когда раздаём канал (фаза 2, §12).
+ *
+ * **Вторая ручка, а не та же, что [`FfiSeeding`].** Участие в раздаче
+ * отвечает на вопрос «раздаём ли вообще», уровень — «кому». Сложи их
+ * в одну настройку, и «раздаю только контактам» стало бы неотличимо
+ * от «не раздаю».
+ */
+
+enum class FfiSharingLevel {
+    
+    /**
+     * Всем, кто спросил. **Умолчание, и §12 велит ему таким остаться.**
+     */
+    EVERYONE,
+    /**
+     * Только контактам.
+     */
+    CONTACTS,
+    /**
+     * Только сверенным.
+     *
+     * Клиенту стоит называть это тем, что оно есть: сверенных обычно
+     * единицы, и это ближе к «не раздавать», чем к середине.
+     */
+    VERIFIED;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiSharingLevel: FfiConverterRustBuffer<FfiSharingLevel> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiSharingLevel.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiSharingLevel) = 4UL
+
+    override fun write(value: FfiSharingLevel, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
  * Транспорт на границе §13.3.
  *
  * Своё перечисление, а не `ratatosk_proto::Transport`: типы протокола
@@ -18818,6 +18982,38 @@ public object FfiConverterOptionalTypeFfiDeliveryStatus: FfiConverterRustBuffer<
         } else {
             buf.put(1)
             FfiConverterTypeFfiDeliveryStatus.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeFfiSharingLevel: FfiConverterRustBuffer<FfiSharingLevel?> {
+    override fun read(buf: ByteBuffer): FfiSharingLevel? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeFfiSharingLevel.read(buf)
+    }
+
+    override fun allocationSize(value: FfiSharingLevel?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeFfiSharingLevel.allocationSize(value)
+        }
+    }
+
+    override fun write(value: FfiSharingLevel?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeFfiSharingLevel.write(value, buf)
         }
     }
 }
@@ -20342,6 +20538,27 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_func_seeding_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Чем платит сужение круга отдачи (фаза 2, §15, §12).
+         *
+         * Показывается **до** затягивания: §12 требует, чтобы UI сказал, что
+         * платят не только за себя. Уровни «только контактам» и «только
+         * сверенным» безобидны как личный выбор и разрушительны как
+         * популярный — рой сворачивается в граф контактов, а заметит это
+         * не тот, кто настраивал, а новый подписчик.
+         *
+         * Сосед [`sharing_notice`] — про другое: там показ **ссылки** (§10.2).
+         */ fun `sharingLevelNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_sharing_level_notice(
     
         _status)
 }
