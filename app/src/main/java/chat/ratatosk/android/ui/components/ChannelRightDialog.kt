@@ -1,7 +1,9 @@
 package chat.ratatosk.android.ui.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
@@ -15,6 +17,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import chat.ratatosk.android.R
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.model.ChannelNotice
+import chat.ratatosk.android.util.toHexString
 import org.ratatosk.core.FfiChannelRights
 
 /** Сроки выдачи: месяц, три, год. «Без срока» здесь быть не может (§6.3). */
@@ -223,6 +227,76 @@ fun ChannelNoticeDialog(
         confirmButton = {
             TextButton(onClick = { onConfirm(); onDismiss() }) { Text(confirmLabel) }
         },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}
+
+/**
+ * Впустить контакт в канал, не дожидаясь заявки (§6.5, §10.4).
+ *
+ * Ключ чтения запечатывается на карточку впускаемого — поэтому впустить
+ * так можно только контакт, и список здесь из контактов. Ссылка при этом
+ * никому не нужна: ядро само отдаёт поколение ключа и подписанную запись
+ * о впуске.
+ *
+ * @param alreadyIn кого уже впустили: им это не нужно второй раз.
+ */
+@Composable
+fun AdmitContactDialog(
+    viewModel: RatatoskViewModel,
+    chatId: ByteArray,
+    alreadyIn: List<ByteArray>,
+    onDismiss: () -> Unit,
+) {
+    val contacts by viewModel.contacts.collectAsState()
+    val avatars by viewModel.contactAvatars.collectAsState()
+
+    val available = remember(contacts, alreadyIn) {
+        contacts.filterNot { contact -> alreadyIn.any { it.contentEquals(contact.peerIk) } }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.channel_admit_contact)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.channel_admit_contact_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(12.dp))
+                when {
+                    contacts.isEmpty() -> Text(stringResource(R.string.channel_admit_no_contacts))
+                    available.isEmpty() -> Text(stringResource(R.string.channel_admit_none_left))
+                    else -> androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier.heightIn(max = 360.dp)
+                    ) {
+                        items(available.size) { index ->
+                            val contact = available[index]
+                            val name = contact.localName ?: contact.displayName
+                            androidx.compose.material3.ListItem(
+                                headlineContent = { Text(name) },
+                                leadingContent = {
+                                    Avatar(
+                                        avatarBytes = avatars[contact.peerIk.toHexString()]
+                                            ?: viewModel.getAvatarOf(contact.peerIk),
+                                        name = name,
+                                    )
+                                },
+                                modifier = Modifier.clickable {
+                                    viewModel.admitToChannel(chatId, contact.peerIk)
+                                    onDismiss()
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },

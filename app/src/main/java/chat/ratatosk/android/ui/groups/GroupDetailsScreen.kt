@@ -545,6 +545,7 @@ private fun ChannelSection(
     // с текстом ядра, и оба до действия, а не после.
     var confirmAnnounce by remember { mutableStateOf(false) }
     var confirmNarrow by remember { mutableStateOf<org.ratatosk.core.FfiSharingLevel?>(null) }
+    var showAdmitContact by remember { mutableStateOf(false) }
 
     editingRight?.let { (who, name) ->
         chat.ratatosk.android.ui.components.ChannelRightDialog(
@@ -562,6 +563,15 @@ private fun ChannelSection(
             notice = viewModel.channelNotice(chat.ratatosk.android.ui.model.ChannelNotice.KEY_ROTATION),
             onConfirm = { viewModel.rotateChannelKey(chatId) },
             onDismiss = { showRotate = false },
+        )
+    }
+
+    if (showAdmitContact) {
+        chat.ratatosk.android.ui.components.AdmitContactDialog(
+            viewModel = viewModel,
+            chatId = chatId,
+            alreadyIn = admits[hex].orEmpty().map { it.who },
+            onDismiss = { showAdmitContact = false },
         )
     }
 
@@ -726,6 +736,25 @@ private fun ChannelSection(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
                 modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+
+        // Впускать может и делегат с правом «впускать»: ключ уезжает
+        // адресату и ничьего состава не требует. А вот заявки, выдачи
+        // и поворот ключа — дело владельца: заявки ядро держит у него.
+        val canAdmit = isOwner || channel.rights.admit
+
+        if (canAdmit && channel.open != true) {
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedButton(onClick = { showAdmitContact = true }, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.PersonAdd, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.channel_admit_contact))
+            }
+            Text(
+                text = stringResource(R.string.channel_admit_contact_desc),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
             )
         }
 
