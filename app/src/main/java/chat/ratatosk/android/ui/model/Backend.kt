@@ -93,6 +93,14 @@ interface Backend {
 
     /** Текст §15 — слова ядра; свой писать нельзя. */
     fun channelNotice(which: ChannelNotice): String
+
+    /**
+     * Чем платит сужение круга отдачи (§12).
+     *
+     * Отдельно от [channelNotice]: этот текст не про канал, а про то,
+     * кому мы отдаём блоки — и сказать его надо **до** затягивания.
+     */
+    fun sharingLevelNotice(): String
 }
 
 /** Настоящее ядро. */
@@ -144,4 +152,6 @@ object CoreBackend : Backend {
         ChannelNotice.SHARING -> org.ratatosk.core.sharingNotice()
         ChannelNotice.SEEDING -> org.ratatosk.core.seedingNotice()
     }
+
+    override fun sharingLevelNotice(): String = org.ratatosk.core.sharingLevelNotice()
 }

@@ -12,6 +12,9 @@ import kotlinx.coroutines.withContext
 import org.ratatosk.core.FfiChannelAdmit
 import org.ratatosk.core.FfiChannelGrant
 import org.ratatosk.core.FfiChannelRights
+import org.ratatosk.core.FfiChannelSeed
+import org.ratatosk.core.FfiSeeding
+import org.ratatosk.core.FfiSharingLevel
 import org.ratatosk.core.FfiChannelRequest
 import org.ratatosk.core.FfiGroup
 
@@ -89,6 +92,37 @@ interface ChannelsApi {
 
     /** Цена слова (§11): фильтр первого уровня, а не защита. */
     fun setChannelPow(chatId: ByteArray, bits: UInt)
+
+    /** Текст §12 — чем платит сужение круга отдачи. */
+    fun sharingLevelNotice(): String
+
+    /** Перечитать состояние раздачи: его видит каждый читатель. */
+    fun refreshChannelSeeding(chatId: ByteArray)
+
+    /** Как мы раздаём этот канал (§7.5.1); по каналам. */
+    val seedingMode: StateFlow<Map<String, FfiSeeding>>
+
+    /** Кто ещё вызвался раздавать (§7.5): каталог сидов. */
+    val channelSeeds: StateFlow<Map<String, List<FfiChannelSeed>>>
+
+    /** Кому отдаём блоки этого канала (§12); `null` — умолчание аккаунта. */
+    val sharingLevel: StateFlow<Map<String, FfiSharingLevel>>
+
+    /**
+     * Меняет участие в раздаче (§7.5.1).
+     *
+     * `OFF` — выключатель раздачи, а не отписка: канал продолжает
+     * читаться. Перед `ANNOUNCED` клиент обязан показать `seeding_notice`.
+     */
+    fun setSeeding(chatId: ByteArray, mode: FfiSeeding)
+
+    /**
+     * Кому отдавать блоки этого канала (§12).
+     *
+     * Перед сужением обязателен `sharing_level_notice`: платит за него
+     * не только тот, кто настраивал.
+     */
+    fun setSharingLevel(chatId: ByteArray, level: FfiSharingLevel)
 
     /** Перечитать заявки и впущенных — при открытии карточки канала. */
     fun refreshChannelPeople(chatId: ByteArray)
@@ -181,6 +215,54 @@ class ChannelsModel(
     override fun setChannelPow(chatId: ByteArray, bits: UInt) {
         session.io("Failed to set channel pow", R.string.channel_pow_failed) {
             session.core.client().setChannelPow(chatId, bits)
+        }
+    }
+
+    private val _seedingMode = MutableStateFlow<Map<String, FfiSeeding>>(emptyMap())
+    override val seedingMode = _seedingMode.asStateFlow()
+
+    private val _channelSeeds = MutableStateFlow<Map<String, List<FfiChannelSeed>>>(emptyMap())
+    override val channelSeeds = _channelSeeds.asStateFlow()
+
+    private val _sharingLevel = MutableStateFlow<Map<String, FfiSharingLevel>>(emptyMap())
+    override val sharingLevel = _sharingLevel.asStateFlow()
+
+    override fun setSeeding(chatId: ByteArray, mode: FfiSeeding) {
+        session.io("Failed to change seeding", R.string.channel_seeding_failed) {
+            session.core.client().setSeeding(chatId, mode)
+            refreshSeeding(chatId)
+        }
+    }
+
+    override fun setSharingLevel(chatId: ByteArray, level: FfiSharingLevel) {
+        session.io("Failed to set sharing level", R.string.channel_sharing_failed) {
+            session.core.client().setSharingLevel(chatId, level)
+            refreshSeeding(chatId)
+        }
+    }
+
+    override fun sharingLevelNotice(): String = session.core.sharingLevelNotice()
+
+    override fun refreshChannelSeeding(chatId: ByteArray) = refreshSeeding(chatId)
+
+    /** Раздача — дело каждого читателя, не только владельца. */
+    private fun refreshSeeding(chatId: ByteArray) {
+        if (session.isCompanion) return
+        val hex = chatId.toHexString()
+        session.scope.launch(Dispatchers.IO) {
+            try {
+                val client = session.core.client()
+                val mode = client.seedingMode(chatId)
+                val seeds = client.channelSeeds(chatId)
+                val level = client.sharingLevel(chatId)
+                withContext(Dispatchers.Main) {
+                    _seedingMode.update { it + (hex to mode) }
+                    _channelSeeds.update { it + (hex to seeds) }
+                    _sharingLevel.update { it + (hex to level) }
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to read seeding state", e)
+            }
         }
     }
 
@@ -300,6 +382,8 @@ class ChannelsModel(
                 loadMessages(event.chatId)
             }
             is org.ratatosk.core.FfiEvent.ChannelRequested -> refreshRequests(event.chatId)
+            is org.ratatosk.core.FfiEvent.SeedingChanged -> refreshSeeding(event.chatId)
+            is org.ratatosk.core.FfiEvent.SeedAnnounced -> refreshSeeding(event.chatId)
             else -> {}
         }
     }
@@ -309,5 +393,8 @@ class ChannelsModel(
         _channelRequests.value = emptyMap()
         _channelAdmits.value = emptyMap()
         _channelGrants.value = emptyMap()
+        _seedingMode.value = emptyMap()
+        _channelSeeds.value = emptyMap()
+        _sharingLevel.value = emptyMap()
     }
 }

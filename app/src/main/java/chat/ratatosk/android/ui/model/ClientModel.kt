@@ -382,6 +382,8 @@ class ClientModel(
             is FfiEvent.ChannelAdmitted,
             is FfiEvent.ChannelKeyRotated,
             is FfiEvent.ChannelRequested,
+            is FfiEvent.SeedingChanged,
+            is FfiEvent.SeedAnnounced,
             -> channels.onChannelEvent(event)
             else -> {}
         }

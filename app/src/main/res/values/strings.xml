@@ -491,4 +491,21 @@
     <string name="channel_pow_failed">Could not set the price</string>
     <string name="channel_my_right_until">Your right to write lasts until %1$s</string>
     <string name="channel_owner_quiet">Nothing has come from the owner for a long time</string>
+    <string name="channel_seeding">Sharing the channel</string>
+    <string name="channel_seeding_off">Not sharing: to nobody</string>
+    <string name="channel_seeding_off_desc">The channel still reads as before — what stops is the giving, not the subscription.</string>
+    <string name="channel_seeding_quiet">Quietly (default)</string>
+    <string name="channel_seeding_quiet_desc">The address is not announced and nobody can dial you, but to those you connected to yourself you give like everyone else.</string>
+    <string name="channel_seeding_announced">Announced seed</string>
+    <string name="channel_seeding_announced_desc">The address goes into the catalogue, strangers dial it, and you give to whoever asks.</string>
+    <string name="channel_seeding_failed">Could not change the sharing</string>
+    <string name="channel_seeds">Who else is sharing</string>
+    <string name="channel_seeds_none">Nobody has announced themselves</string>
+    <string name="channel_seed_until">announced until %1$s</string>
+    <string name="channel_seed_unverified">the card could not be checked</string>
+    <string name="channel_sharing_level">Whom to give to</string>
+    <string name="channel_sharing_everyone">Everyone who asks (default)</string>
+    <string name="channel_sharing_contacts">Only contacts</string>
+    <string name="channel_sharing_verified">Only verified — usually a handful, closer to not sharing at all</string>
+    <string name="channel_sharing_failed">Could not change whom to give to</string>
 </resources>

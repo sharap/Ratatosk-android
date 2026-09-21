@@ -83,6 +83,25 @@ class ModelsWithFakeBackendTest {
             calls += "client.admitToChannel:${chatId.toHexString()}:${peerIk.toHexString()}"
         }
 
+        override fun `setSeeding`(`chatId`: kotlin.ByteArray, `mode`: org.ratatosk.core.FfiSeeding) {
+            calls += "client.setSeeding:$mode"
+        }
+
+        override fun `seedingMode`(`chatId`: kotlin.ByteArray): org.ratatosk.core.FfiSeeding =
+            org.ratatosk.core.FfiSeeding.QUIET
+
+        override fun `channelSeeds`(`chatId`: kotlin.ByteArray): List<org.ratatosk.core.FfiChannelSeed> = emptyList()
+
+        override fun `sharingLevel`(`chatId`: kotlin.ByteArray): org.ratatosk.core.FfiSharingLevel =
+            org.ratatosk.core.FfiSharingLevel.EVERYONE
+
+        override fun `setSharingLevel`(
+            `chatId`: kotlin.ByteArray?,
+            `level`: org.ratatosk.core.FfiSharingLevel?,
+        ) {
+            calls += "client.setSharingLevel:$level"
+        }
+
         override fun `channelGrants`(`chatId`: kotlin.ByteArray): List<org.ratatosk.core.FfiChannelGrant> {
             calls += "client.channelGrants:${chatId.toHexString()}"
             return emptyList()
@@ -588,5 +607,39 @@ class ModelsWithFakeBackendTest {
 
         waitUntil("выдача ушла") { seen().any { it.startsWith("client.setChannelRight") } }
         assertTrue(seen().toString(), seen().contains("client.setChannelRight:0505:писать:срок=true"))
+    }
+
+    /**
+     * Выключить раздачу — не то же, что отписаться (§9.2).
+     *
+     * `OFF` гасит только отдачу, канал продолжает читаться. Свалив это
+     * с отпиской, клиент стёр бы человеку архив там, где он просил всего
+     * лишь не раздавать.
+     */
+    @Test
+    fun turningSharingOffIsNotUnsubscribing() {
+        val s = session(companion = false)
+        val channels = channelsModel(s)
+
+        channels.setSeeding(chatA, org.ratatosk.core.FfiSeeding.OFF)
+
+        waitUntil("раздача выключена") { seen().any { it.startsWith("client.setSeeding") } }
+        assertTrue(seen().toString(), seen().contains("client.setSeeding:OFF"))
+        assertTrue(
+            "отписки здесь быть не должно: ${seen()}",
+            seen().none { it.contains("unsubscribe", ignoreCase = true) },
+        )
+    }
+
+    /** Сужение круга отдачи доходит до ядра как есть (§12). */
+    @Test
+    fun narrowingWhomWeGiveToReachesTheCore() {
+        val s = session(companion = false)
+        val channels = channelsModel(s)
+
+        channels.setSharingLevel(chatA, org.ratatosk.core.FfiSharingLevel.CONTACTS)
+
+        waitUntil("сужение ушло") { seen().any { it.startsWith("client.setSharingLevel") } }
+        assertTrue(seen().toString(), seen().contains("client.setSharingLevel:CONTACTS"))
     }
 }

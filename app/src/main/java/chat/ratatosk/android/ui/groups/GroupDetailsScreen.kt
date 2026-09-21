@@ -532,12 +532,19 @@ private fun ChannelSection(
     val requests by viewModel.channelRequests.collectAsState()
     val admits by viewModel.channelAdmits.collectAsState()
     val grants by viewModel.channelGrants.collectAsState()
+    val seeding by viewModel.seedingMode.collectAsState()
+    val seeds by viewModel.channelSeeds.collectAsState()
+    val sharing by viewModel.sharingLevel.collectAsState()
     val hex = remember(chatId) { chatId.toHexString() }
 
     // Кому правим права; `null` — окно закрыто.
     var editingRight by remember { mutableStateOf<Pair<ByteArray, String>?>(null) }
     var showRotate by remember { mutableStateOf(false) }
     var showPow by remember { mutableStateOf(false) }
+    // Подтверждения: объявить себя сидом и сузить круг отдачи. Оба —
+    // с текстом ядра, и оба до действия, а не после.
+    var confirmAnnounce by remember { mutableStateOf(false) }
+    var confirmNarrow by remember { mutableStateOf<org.ratatosk.core.FfiSharingLevel?>(null) }
 
     editingRight?.let { (who, name) ->
         chat.ratatosk.android.ui.components.ChannelRightDialog(
@@ -558,6 +565,26 @@ private fun ChannelSection(
         )
     }
 
+    if (confirmAnnounce) {
+        chat.ratatosk.android.ui.components.ChannelNoticeDialog(
+            title = stringResource(R.string.channel_seeding_announced),
+            notice = viewModel.channelNotice(chat.ratatosk.android.ui.model.ChannelNotice.SEEDING),
+            confirmLabel = stringResource(R.string.channel_seeding_announced),
+            onConfirm = { viewModel.setSeeding(chatId, org.ratatosk.core.FfiSeeding.ANNOUNCED) },
+            onDismiss = { confirmAnnounce = false },
+        )
+    }
+
+    confirmNarrow?.let { level ->
+        chat.ratatosk.android.ui.components.ChannelNoticeDialog(
+            title = stringResource(R.string.channel_sharing_level),
+            notice = viewModel.sharingLevelNotice(),
+            confirmLabel = stringResource(R.string.save),
+            onConfirm = { viewModel.setSharingLevel(chatId, level) },
+            onDismiss = { confirmNarrow = null },
+        )
+    }
+
     if (showPow) {
         chat.ratatosk.android.ui.components.ChannelPowDialog(
             current = channel.powBits,
@@ -567,6 +594,7 @@ private fun ChannelSection(
     }
 
     LaunchedEffect(hex, isOwner) {
+        viewModel.refreshChannelSeeding(chatId)
         if (isOwner) viewModel.refreshChannelPeople(chatId)
     }
 
@@ -587,6 +615,96 @@ private fun ChannelSection(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        // Раздача — дело каждого читателя: канал держится на том, что
+        // читатели раздают друг другу (§7.5).
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.channel_seeding),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        val mode = seeding[hex] ?: org.ratatosk.core.FfiSeeding.QUIET
+        SeedingOption(
+            selected = mode == org.ratatosk.core.FfiSeeding.QUIET,
+            title = stringResource(R.string.channel_seeding_quiet),
+            desc = stringResource(R.string.channel_seeding_quiet_desc),
+            onClick = { viewModel.setSeeding(chatId, org.ratatosk.core.FfiSeeding.QUIET) },
+        )
+        SeedingOption(
+            selected = mode == org.ratatosk.core.FfiSeeding.ANNOUNCED,
+            title = stringResource(R.string.channel_seeding_announced),
+            desc = stringResource(R.string.channel_seeding_announced_desc),
+            // Объявление раскрывает адрес — спрашиваем до, а не после.
+            onClick = { if (mode != org.ratatosk.core.FfiSeeding.ANNOUNCED) confirmAnnounce = true },
+        )
+        SeedingOption(
+            selected = mode == org.ratatosk.core.FfiSeeding.OFF,
+            title = stringResource(R.string.channel_seeding_off),
+            desc = stringResource(R.string.channel_seeding_off_desc),
+            onClick = { viewModel.setSeeding(chatId, org.ratatosk.core.FfiSeeding.OFF) },
+        )
+
+        if (mode != org.ratatosk.core.FfiSeeding.OFF) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = stringResource(R.string.channel_sharing_level),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            val level = sharing[hex] ?: org.ratatosk.core.FfiSharingLevel.EVERYONE
+            SeedingOption(
+                selected = level == org.ratatosk.core.FfiSharingLevel.EVERYONE,
+                title = stringResource(R.string.channel_sharing_everyone),
+                desc = null,
+                onClick = { viewModel.setSharingLevel(chatId, org.ratatosk.core.FfiSharingLevel.EVERYONE) },
+            )
+            SeedingOption(
+                selected = level == org.ratatosk.core.FfiSharingLevel.CONTACTS,
+                title = stringResource(R.string.channel_sharing_contacts),
+                desc = null,
+                // Сужение платится не только настраивающим (§12).
+                onClick = {
+                    if (level != org.ratatosk.core.FfiSharingLevel.CONTACTS) {
+                        confirmNarrow = org.ratatosk.core.FfiSharingLevel.CONTACTS
+                    }
+                },
+            )
+            SeedingOption(
+                selected = level == org.ratatosk.core.FfiSharingLevel.VERIFIED,
+                title = stringResource(R.string.channel_sharing_verified),
+                desc = null,
+                onClick = {
+                    if (level != org.ratatosk.core.FfiSharingLevel.VERIFIED) {
+                        confirmNarrow = org.ratatosk.core.FfiSharingLevel.VERIFIED
+                    }
+                },
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = stringResource(R.string.channel_seeds),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        val others = seeds[hex].orEmpty()
+        if (others.isEmpty()) {
+            Text(
+                text = stringResource(R.string.channel_seeds_none),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+            )
+        } else {
+            others.forEach { seed ->
+                Text(
+                    text = seed.who.toHexString().take(16) + " — " +
+                        stringResource(R.string.channel_seed_until, seed.validUntilMs.toLong().formatDateTime()) +
+                        if (!seed.verified) ", " + stringResource(R.string.channel_seed_unverified) else "",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
 
         // Срок своего права виден заранее (§6.3): отказ по сроку не должен
         // наступать внезапно, и это единственный способ его предупредить.
@@ -772,4 +890,30 @@ private fun rightsSummary(rights: org.ratatosk.core.FfiChannelRights): String {
         if (rights.edit) add(stringResource(R.string.channel_right_edit))
     }
     return parts.joinToString(", ").ifEmpty { stringResource(R.string.channel_right_none) }
+}
+
+/** Строка выбора: кружок, название и, если есть, что это значит. */
+@Composable
+private fun SeedingOption(
+    selected: Boolean,
+    title: String,
+    desc: String?,
+    onClick: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.Top,
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 4.dp),
+    ) {
+        RadioButton(selected = selected, onClick = onClick)
+        Column(modifier = Modifier.padding(top = 12.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium)
+            if (desc != null) {
+                Text(
+                    text = desc,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
+        }
+    }
 }

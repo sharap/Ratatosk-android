@@ -229,6 +229,8 @@ class FakeBackend(
     /** Тексты §15 живут в ядре; в проверках хватает их имени. */
     override fun channelNotice(which: chat.ratatosk.android.ui.model.ChannelNotice): String =
         "текст:$which"
+
+    override fun sharingLevelNotice(): String = "текст:SHARING_LEVEL"
 }
 
 /**

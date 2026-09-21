@@ -200,3 +200,31 @@ fun ChannelPowDialog(
         },
     )
 }
+
+/**
+ * Обязательный текст §15 перед действием, у которого есть цена.
+ *
+ * Одно окно на все такие случаи: объявление себя сидом раскрывает адрес,
+ * сужение круга отдачи платится не только тем, кто настраивал. Слова —
+ * ядра, кнопка называет действие.
+ */
+@Composable
+fun ChannelNoticeDialog(
+    title: String,
+    notice: String,
+    confirmLabel: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(notice) },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(); onDismiss() }) { Text(confirmLabel) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}
