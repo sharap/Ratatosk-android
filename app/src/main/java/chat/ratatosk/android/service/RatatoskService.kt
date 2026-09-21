@@ -152,6 +152,9 @@ class RatatoskService : Service() {
                 if (event is FfiEvent.ReactionChanged && !RatatoskCore.isCompanionMode()) {
                     showReactionNotification(event)
                 }
+                if (event is FfiEvent.ChannelRequested && !RatatoskCore.isCompanionMode()) {
+                    showChannelRequestNotification(event)
+                }
             }
             .launchIn(serviceScope)
 
@@ -707,6 +710,84 @@ class RatatoskService : Service() {
                 // заменяет прежнее уведомление, а не копится рядом.
                 NotificationManagerCompat.from(this@RatatoskService)
                     .notify(("reaction:" + msgIdHex).hashCode(), notification)
+            } catch (e: SecurityException) {
+                // Разрешение на уведомления ещё не выдано.
+            }
+        }
+    }
+
+    /**
+     * Кто-то просится в канал по приглашению (§10.4).
+     *
+     * Сказать об этом надо: заявка ждёт владельца сколько угодно, отказа
+     * как ответа не бывает, и человек, который её не заметил, молча
+     * отказывает — а просящий не узнает даже этого.
+     *
+     * Имя показывается по той же настройке, что и у сообщений: карточка
+     * просящего у нас уже есть, но на замке экрана ей не место, если
+     * человек попросил имён не показывать.
+     */
+    private fun showChannelRequestNotification(event: FfiEvent.ChannelRequested) {
+        serviceScope.launch {
+            val accountId = RatatoskCore.getActiveAccountId() ?: return@launch
+            val chatIdHex = event.chatId.toHexString()
+
+            // Канал открыт и виден — заявку человек и так увидит в карточке.
+            if (chat.ratatosk.android.util.VisibleChat.isVisible(chatIdHex)) {
+                return@launch
+            }
+
+            val settings = SettingsRepository(this@RatatoskService)
+            val showName = settings.getNotificationsShowName(accountId).first()
+
+            val body = if (showName) {
+                val client = RatatoskCore.getClient()
+                val who = try {
+                    client.channelRequests(event.chatId)
+                        .firstOrNull { it.who.contentEquals(event.who) }?.name
+                } catch (t: Throwable) {
+                    android.util.Log.w("RatatoskService", "Failed to read channel requests", t)
+                    null
+                }
+                val title = try {
+                    client.groups().firstOrNull { it.chatId.contentEquals(event.chatId) }?.title
+                } catch (t: Throwable) {
+                    null
+                }
+                if (who != null && !title.isNullOrBlank()) {
+                    getString(R.string.channel_request_notification_named, who, title)
+                } else {
+                    getString(R.string.channel_request_notification_plain)
+                }
+            } else {
+                getString(R.string.channel_request_notification_plain)
+            }
+
+            val intent = Intent(this@RatatoskService, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("chatId", chatIdHex)
+            }
+            val pendingIntent = PendingIntent.getActivity(
+                this@RatatoskService,
+                ("channel-request:" + chatIdHex).hashCode(),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            val notification = NotificationCompat.Builder(this@RatatoskService, MESSAGE_CHANNEL_ID)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle(getString(R.string.channel_request_notification_title))
+                .setContentText(body)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .build()
+
+            try {
+                // Один на канал: пока владелец не открыл карточку, вторая
+                // заявка заменяет уведомление, а не копится рядом с первым.
+                NotificationManagerCompat.from(this@RatatoskService)
+                    .notify(("channel-request:" + chatIdHex).hashCode(), notification)
             } catch (e: SecurityException) {
                 // Разрешение на уведомления ещё не выдано.
             }

@@ -516,4 +516,7 @@
     <string name="channel_admit_contact_desc">Ключ чтения уедет ему без всякой ссылки: он запечатывается на его карточку, поэтому впустить так можно только контакт.</string>
     <string name="channel_admit_none_left">Все ваши контакты уже впущены</string>
     <string name="channel_admit_no_contacts">Впускать некого: ключ запечатывается на карточку, а она есть только у контактов</string>
+    <string name="channel_request_notification_title">Просятся в канал</string>
+    <string name="channel_request_notification_named">%1$s просится в «%2$s»</string>
+    <string name="channel_request_notification_plain">Кто-то просится в канал</string>
 </resources>

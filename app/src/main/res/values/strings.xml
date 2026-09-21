@@ -512,4 +512,7 @@
     <string name="channel_admit_contact_desc">They will get the reading key without any link: it is sealed to their card, so only a contact can be let in this way.</string>
     <string name="channel_admit_none_left">Everyone in your contacts has been let in already</string>
     <string name="channel_admit_no_contacts">There is nobody to let in: the key is sealed to a card, and only contacts have one here</string>
+    <string name="channel_request_notification_title">Asking to join a channel</string>
+    <string name="channel_request_notification_named">%1$s is asking to join “%2$s”</string>
+    <string name="channel_request_notification_plain">Someone is asking to join a channel</string>
 </resources>
