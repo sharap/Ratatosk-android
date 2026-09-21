@@ -427,7 +427,6 @@
     <string name="merge_failed">Не удалось добавить контакты</string>
     <string name="channel">Канал</string>
     <string name="channel_no_title_yet">Канал — его представление ещё не приехало</string>
-    <string name="channel_owner_only">Пока здесь пишет только владелец: слово развозит сказавший, а список читателей — у владельца</string>
     <string name="channel_no_write_right">Права писать в этом канале нет</string>
     <string name="channel_awaiting">Ждём, пока владелец впустит</string>
     <string name="channel_not_readable">Читать пока нечем: ключ ещё не приехал</string>

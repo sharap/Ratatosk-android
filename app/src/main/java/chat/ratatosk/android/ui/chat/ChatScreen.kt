@@ -127,7 +127,6 @@ fun ChatScreen(
     val channelInput = remember(group) { chat.ratatosk.android.ui.model.channelInput(group) }
     val channelBlockText = when (channelInput) {
         chat.ratatosk.android.ui.model.ChannelInput.ALLOWED -> null
-        chat.ratatosk.android.ui.model.ChannelInput.OWNER_ONLY -> stringResource(R.string.channel_owner_only)
         chat.ratatosk.android.ui.model.ChannelInput.NO_RIGHT -> stringResource(R.string.channel_no_write_right)
         chat.ratatosk.android.ui.model.ChannelInput.AWAITING -> stringResource(R.string.channel_awaiting)
         chat.ratatosk.android.ui.model.ChannelInput.NOT_READABLE -> stringResource(R.string.channel_not_readable)

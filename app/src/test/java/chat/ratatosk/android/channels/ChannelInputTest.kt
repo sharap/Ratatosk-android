@@ -61,11 +61,18 @@ class ChannelInputTest {
         assertEquals(ChannelInput.ALLOWED, channelInput(group(mine = true, channel = channel())))
     }
 
-    /** Право писать есть, а развозить некому — и сказать надо именно это. */
+    /**
+     * Держатель права пишет наравне с владельцем.
+     *
+     * Так было не всегда: доставки у делегата не было — состав канала
+     * §3.2 оставляет владельцу, и развозить ему было некому. Теперь
+     * своё слово уезжает владельцу и своим сидам, а дальше расходится
+     * роем, и гасить поле по составу больше не за чем.
+     */
     @Test
-    fun aGranteeIsToldAboutDeliveryNotRights() {
+    fun aGranteeWritesToo() {
         assertEquals(
-            ChannelInput.OWNER_ONLY,
+            ChannelInput.ALLOWED,
             channelInput(group(mine = false, channel = channel(write = true))),
         )
     }

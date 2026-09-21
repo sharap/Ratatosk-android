@@ -423,7 +423,6 @@
     <string name="merge_failed">Could not add the contacts</string>
     <string name="channel">Channel</string>
     <string name="channel_no_title_yet">Channel — its description has not arrived yet</string>
-    <string name="channel_owner_only">Only the owner publishes here for now: a post is delivered by whoever said it, and the reader list belongs to the owner</string>
     <string name="channel_no_write_right">You have no right to write in this channel</string>
     <string name="channel_awaiting">Waiting for the owner to let you in</string>
     <string name="channel_not_readable">Nothing to read it with yet: the key has not arrived</string>
