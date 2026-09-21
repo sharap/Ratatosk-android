@@ -518,4 +518,11 @@
     <string name="channel_request_notification_title">Просятся в канал</string>
     <string name="channel_request_notification_named">%1$s просится в «%2$s»</string>
     <string name="channel_request_notification_plain">Кто-то просится в канал</string>
+    <string name="channel_rename">Переименовать канал</string>
+    <string name="channel_readers">Читатели</string>
+    <string name="channel_left">Вы больше не читаете этот канал</string>
+    <string name="channel_owner_stays">Из своего канала не уходят: отписываться не от кого. «Очистить чат» убирает только то, что видно здесь.</string>
+    <string name="channel_readers_count">Читателей: %1$d</string>
+    <string name="channel_open_short">Открытый канал</string>
+    <string name="channel_private_short">Канал по приглашению</string>
 </resources>

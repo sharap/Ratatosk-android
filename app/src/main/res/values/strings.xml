@@ -514,4 +514,11 @@
     <string name="channel_request_notification_title">Asking to join a channel</string>
     <string name="channel_request_notification_named">%1$s is asking to join “%2$s”</string>
     <string name="channel_request_notification_plain">Someone is asking to join a channel</string>
+    <string name="channel_rename">Rename the channel</string>
+    <string name="channel_readers">Readers</string>
+    <string name="channel_left">You are not reading this channel any more</string>
+    <string name="channel_owner_stays">A channel of your own cannot be left: there is nobody to unsubscribe from. Clearing the chat empties what you see here.</string>
+    <string name="channel_readers_count">%1$d readers</string>
+    <string name="channel_open_short">Open channel</string>
+    <string name="channel_private_short">Channel by invitation</string>
 </resources>

@@ -338,17 +338,34 @@ fun ChatScreen(
                                 ) {
                                     if (group != null) {
                                         val groupAvatarBytes = contactAvatars[chatIdHex] ?: viewModel.getGroupAvatar(group.chatId)
+                                        val channel = group.channel
+                                        // Названия у канала нет, пока не приехало
+                                        // представление: в ссылке его подписать нечем.
+                                        val shownTitle = group.title.ifBlank {
+                                            if (channel != null) stringResource(R.string.channel_no_title_yet) else ""
+                                        }
                                         Avatar(
                                             avatarBytes = groupAvatarBytes,
-                                            name = group.title,
+                                            name = shownTitle,
                                             size = 32.dp,
-                                            icon = Icons.Default.Groups
+                                            icon = if (channel != null) Icons.Default.Campaign else Icons.Default.Groups
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Column {
-                                            Text(group.title)
+                                            Text(shownTitle)
                                             Text(
-                                                text = stringResource(R.string.group_members_count, group.members.size),
+                                                // Читателей знает владелец; у читателя
+                                                // состава нет вовсе (§3.2), и считать
+                                                // ему нечего — вместо числа порода.
+                                                text = when {
+                                                    channel == null ->
+                                                        stringResource(R.string.group_members_count, group.members.size)
+                                                    group.mine ->
+                                                        stringResource(R.string.channel_readers_count, group.members.size)
+                                                    channel.open == true -> stringResource(R.string.channel_open_short)
+                                                    channel.open == false -> stringResource(R.string.channel_private_short)
+                                                    else -> stringResource(R.string.channel)
+                                                },
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = MaterialTheme.colorScheme.secondary
                                             )
@@ -430,7 +447,14 @@ fun ChatScreen(
                                     )
                                     if (group.mine && isMember) {
                                         DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.rename_group)) },
+                                            text = {
+                                                Text(
+                                                    stringResource(
+                                                        if (group.channel != null) R.string.channel_rename
+                                                        else R.string.rename_group
+                                                    )
+                                                )
+                                            },
                                             onClick = {
                                                 showChatMenu = false
                                                 editGroupTitleText = group.title
@@ -440,7 +464,7 @@ fun ChatScreen(
                                         )
                                     }
                                 }
-                                if (group != null && group.mine) {
+                                if (group != null && group.mine && group.channel == null) {
                                     DropdownMenuItem(
                                         text = { Text(stringResource(R.string.invite_contact)) },
                                         onClick = {
@@ -675,7 +699,11 @@ fun ChatScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = channelBlockText ?: stringResource(R.string.you_left_group),
+                                    text = channelBlockText
+                                        ?: stringResource(
+                                            if (group?.channel != null) R.string.channel_left
+                                            else R.string.you_left_group
+                                        ),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.outline,
                                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -944,7 +972,13 @@ fun ChatScreen(
         val maxChars = viewModel.getMaxGroupTitleChars()
         AlertDialog(
             onDismissRequest = { showRenameGroupDialog = false },
-            title = { Text(stringResource(R.string.rename_group)) },
+            title = {
+                Text(
+                    stringResource(
+                        if (group?.channel != null) R.string.channel_rename else R.string.rename_group
+                    )
+                )
+            },
             text = {
                 OutlinedTextField(
                     value = editGroupTitleText,

@@ -59,6 +59,7 @@ fun GroupDetailsScreen(
     var showLeaveDialog by remember { mutableStateOf(false) }
     var memberToEvict by remember { mutableStateOf<ByteArray?>(null) }
     var showChannelLink by remember { mutableStateOf(false) }
+    var showUnsubscribe by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -215,7 +216,9 @@ fun GroupDetailsScreen(
                 if (showMembers) {
                     item {
                         Text(
-                            text = stringResource(R.string.members),
+                            text = stringResource(
+                                if (group.channel != null) R.string.channel_readers else R.string.members
+                            ),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
@@ -301,25 +304,52 @@ fun GroupDetailsScreen(
                             Text(stringResource(R.string.clear_chat))
                         }
 
-                        if (group.joined) {
-                            TextButton(
-                                onClick = { showLeaveDialog = true },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(Icons.Default.Logout, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.leave_group))
+                        when {
+                            // В канале уход — это отписка (§10.6), и она
+                            // уносит архив: сказать об этом надо до кнопки.
+                            group.channel != null && !group.mine -> {
+                                TextButton(
+                                    onClick = { showUnsubscribe = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                ) {
+                                    Icon(Icons.Default.Logout, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(stringResource(R.string.channel_unsubscribe))
+                                }
                             }
-                        }
+                            // Из своего канала уходить некуда, и удалить его
+                            // ядро не предлагает. Обещать кнопкой то, чего нет,
+                            // хуже, чем честная строка.
+                            group.channel != null -> {
+                                Text(
+                                    text = stringResource(R.string.channel_owner_stays),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline,
+                                )
+                            }
+                            else -> {
+                                if (group.joined) {
+                                    TextButton(
+                                        onClick = { showLeaveDialog = true },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(Icons.Default.Logout, contentDescription = null)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(stringResource(R.string.leave_group))
+                                    }
+                                }
 
-                        TextButton(
-                            onClick = { showDeleteDialog = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.delete_group))
+                                TextButton(
+                                    onClick = { showDeleteDialog = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(stringResource(R.string.delete_group))
+                                }
+                            }
                         }
                     }
                 }
@@ -468,7 +498,13 @@ fun GroupDetailsScreen(
         val maxChars = viewModel.getMaxGroupTitleChars()
         AlertDialog(
             onDismissRequest = { showEditTitleDialog = false },
-            title = { Text(stringResource(R.string.rename_group)) },
+            title = {
+                Text(
+                    stringResource(
+                        if (group?.channel != null) R.string.channel_rename else R.string.rename_group
+                    )
+                )
+            },
             text = {
                 OutlinedTextField(
                     value = editTitleText,
@@ -502,6 +538,13 @@ fun GroupDetailsScreen(
                     Text(stringResource(R.string.cancel))
                 }
             }
+        )
+    }
+
+    if (showUnsubscribe) {
+        chat.ratatosk.android.ui.components.UnsubscribeChannelDialog(
+            onConfirm = { viewModel.unsubscribeFromChannel(chatId); onBack() },
+            onDismiss = { showUnsubscribe = false },
         )
     }
 
