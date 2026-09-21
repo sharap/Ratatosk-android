@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.ratatosk.core.FfiChannelAdmit
 import org.ratatosk.core.FfiChannelRequest
 import org.ratatosk.core.FfiGroup
 
@@ -64,6 +65,21 @@ interface ChannelsApi {
     /** Заявки на впуск, по каналам; §10.4 обещает, что они ждут. */
     val channelRequests: StateFlow<Map<String, List<FfiChannelRequest>>>
 
+    /** Кого уже впустили, по каналам: видно только владельцу. */
+    val channelAdmits: StateFlow<Map<String, List<FfiChannelAdmit>>>
+
+    /** Перечитать заявки и впущенных — при открытии карточки канала. */
+    fun refreshChannelPeople(chatId: ByteArray)
+
+    /**
+     * Впускает просящего (§10.4): ему уедет ключ текущего поколения
+     * и подписанная запись о впуске.
+     *
+     * Отказа как ответа не бывает — молчание владельца и есть отказ,
+     * поэтому кнопка здесь одна.
+     */
+    fun admitToChannel(chatId: ByteArray, peerIk: ByteArray)
+
     /** Текст §15 — слова ядра, показываются **до** действия. */
     fun channelNotice(which: ChannelNotice): String
 
@@ -109,6 +125,39 @@ class ChannelsModel(
 
     private val _channelRequests = MutableStateFlow<Map<String, List<FfiChannelRequest>>>(emptyMap())
     override val channelRequests = _channelRequests.asStateFlow()
+
+    private val _channelAdmits = MutableStateFlow<Map<String, List<FfiChannelAdmit>>>(emptyMap())
+    override val channelAdmits = _channelAdmits.asStateFlow()
+
+    override fun refreshChannelPeople(chatId: ByteArray) {
+        refreshRequests(chatId)
+        refreshAdmits(chatId)
+    }
+
+    override fun admitToChannel(chatId: ByteArray, peerIk: ByteArray) {
+        session.io("Failed to admit to channel", R.string.channel_admit_failed) {
+            session.core.client().admitToChannel(chatId, peerIk)
+            // Ядро ответит и событием, но списки обновляем сразу: человек
+            // нажал и ждёт, что просящий перейдёт в впущенные.
+            refreshChannelPeople(chatId)
+        }
+    }
+
+    /** Впущенных читает только владелец: у остальных ядро их не держит. */
+    private fun refreshAdmits(chatId: ByteArray) {
+        if (session.isCompanion) return
+        val hex = chatId.toHexString()
+        session.scope.launch(Dispatchers.IO) {
+            try {
+                val list = session.core.client().channelAdmits(chatId)
+                withContext(Dispatchers.Main) {
+                    _channelAdmits.update { it + (hex to list) }
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to read channel admits", e)
+            }
+        }
+    }
 
     override fun channelNotice(which: ChannelNotice): String = session.core.channelNotice(which)
 
@@ -173,8 +222,9 @@ class ChannelsModel(
                 refreshGroups()
             }
             is org.ratatosk.core.FfiEvent.ChannelAdmitted -> {
-                // Впустили — заявки этого человека больше нет.
-                refreshRequests(event.chatId)
+                // Впустили — заявки этого человека больше нет, а в списке
+                // впущенных он появился.
+                refreshChannelPeople(event.chatId)
                 refreshGroups()
             }
             is org.ratatosk.core.FfiEvent.ChannelKeyRotated -> {
@@ -191,5 +241,6 @@ class ChannelsModel(
     /** Сессия закрыта: чужих заявок мы не храним. */
     fun reset() {
         _channelRequests.value = emptyMap()
+        _channelAdmits.value = emptyMap()
     }
 }

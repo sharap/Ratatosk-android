@@ -452,4 +452,16 @@
     <string name="channel_link_share">Send</string>
     <string name="channel_link_open_warning">This link carries the reading key: anyone it reaches will read the channel.</string>
     <string name="channel_details">Channel</string>
+    <string name="channel_kind_label">Kind</string>
+    <string name="channel_kind_open_short">Open: anyone with the link reads it</string>
+    <string name="channel_kind_private_short">By invitation: you let readers in</string>
+    <string name="channel_kind_unknown">Not known yet: the channel description has not arrived</string>
+    <string name="channel_requests">Asking to be let in</string>
+    <string name="channel_requests_none">No one is asking</string>
+    <string name="channel_admit">Let in</string>
+    <string name="channel_admit_failed">Could not let them in</string>
+    <string name="channel_admitted">Readers you let in</string>
+    <string name="channel_admitted_by">let in by %1$s</string>
+    <string name="channel_admitted_none">No one yet</string>
+    <string name="channel_no_refusal">There is no refusal to send: staying silent is the refusal.</string>
 </resources>

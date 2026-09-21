@@ -195,6 +195,17 @@ fun GroupDetailsScreen(
                     }
                 }
 
+                group.channel?.let { channel ->
+                    item {
+                        ChannelSection(
+                            viewModel = viewModel,
+                            chatId = chatId,
+                            channel = channel,
+                            isOwner = group.mine,
+                        )
+                    }
+                }
+
                 // Состава у читателя канала нет, и это свойство, а не пропуск
                 // (§3.2): читатели друг друга не знают и карточками
                 // не обмениваются. Показывать ему список из себя одного —
@@ -501,5 +512,115 @@ fun GroupDetailsScreen(
             open = group.channel?.open,
             onDismiss = { showChannelLink = false },
         )
+    }
+}
+
+/**
+ * Канальная часть карточки: порода, заявки и впущенные.
+ *
+ * Порода — только из подписанного представления: пока его нет, сказано
+ * «неизвестна», а не обещание ссылки (§10.2). Заявки и впущенных держит
+ * ядро **у владельца**; у читателя их нет, и показывать ему нечего.
+ */
+@Composable
+private fun ChannelSection(
+    viewModel: RatatoskViewModel,
+    chatId: ByteArray,
+    channel: org.ratatosk.core.FfiChannel,
+    isOwner: Boolean,
+) {
+    val requests by viewModel.channelRequests.collectAsState()
+    val admits by viewModel.channelAdmits.collectAsState()
+    val hex = remember(chatId) { chatId.toHexString() }
+
+    LaunchedEffect(hex, isOwner) {
+        if (isOwner) viewModel.refreshChannelPeople(chatId)
+    }
+
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+        Text(
+            text = stringResource(R.string.channel_kind_label),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(
+                when (channel.open) {
+                    true -> R.string.channel_kind_open_short
+                    false -> R.string.channel_kind_private_short
+                    null -> R.string.channel_kind_unknown
+                }
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        // Впуск — дело владельца канала по приглашению. В открытом впускать
+        // некого: ключ чтения и так лежит в ссылке (§10.4).
+        if (!isOwner || channel.open == true) return@Column
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.channel_requests),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        Text(
+            text = stringResource(R.string.channel_no_refusal),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline,
+        )
+
+        val waiting = requests[hex].orEmpty()
+        if (waiting.isEmpty()) {
+            Text(
+                text = stringResource(R.string.channel_requests_none),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        } else {
+            waiting.forEach { request ->
+                ListItem(
+                    headlineContent = { Text(request.name) },
+                    supportingContent = { Text(request.who.toHexString().take(16)) },
+                    leadingContent = { Avatar(avatarBytes = null, name = request.name) },
+                    trailingContent = {
+                        // Одна кнопка, а не пара: отказа как ответа §10.4
+                        // не знает, и вторая обещала бы просящему ответ,
+                        // которого он не получит.
+                        Button(onClick = { viewModel.admitToChannel(chatId, request.who) }) {
+                            Text(stringResource(R.string.channel_admit))
+                        }
+                    },
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.channel_admitted),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        val letIn = admits[hex].orEmpty()
+        if (letIn.isEmpty()) {
+            Text(
+                text = stringResource(R.string.channel_admitted_none),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        } else {
+            letIn.forEach { admit ->
+                ListItem(
+                    headlineContent = { Text(admit.name) },
+                    supportingContent = {
+                        Text(stringResource(R.string.channel_admitted_by, admit.admittedByName))
+                    },
+                    leadingContent = { Avatar(avatarBytes = null, name = admit.name) },
+                )
+            }
+        }
     }
 }

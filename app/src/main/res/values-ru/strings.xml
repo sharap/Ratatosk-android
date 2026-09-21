@@ -456,4 +456,16 @@
     <string name="channel_link_share">Отправить</string>
     <string name="channel_link_open_warning">В этой ссылке ключ чтения: любой, к кому она попадёт, будет читать канал.</string>
     <string name="channel_details">О канале</string>
+    <string name="channel_kind_label">Порода</string>
+    <string name="channel_kind_open_short">Открытый: читает любой, кому дали ссылку</string>
+    <string name="channel_kind_private_short">По приглашению: читателей впускаете вы</string>
+    <string name="channel_kind_unknown">Пока неизвестна: представление канала ещё не приехало</string>
+    <string name="channel_requests">Просятся внутрь</string>
+    <string name="channel_requests_none">Никто не просится</string>
+    <string name="channel_admit">Впустить</string>
+    <string name="channel_admit_failed">Не удалось впустить</string>
+    <string name="channel_admitted">Впущенные читатели</string>
+    <string name="channel_admitted_by">впустил %1$s</string>
+    <string name="channel_admitted_none">Пока никого</string>
+    <string name="channel_no_refusal">Отказа не отправить: отказ — это молчание.</string>
 </resources>

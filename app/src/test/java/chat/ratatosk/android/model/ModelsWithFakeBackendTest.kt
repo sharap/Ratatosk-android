@@ -63,6 +63,26 @@ class ModelsWithFakeBackendTest {
     private val calls: MutableList<String> = Collections.synchronizedList(mutableListOf())
 
     private inner class RecordingClient : FakeClient() {
+        override fun `channelRequests`(`chatId`: kotlin.ByteArray): List<org.ratatosk.core.FfiChannelRequest> {
+            calls += "client.channelRequests:${chatId.toHexString()}"
+            return listOf(
+                org.ratatosk.core.FfiChannelRequest(
+                    who = byteArrayOf(5, 5),
+                    name = "Проситель",
+                    receivedMs = 1UL,
+                )
+            )
+        }
+
+        override fun `channelAdmits`(`chatId`: kotlin.ByteArray): List<org.ratatosk.core.FfiChannelAdmit> {
+            calls += "client.channelAdmits:${chatId.toHexString()}"
+            return emptyList()
+        }
+
+        override fun `admitToChannel`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray) {
+            calls += "client.admitToChannel:${chatId.toHexString()}:${peerIk.toHexString()}"
+        }
+
         override fun `mergeContacts`(
             `archive`: kotlin.String,
             `unlock`: org.ratatosk.core.FfiArchiveUnlock,
@@ -211,7 +231,12 @@ class ModelsWithFakeBackendTest {
         assertTrue("отправлять было некуда: ${seen()}", seen().none { it.contains("sendText") })
     }
 
-    private fun clientModel(s: SessionContext, files: FilesModel, chats: ChatsModel): ClientModel {
+    private fun clientModel(
+        s: SessionContext,
+        files: FilesModel,
+        chats: ChatsModel,
+        channels: chat.ratatosk.android.ui.model.ChannelsModel = channelsModel(s),
+    ): ClientModel {
         val groups = GroupsModel(s) {}
         return ClientModel(
             session = s,
@@ -221,7 +246,7 @@ class ModelsWithFakeBackendTest {
             files = files,
             transports = TransportsModel(s),
             pairing = PairingModel(s),
-            channels = chat.ratatosk.android.ui.model.ChannelsModel(s, refreshGroups = {}, loadMessages = {}),
+            channels = channels,
             openCompanion = {},
             onCompanionMode = {},
         )
@@ -462,6 +487,46 @@ class ModelsWithFakeBackendTest {
         assertTrue(
             "слова причины не должны утечь как есть",
             s.errorText(refusal)?.contains("reason=") != true,
+        )
+    }
+
+    private fun channelsModel(s: SessionContext) =
+        chat.ratatosk.android.ui.model.ChannelsModel(s, refreshGroups = {}, loadMessages = {})
+
+    /**
+     * Заявка на впуск доезжает до владельца и ждёт его.
+     *
+     * §10.4 обещает ожидание: заявка переживает перезапуск и лежит
+     * в `channel_requests`, пока владелец не впустит. Поэтому событие —
+     * это повод перечитать список, а не сам список.
+     */
+    @Test
+    fun aRequestToJoinReachesTheOwnersList() {
+        val s = session(companion = false)
+        val chats = ChatsModel(s, previewFor = { null }, onChatOpened = {})
+        val files = FilesModel(s) { chats.loadMessages(it) }
+        val channels = channelsModel(s)
+        val client = clientModel(s, files, chats, channels)
+        client.ensureClientEvents()
+
+        backend.eventFlow.tryEmit(FfiEvent.ChannelRequested(chatA, byteArrayOf(5, 5)))
+
+        waitUntil("заявка прочитана") { channels.channelRequests.value[chatA.toHexString()] != null }
+        assertEquals("Проситель", channels.channelRequests.value[chatA.toHexString()]!!.single().name)
+    }
+
+    /** Впуск доходит до ядра — и только он: отказа в §10.4 нет. */
+    @Test
+    fun admittingReachesTheCore() {
+        val s = session(companion = false)
+        val channels = channelsModel(s)
+
+        channels.admitToChannel(chatA, byteArrayOf(5, 5))
+
+        waitUntil("впуск ушёл") { seen().any { it.startsWith("client.admitToChannel") } }
+        assertTrue(
+            seen().toString(),
+            seen().contains("client.admitToChannel:${chatA.toHexString()}:0505"),
         )
     }
 }
