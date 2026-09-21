@@ -955,6 +955,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_forward_messages(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_giving_limits(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_group_avatar(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_groups(
@@ -1036,6 +1038,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_channel_right(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_giving_limits(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_group_avatar(
     ): Int
@@ -1332,6 +1336,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_forward_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_giving_limits(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_group_avatar(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_groups(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1413,6 +1419,8 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_channel_right(`ptr`: Long,`chatId`: RustBuffer.ByValue,`who`: RustBuffer.ByValue,`rights`: RustBuffer.ByValue,`untilMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_foreground(`ptr`: Long,`front`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_giving_limits(`ptr`: Long,`limits`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_group_avatar(`ptr`: Long,`chatId`: RustBuffer.ByValue,`bytes`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -2086,6 +2094,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_forward_messages() != 50510) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_giving_limits() != 23481) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_group_avatar() != 18575) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2207,6 +2218,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground() != 48471) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_giving_limits() != 26284) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_group_avatar() != 3502) {
@@ -6215,6 +6229,15 @@ public interface RatatoskClientInterface {
     fun `forwardMessages`(`chatId`: kotlin.ByteArray, `msgIds`: List<kotlin.ByteArray>)
     
     /**
+     * Нынешние пределы отдачи (§9.2).
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    fun `givingLimits`(): FfiGivingLimits
+    
+    /**
      * Аватарка группы.
      *
      * `None` означает «показывать нечего»: её не ставили или сняли.
@@ -6762,6 +6785,19 @@ public interface RatatoskClientInterface {
      * входящих по адресу из карточки.
      */
     fun `setForeground`(`front`: kotlin.Boolean)
+    
+    /**
+     * Пределы отдачи: сколько блоков за минуту одному и всем (§9.2).
+     *
+     * Числа лежат **на диске** и переживают перезапуск: §9.2 требует
+     * именно этого — «сервера нет, значит ограничителя частоты нет
+     * ни у кого, кроме нас самих».
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    fun `setGivingLimits`(`limits`: FfiGivingLimits)
     
     /**
      * Меняет аватарку группы.
@@ -8032,6 +8068,27 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Нынешние пределы отдачи (§9.2).
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    @Throws(RatatoskException::class)override fun `givingLimits`(): FfiGivingLimits {
+            return FfiConverterTypeFfiGivingLimits.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_giving_limits(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
      * Аватарка группы.
      *
      * `None` означает «показывать нечего»: её не ставили или сняли.
@@ -9094,6 +9151,31 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         it,
         
         FfiConverterBoolean.lower(`front`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Пределы отдачи: сколько блоков за минуту одному и всем (§9.2).
+     *
+     * Числа лежат **на диске** и переживают перезапуск: §9.2 требует
+     * именно этого — «сервера нет, значит ограничителя частоты нет
+     * ни у кого, кроме нас самих».
+     *
+     * # Errors
+     *
+     * [`RatatoskError::Internal`] — ядро остановлено.
+     */
+    @Throws(RatatoskException::class)override fun `setGivingLimits`(`limits`: FfiGivingLimits)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_giving_limits(
+        it,
+        
+        FfiConverterTypeFfiGivingLimits.lower(`limits`),_status)
 }
     }
     
@@ -13545,6 +13627,62 @@ public object FfiConverterTypeFfiFile: FfiConverterRustBuffer<FfiFile> {
             FfiConverterULong.write(value.`chunkTotal`, buf)
             FfiConverterUInt.write(value.`chunkBytes`, buf)
             FfiConverterBoolean.write(value.`hasPreview`, buf)
+    }
+}
+
+
+
+/**
+ * Пределы отдачи: сколько блоков отдаём за минуту (фаза 2, §9.2).
+ *
+ * Два числа из четырёх, которые §9.2 называет «наши»: предел на пира
+ * и общий. Третье — окно сидирования — ставит владелец канала
+ * в подписанном представлении (§9.3), четвёртый пункт — выключатель
+ * раздачи ([`FfiSeeding`]).
+ *
+ * **Ноль законен и означает «блоков не отдаём».** Но выключать
+ * раздачу нулём не стоит: выключатель гасит ещё и объявление адреса,
+ * и привязки читателей, а ноль останавливает только отдачу.
+ */
+data class FfiGivingLimits (
+    /**
+     * Сколько блоков отдаём **одному** пиру за минуту.
+     */
+    val `perPeer`: kotlin.UInt
+    , 
+    /**
+     * Сколько блоков отдаём **всем вместе** за минуту.
+     */
+    val `total`: kotlin.UInt
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiGivingLimits: FfiConverterRustBuffer<FfiGivingLimits> {
+    override fun read(buf: ByteBuffer): FfiGivingLimits {
+        return FfiGivingLimits(
+            FfiConverterUInt.read(buf),
+            FfiConverterUInt.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiGivingLimits) = (
+            FfiConverterUInt.allocationSize(value.`perPeer`) +
+            FfiConverterUInt.allocationSize(value.`total`)
+    )
+
+    override fun write(value: FfiGivingLimits, buf: ByteBuffer) {
+            FfiConverterUInt.write(value.`perPeer`, buf)
+            FfiConverterUInt.write(value.`total`, buf)
     }
 }
 

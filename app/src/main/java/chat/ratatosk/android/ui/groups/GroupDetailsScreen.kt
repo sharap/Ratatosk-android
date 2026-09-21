@@ -58,6 +58,7 @@ fun GroupDetailsScreen(
     var showClearDialog by remember { mutableStateOf(false) }
     var showLeaveDialog by remember { mutableStateOf(false) }
     var memberToEvict by remember { mutableStateOf<ByteArray?>(null) }
+    var showChannelLink by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -169,6 +170,19 @@ fun GroupDetailsScreen(
                             Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(stringResource(R.string.chat_button))
+                        }
+
+                        // Ссылка на канал — здесь же, где всё о нём.
+                        if (group.channel != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = { showChannelLink = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.Link, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.channel_link_show))
+                            }
                         }
                     }
                 }

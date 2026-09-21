@@ -140,6 +140,7 @@ fun ChatScreen(
     var showInviteDialog by remember { mutableStateOf(false) }
     var showRenameGroupDialog by remember { mutableStateOf(false) }
     var showUnsubscribeDialog by remember { mutableStateOf(false) }
+    var showChannelLinkDialog by remember { mutableStateOf(false) }
     var editGroupTitleText by remember { mutableStateOf("") }
     
     var isSearchMode by remember { mutableStateOf(false) }
@@ -451,6 +452,16 @@ fun ChatScreen(
                                     },
                                     leadingIcon = { Icon(Icons.Default.DeleteSweep, contentDescription = null) }
                                 )
+                                if (group?.channel != null) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.channel_link_show)) },
+                                        onClick = {
+                                            showChatMenu = false
+                                            showChannelLinkDialog = true
+                                        },
+                                        leadingIcon = { Icon(Icons.Default.Link, contentDescription = null) }
+                                    )
+                                }
                                 // Из своего канала не отписываются: ядро ответит
                                 // `OwnChannel`, а предлагать заведомый отказ незачем.
                                 if (group?.channel != null && !group.mine) {
@@ -830,6 +841,15 @@ fun ChatScreen(
                 }
             }
         }
+    }
+
+    if (showChannelLinkDialog) {
+        chat.ratatosk.android.ui.components.ChannelLinkDialog(
+            viewModel = viewModel,
+            chatId = chatId,
+            open = group?.channel?.open,
+            onDismiss = { showChannelLinkDialog = false },
+        )
     }
 
     if (showUnsubscribeDialog) {
