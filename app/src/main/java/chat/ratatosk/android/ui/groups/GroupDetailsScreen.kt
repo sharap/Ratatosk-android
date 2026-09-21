@@ -531,7 +531,40 @@ private fun ChannelSection(
 ) {
     val requests by viewModel.channelRequests.collectAsState()
     val admits by viewModel.channelAdmits.collectAsState()
+    val grants by viewModel.channelGrants.collectAsState()
     val hex = remember(chatId) { chatId.toHexString() }
+
+    // Кому правим права; `null` — окно закрыто.
+    var editingRight by remember { mutableStateOf<Pair<ByteArray, String>?>(null) }
+    var showRotate by remember { mutableStateOf(false) }
+    var showPow by remember { mutableStateOf(false) }
+
+    editingRight?.let { (who, name) ->
+        chat.ratatosk.android.ui.components.ChannelRightDialog(
+            viewModel = viewModel,
+            chatId = chatId,
+            who = who,
+            name = name,
+            current = grants[hex]?.firstOrNull { it.who.contentEquals(who) }?.rights,
+            onDismiss = { editingRight = null },
+        )
+    }
+
+    if (showRotate) {
+        chat.ratatosk.android.ui.components.ChannelRotateDialog(
+            notice = viewModel.channelNotice(chat.ratatosk.android.ui.model.ChannelNotice.KEY_ROTATION),
+            onConfirm = { viewModel.rotateChannelKey(chatId) },
+            onDismiss = { showRotate = false },
+        )
+    }
+
+    if (showPow) {
+        chat.ratatosk.android.ui.components.ChannelPowDialog(
+            current = channel.powBits,
+            onConfirm = { viewModel.setChannelPow(chatId, it) },
+            onDismiss = { showPow = false },
+        )
+    }
 
     LaunchedEffect(hex, isOwner) {
         if (isOwner) viewModel.refreshChannelPeople(chatId)
@@ -555,9 +588,108 @@ private fun ChannelSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
+        // Срок своего права виден заранее (§6.3): отказ по сроку не должен
+        // наступать внезапно, и это единственный способ его предупредить.
+        if (!isOwner && channel.rightsUntilMs > 0UL) {
+            Text(
+                text = stringResource(
+                    R.string.channel_my_right_until,
+                    channel.rightsUntilMs.toLong().formatDateTime(),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+        // «От владельца ничего не приходило» — про наш приём, а не про то,
+        // где владелец: каталога пиров в ядре нет, и утверждать о нём нечего.
+        if (channel.ownerUnseen) {
+            Text(
+                text = stringResource(R.string.channel_owner_quiet),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+
+        if (!isOwner) return@Column
+
+        // Ключ поворачивается сам раз в месяц (§6.4); кнопка — «повернуть
+        // сейчас», то есть исключить читателя. Показывается по may_rotate:
+        // там уже учтены порода, право и нижний предел в неделю.
+        if (channel.mayRotate) {
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedButton(onClick = { showRotate = true }, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.channel_rotate))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.channel_pow_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = if (channel.powBits > 0u) {
+                    stringResource(R.string.channel_pow_current, channel.powBits.toInt())
+                } else {
+                    stringResource(R.string.channel_pow_free)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = { showPow = true }) { Text(stringResource(R.string.edit)) }
+        }
+
+        // Выдачи: что кому выдано и до какого числа.
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.channel_grants),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+        )
+        if (channel.grantsExpiring > 0u) {
+            Text(
+                text = stringResource(R.string.channel_grants_expiring, channel.grantsExpiring.toInt()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        val given = grants[hex].orEmpty()
+        if (given.isEmpty()) {
+            Text(
+                text = stringResource(R.string.channel_grants_none),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        } else {
+            given.forEach { grant ->
+                ListItem(
+                    headlineContent = { Text(grant.name) },
+                    supportingContent = {
+                        Text(
+                            rightsSummary(grant.rights) + ", " + if (grant.live) {
+                                stringResource(R.string.channel_right_until, grant.untilMs.toLong().formatDateTime())
+                            } else {
+                                stringResource(R.string.channel_right_expired)
+                            }
+                        )
+                    },
+                    leadingContent = { Avatar(avatarBytes = null, name = grant.name) },
+                    trailingContent = {
+                        TextButton(onClick = { editingRight = grant.who to grant.name }) {
+                            Text(stringResource(R.string.channel_grant_edit))
+                        }
+                    },
+                )
+            }
+        }
+
         // Впуск — дело владельца канала по приглашению. В открытом впускать
         // некого: ключ чтения и так лежит в ссылке (§10.4).
-        if (!isOwner || channel.open == true) return@Column
+        if (channel.open == true) return@Column
 
         Spacer(modifier = Modifier.height(16.dp))
         Text(
@@ -619,8 +751,25 @@ private fun ChannelSection(
                         Text(stringResource(R.string.channel_admitted_by, admit.admittedByName))
                     },
                     leadingContent = { Avatar(avatarBytes = null, name = admit.name) },
+                    trailingContent = {
+                        TextButton(onClick = { editingRight = admit.who to admit.name }) {
+                            Text(stringResource(R.string.channel_grant_edit))
+                        }
+                    },
                 )
             }
         }
     }
+}
+
+/** Права одной строкой: что именно выдано. */
+@Composable
+private fun rightsSummary(rights: org.ratatosk.core.FfiChannelRights): String {
+    val parts = buildList {
+        if (rights.write) add(stringResource(R.string.channel_right_write))
+        if (rights.admit) add(stringResource(R.string.channel_right_admit))
+        if (rights.evict) add(stringResource(R.string.channel_right_evict))
+        if (rights.edit) add(stringResource(R.string.channel_right_edit))
+    }
+    return parts.joinToString(", ").ifEmpty { stringResource(R.string.channel_right_none) }
 }

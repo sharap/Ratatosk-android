@@ -83,6 +83,26 @@ class ModelsWithFakeBackendTest {
             calls += "client.admitToChannel:${chatId.toHexString()}:${peerIk.toHexString()}"
         }
 
+        override fun `channelGrants`(`chatId`: kotlin.ByteArray): List<org.ratatosk.core.FfiChannelGrant> {
+            calls += "client.channelGrants:${chatId.toHexString()}"
+            return emptyList()
+        }
+
+        override fun `setChannelRight`(
+            `chatId`: kotlin.ByteArray,
+            `who`: kotlin.ByteArray,
+            `rights`: org.ratatosk.core.FfiChannelRights,
+            `untilMs`: kotlin.ULong,
+        ) {
+            val what = listOfNotNull(
+                "писать".takeIf { rights.write },
+                "впускать".takeIf { rights.admit },
+                "исключать".takeIf { rights.evict },
+                "править".takeIf { rights.edit },
+            ).joinToString("+").ifEmpty { "ничего" }
+            calls += "client.setChannelRight:${who.toHexString()}:$what:срок=${untilMs > 0UL}"
+        }
+
         override fun `mergeContacts`(
             `archive`: kotlin.String,
             `unlock`: org.ratatosk.core.FfiArchiveUnlock,
@@ -528,5 +548,45 @@ class ModelsWithFakeBackendTest {
             seen().toString(),
             seen().contains("client.admitToChannel:${chatA.toHexString()}:0505"),
         )
+    }
+
+    /**
+     * Снятие права — это выдача с пустым набором, и срока у неё нет.
+     *
+     * Список в новой версии представления и есть всё, что действует
+     * (§6.2): отдельной команды «снять» не бывает, и придумывать её
+     * клиенту нельзя.
+     */
+    @Test
+    fun takingARightAwayIsAGrantOfNothing() {
+        val s = session(companion = false)
+        val channels = channelsModel(s)
+
+        channels.setChannelRight(
+            chatA,
+            byteArrayOf(5, 5),
+            org.ratatosk.core.FfiChannelRights(write = false, admit = false, evict = false, edit = false),
+            0UL,
+        )
+
+        waitUntil("снятие ушло") { seen().any { it.startsWith("client.setChannelRight") } }
+        assertTrue(seen().toString(), seen().contains("client.setChannelRight:0505:ничего:срок=false"))
+    }
+
+    /** Выданное право всегда со сроком: непродлённое истекает само (§6.3). */
+    @Test
+    fun aGrantedRightAlwaysCarriesATerm() {
+        val s = session(companion = false)
+        val channels = channelsModel(s)
+
+        channels.setChannelRight(
+            chatA,
+            byteArrayOf(5, 5),
+            org.ratatosk.core.FfiChannelRights(write = true, admit = false, evict = false, edit = false),
+            (System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000).toULong(),
+        )
+
+        waitUntil("выдача ушла") { seen().any { it.startsWith("client.setChannelRight") } }
+        assertTrue(seen().toString(), seen().contains("client.setChannelRight:0505:писать:срок=true"))
     }
 }

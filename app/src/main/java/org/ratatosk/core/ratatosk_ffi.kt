@@ -2217,7 +2217,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_channel_right() != 24987) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground() != 48471) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground() != 14011) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_giving_limits() != 26284) {
@@ -6783,6 +6783,17 @@ public interface RatatoskClientInterface {
      *
      * Onion и почты не касается: они не объявляют присутствия, а ждут
      * входящих по адресу из карточки.
+     *
+     * **Раздачу канала (§7) это гасит** — §12: «активен ровно один
+     * аккаунт… его сидирование прекращается, `PeerRecord` выпадает
+     * по сроку». Ушедший с экрана перестаёт отдавать блоки и перестаёт
+     * продлевать свою запись в каталоге; принимать он продолжает.
+     * Довод не про батарею: два аккаунта, раздающие с одного
+     * устройства, связываются на проводе объёмом и временем.
+     *
+     * Запись гаснет **не сразу** — отзыва §7.5 не знает, и до конца
+     * недели читатели будут набирать погасший адрес. Вернувшийся
+     * на экран раздаёт снова.
      */
     fun `setForeground`(`front`: kotlin.Boolean)
     
@@ -9142,6 +9153,17 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
      *
      * Onion и почты не касается: они не объявляют присутствия, а ждут
      * входящих по адресу из карточки.
+     *
+     * **Раздачу канала (§7) это гасит** — §12: «активен ровно один
+     * аккаунт… его сидирование прекращается, `PeerRecord` выпадает
+     * по сроку». Ушедший с экрана перестаёт отдавать блоки и перестаёт
+     * продлевать свою запись в каталоге; принимать он продолжает.
+     * Довод не про батарею: два аккаунта, раздающие с одного
+     * устройства, связываются на проводе объёмом и временем.
+     *
+     * Запись гаснет **не сразу** — отзыва §7.5 не знает, и до конца
+     * недели читатели будут набирать погасший адрес. Вернувшийся
+     * на экран раздаёт снова.
      */
     @Throws(RatatoskException::class)override fun `setForeground`(`front`: kotlin.Boolean)
         = 

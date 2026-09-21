@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.ratatosk.core.FfiChannelAdmit
+import org.ratatosk.core.FfiChannelGrant
+import org.ratatosk.core.FfiChannelRights
 import org.ratatosk.core.FfiChannelRequest
 import org.ratatosk.core.FfiGroup
 
@@ -67,6 +69,26 @@ interface ChannelsApi {
 
     /** Кого уже впустили, по каналам: видно только владельцу. */
     val channelAdmits: StateFlow<Map<String, List<FfiChannelAdmit>>>
+
+    /** Кому и что выдано, по каналам (§6.2, §6.3). */
+    val channelGrants: StateFlow<Map<String, List<FfiChannelGrant>>>
+
+    /**
+     * Выдаёт или снимает право (§6.2, §6.3).
+     *
+     * Снятие — это выдача с пустым набором: список в новой версии
+     * представления и есть всё, что действует.
+     *
+     * **Срок обязателен**: не продлил — истекло само. Право без срока
+     * означало бы отзыв, а отзыв в рое не работает.
+     */
+    fun setChannelRight(chatId: ByteArray, who: ByteArray, rights: FfiChannelRights, untilMs: ULong)
+
+    /** Поворот ключа чтения (§6.4): кнопка — по `may_rotate`. */
+    fun rotateChannelKey(chatId: ByteArray)
+
+    /** Цена слова (§11): фильтр первого уровня, а не защита. */
+    fun setChannelPow(chatId: ByteArray, bits: UInt)
 
     /** Перечитать заявки и впущенных — при открытии карточки канала. */
     fun refreshChannelPeople(chatId: ByteArray)
@@ -129,9 +151,52 @@ class ChannelsModel(
     private val _channelAdmits = MutableStateFlow<Map<String, List<FfiChannelAdmit>>>(emptyMap())
     override val channelAdmits = _channelAdmits.asStateFlow()
 
+    private val _channelGrants = MutableStateFlow<Map<String, List<FfiChannelGrant>>>(emptyMap())
+    override val channelGrants = _channelGrants.asStateFlow()
+
     override fun refreshChannelPeople(chatId: ByteArray) {
         refreshRequests(chatId)
         refreshAdmits(chatId)
+        refreshGrants(chatId)
+    }
+
+    override fun setChannelRight(
+        chatId: ByteArray,
+        who: ByteArray,
+        rights: FfiChannelRights,
+        untilMs: ULong,
+    ) {
+        session.io("Failed to set channel right", R.string.channel_right_failed) {
+            session.core.client().setChannelRight(chatId, who, rights, untilMs)
+            refreshChannelPeople(chatId)
+        }
+    }
+
+    override fun rotateChannelKey(chatId: ByteArray) {
+        session.io("Failed to rotate channel key", R.string.channel_rotate_failed) {
+            session.core.client().rotateChannelKey(chatId)
+        }
+    }
+
+    override fun setChannelPow(chatId: ByteArray, bits: UInt) {
+        session.io("Failed to set channel pow", R.string.channel_pow_failed) {
+            session.core.client().setChannelPow(chatId, bits)
+        }
+    }
+
+    private fun refreshGrants(chatId: ByteArray) {
+        if (session.isCompanion) return
+        val hex = chatId.toHexString()
+        session.scope.launch(Dispatchers.IO) {
+            try {
+                val list = session.core.client().channelGrants(chatId)
+                withContext(Dispatchers.Main) {
+                    _channelGrants.update { it + (hex to list) }
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to read channel grants", e)
+            }
+        }
     }
 
     override fun admitToChannel(chatId: ByteArray, peerIk: ByteArray) {
@@ -228,6 +293,7 @@ class ChannelsModel(
                 refreshGroups()
             }
             is org.ratatosk.core.FfiEvent.ChannelKeyRotated -> {
+                refreshChannelPeople(event.chatId)
                 // Новое поколение: старые записи читаются, новые — только
                 // с новым ключом. Перечитываем чат, чтобы это стало видно.
                 refreshGroups()
@@ -242,5 +308,6 @@ class ChannelsModel(
     fun reset() {
         _channelRequests.value = emptyMap()
         _channelAdmits.value = emptyMap()
+        _channelGrants.value = emptyMap()
     }
 }
