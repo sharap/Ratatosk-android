@@ -455,4 +455,5 @@
     <string name="channel_link_copied">Ссылка скопирована</string>
     <string name="channel_link_share">Отправить</string>
     <string name="channel_link_open_warning">В этой ссылке ключ чтения: любой, к кому она попадёт, будет читать канал.</string>
+    <string name="channel_details">О канале</string>
 </resources>

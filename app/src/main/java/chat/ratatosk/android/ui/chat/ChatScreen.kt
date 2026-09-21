@@ -415,7 +415,14 @@ fun ChatScreen(
                             ) {
                                 if (group != null) {
                                     DropdownMenuItem(
-                                        text = { Text(stringResource(R.string.group_details)) },
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    if (group.channel != null) R.string.channel_details
+                                                    else R.string.group_details
+                                                )
+                                            )
+                                        },
                                         onClick = {
                                             showChatMenu = false
                                             onHeaderClick()

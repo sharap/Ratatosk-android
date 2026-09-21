@@ -64,7 +64,15 @@ fun GroupDetailsScreen(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.group_details)) },
+                title = {
+                    // Канал — группа со вторым профилем, но человеку он
+                    // обещан каналом, и называть его группой нельзя.
+                    Text(
+                        stringResource(
+                            if (group?.channel != null) R.string.channel_details else R.string.group_details
+                        )
+                    )
+                },
                 navigationIcon = {
                     if (showBackButton) {
                         IconButton(onClick = onBack) {
@@ -187,16 +195,24 @@ fun GroupDetailsScreen(
                     }
                 }
 
-                item {
-                    Text(
-                        text = stringResource(R.string.members),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
+                // Состава у читателя канала нет, и это свойство, а не пропуск
+                // (§3.2): читатели друг друга не знают и карточками
+                // не обмениваются. Показывать ему список из себя одного —
+                // значит выдавать это за неполноту.
+                val showMembers = group.channel == null || group.mine
+
+                if (showMembers) {
+                    item {
+                        Text(
+                            text = stringResource(R.string.members),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
                 }
-                
-                items(group.members) { member ->
+
+                items(if (showMembers) group.members else emptyList()) { member ->
                     val memberContact = contacts.find { it.peerIk.contentEquals(member.ik) }
                     val name = memberContact?.let { it.localName ?: it.displayName } ?: member.name
                     val avatarBytes = if (member.mine) {
@@ -252,7 +268,7 @@ fun GroupDetailsScreen(
 
                 item {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        if (group.joined) {
+                        if (group.joined && group.channel == null) {
                             Button(
                                 onClick = { showInviteDialog = true },
                                 modifier = Modifier.fillMaxWidth()
@@ -475,6 +491,15 @@ fun GroupDetailsScreen(
                     Text(stringResource(R.string.cancel))
                 }
             }
+        )
+    }
+
+    if (showChannelLink && group != null) {
+        chat.ratatosk.android.ui.components.ChannelLinkDialog(
+            viewModel = viewModel,
+            chatId = chatId,
+            open = group.channel?.open,
+            onDismiss = { showChannelLink = false },
         )
     }
 }
