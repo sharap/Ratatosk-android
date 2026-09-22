@@ -589,6 +589,7 @@ private fun ChannelSection(
     var confirmAnnounce by remember { mutableStateOf(false) }
     var confirmNarrow by remember { mutableStateOf<org.ratatosk.core.FfiSharingLevel?>(null) }
     var showAdmitContact by remember { mutableStateOf(false) }
+    var showAddAuthor by remember { mutableStateOf(false) }
 
     editingRight?.let { (who, name) ->
         chat.ratatosk.android.ui.components.ChannelRightDialog(
@@ -610,11 +611,25 @@ private fun ChannelSection(
     }
 
     if (showAdmitContact) {
-        chat.ratatosk.android.ui.components.AdmitContactDialog(
+        chat.ratatosk.android.ui.components.PickChannelContactDialog(
             viewModel = viewModel,
-            chatId = chatId,
-            alreadyIn = admits[hex].orEmpty().map { it.who },
+            title = stringResource(R.string.channel_admit_contact),
+            desc = stringResource(R.string.channel_admit_contact_desc),
+            exclude = admits[hex].orEmpty().map { it.who },
+            onPick = { who, _ -> viewModel.admitToChannel(chatId, who) },
             onDismiss = { showAdmitContact = false },
+        )
+    }
+
+    if (showAddAuthor) {
+        chat.ratatosk.android.ui.components.PickChannelContactDialog(
+            viewModel = viewModel,
+            title = stringResource(R.string.channel_add_author),
+            desc = stringResource(R.string.channel_add_author_desc),
+            // Уже одарённые правятся в списке выдач, а не заводятся заново.
+            exclude = grants[hex].orEmpty().map { it.who },
+            onPick = { who, name -> editingRight = who to name },
+            onDismiss = { showAddAuthor = false },
         )
     }
 
@@ -838,6 +853,20 @@ private fun ChannelSection(
             text = stringResource(R.string.channel_grants),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
+        )
+        // В открытом канале списка читателей нет вовсе — читает любой,
+        // у кого ссылка, — поэтому соавтора выбирают из контактов. Право
+        // выдаёт только владелец: «раздача прав не делегируется никогда,
+        // иначе это совладение» (§6.2).
+        OutlinedButton(onClick = { showAddAuthor = true }, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Default.PersonAdd, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.channel_add_author))
+        }
+        Text(
+            text = stringResource(R.string.channel_add_author_desc),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.outline,
         )
         if (channel.grantsExpiring > 0u) {
             Text(

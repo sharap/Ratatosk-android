@@ -59,6 +59,16 @@ interface TransportsApi {
     fun btAdapterEnabled(): Boolean
     /** Каких разрешений не хватает Bluetooth. */
     fun btMissingPermissions(): List<String>
+
+    /**
+     * Пределы отдачи (§9.2): сколько блоков в минуту одному и всем вместе.
+     *
+     * Числа лежат в ядре на диске и переживают перезапуск: сервера нет,
+     * значит ограничителя частоты нет ни у кого, кроме нас самих.
+     */
+    val givingLimits: StateFlow<org.ratatosk.core.FfiGivingLimits?>
+    fun refreshGivingLimits()
+    fun setGivingLimits(perPeer: UInt, total: UInt)
     fun setTransportEnabled(transport: FfiTransport, enabled: Boolean)
     fun setMailAccount(address: String, password: String, imapHost: String, imapPort: Int, smtpHost: String, smtpPort: Int, viaTor: Boolean)
     fun createMailAccount(serverUrl: String, viaTor: Boolean)
@@ -151,6 +161,30 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
 
     override fun btMissingPermissions(): List<String> =
         org.ratatosk.bt.BtRadio.Permissions.missing(session.app)
+
+    private val _givingLimits = MutableStateFlow<org.ratatosk.core.FfiGivingLimits?>(null)
+    override val givingLimits = _givingLimits.asStateFlow()
+
+    override fun refreshGivingLimits() {
+        if (session.isCompanion) return
+        session.scope.launch(Dispatchers.IO) {
+            try {
+                val limits = session.core.client().givingLimits()
+                withContext(Dispatchers.Main) { _givingLimits.value = limits }
+            } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to read giving limits", e)
+            }
+        }
+    }
+
+    override fun setGivingLimits(perPeer: UInt, total: UInt) {
+        session.io("Failed to set giving limits", R.string.giving_limits_failed) {
+            session.core.client().setGivingLimits(
+                org.ratatosk.core.FfiGivingLimits(perPeer = perPeer, total = total)
+            )
+            refreshGivingLimits()
+        }
+    }
 
     override fun refreshTransportStatus() {
         if (session.isCompanion) return

@@ -521,4 +521,15 @@
     <string name="channel_readers_count">%1$d readers</string>
     <string name="channel_open_short">Open channel</string>
     <string name="channel_private_short">Channel by invitation</string>
+    <string name="channel_add_author">Add an author</string>
+    <string name="channel_add_author_desc">Give a contact the right to write in this channel. In an open channel there is no reader list — anyone with the link reads it — so an author is chosen from contacts.</string>
+    <string name="channel_history_pull">Ask for earlier posts</string>
+    <string name="channel_history_pulling">Asking the seeds for earlier posts…</string>
+    <string name="channel_history_end">Those we asked have nothing deeper. A seed with a longer archive may turn up — then it is worth asking again.</string>
+    <string name="channel_history_failed">Could not ask for earlier posts</string>
+    <string name="giving_limits">Limits on giving</string>
+    <string name="giving_limits_desc">How many blocks a minute you give out: to one peer and to everyone together. There is no server here, so there is no rate limiter anywhere except in your own hands.</string>
+    <string name="giving_limits_per_peer">To one peer, per minute</string>
+    <string name="giving_limits_total">To everyone, per minute</string>
+    <string name="giving_limits_failed">Could not change the limits</string>
 </resources>

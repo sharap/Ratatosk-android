@@ -71,6 +71,7 @@ open class FakeClient : RatatoskClientInterface {
     override fun `pairDevice`(`label`: kotlin.String): Unit = notCalled("pairDevice")
     override fun `pauseFile`(`fileId`: kotlin.ByteArray): Unit = notCalled("pauseFile")
     override fun `previewOf`(`fileId`: kotlin.ByteArray): kotlin.ByteArray? = notCalled("previewOf")
+    override fun `pullOlderHistory`(`chatId`: kotlin.ByteArray): Unit = notCalled("pullOlderHistory")
     override fun `renameGroup`(`chatId`: kotlin.ByteArray, `title`: kotlin.String): Unit = notCalled("renameGroup")
     override fun `reply`(`chatId`: kotlin.ByteArray, `replyTo`: kotlin.ByteArray, `text`: kotlin.String): Unit = notCalled("reply")
     override fun `retractMessages`(`chatId`: kotlin.ByteArray, `msgIds`: List<kotlin.ByteArray>): Unit = notCalled("retractMessages")

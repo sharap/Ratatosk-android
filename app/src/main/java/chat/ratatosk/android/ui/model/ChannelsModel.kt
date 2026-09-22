@@ -107,6 +107,28 @@ interface ChannelsApi {
     val sharingLevel: StateFlow<Map<String, FfiSharingLevel>>
 
     /**
+     * Тянем ли сейчас более раннюю историю канала (§7.4).
+     *
+     * `true` — попросили и ждём; `false` после `ChannelHistoryEnd` —
+     * у тех, кого спросили, глубже ничего нет. Ответ окончателен ровно
+     * настолько, насколько полон каталог: появится сид с более длинным
+     * архивом — и попросить стоит снова.
+     */
+    val historyPulling: StateFlow<Map<String, Boolean>>
+
+    /** Признак «глубже ничего нет» по последней попытке. */
+    val historyEnded: StateFlow<Map<String, Boolean>>
+
+    /**
+     * Просит более раннюю историю канала (§7.4).
+     *
+     * Вступление историю не тянет, и это решение: иначе подписавшийся
+     * оплачивал бы год чужой переписки, которого не просил. Лента
+     * начинается с первого живого слова, а дальше — по просьбе.
+     */
+    fun pullOlderHistory(chatId: ByteArray)
+
+    /**
      * Меняет участие в раздаче (§7.5.1).
      *
      * `OFF` — выключатель раздачи, а не отписка: канал продолжает
@@ -224,6 +246,21 @@ class ChannelsModel(
 
     private val _sharingLevel = MutableStateFlow<Map<String, FfiSharingLevel>>(emptyMap())
     override val sharingLevel = _sharingLevel.asStateFlow()
+
+    private val _historyPulling = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    override val historyPulling = _historyPulling.asStateFlow()
+
+    private val _historyEnded = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    override val historyEnded = _historyEnded.asStateFlow()
+
+    override fun pullOlderHistory(chatId: ByteArray) {
+        val hex = chatId.toHexString()
+        _historyPulling.update { it + (hex to true) }
+        _historyEnded.update { it - hex }
+        session.io("Failed to pull older history", R.string.channel_history_failed) {
+            session.core.client().pullOlderHistory(chatId)
+        }
+    }
 
     override fun setSeeding(chatId: ByteArray, mode: FfiSeeding) {
         session.io("Failed to change seeding", R.string.channel_seeding_failed) {
@@ -380,6 +417,12 @@ class ChannelsModel(
                 loadMessages(event.chatId)
             }
             is org.ratatosk.core.FfiEvent.ChannelRequested -> refreshRequests(event.chatId)
+            is org.ratatosk.core.FfiEvent.ChannelHistoryEnd -> {
+                // Полоску пора убрать: у тех, кого спросили, глубже ничего нет.
+                val hex = event.chatId.toHexString()
+                _historyPulling.update { it - hex }
+                _historyEnded.update { it + (hex to true) }
+            }
             is org.ratatosk.core.FfiEvent.SeedingChanged -> refreshSeeding(event.chatId)
             is org.ratatosk.core.FfiEvent.SeedAnnounced -> refreshSeeding(event.chatId)
             else -> {}
@@ -394,5 +437,7 @@ class ChannelsModel(
         _seedingMode.value = emptyMap()
         _channelSeeds.value = emptyMap()
         _sharingLevel.value = emptyMap()
+        _historyPulling.value = emptyMap()
+        _historyEnded.value = emptyMap()
     }
 }

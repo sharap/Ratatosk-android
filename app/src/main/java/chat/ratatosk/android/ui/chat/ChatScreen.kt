@@ -514,6 +514,55 @@ fun ChatScreen(
                         windowInsets = TopAppBarDefaults.windowInsets
                     )
 
+                    // Вступление в канал историю не тянет (§7.4): лента
+                    // начинается с первого живого слова, а более раннее —
+                    // по просьбе. Иначе подписавшийся оплачивал бы год
+                    // чужой переписки, которого не просил.
+                    if (group?.channel != null) {
+                        val pulling by viewModel.historyPulling.collectAsState()
+                        val ended by viewModel.historyEnded.collectAsState()
+                        val busy = pulling[chatIdHex] == true
+                        val noDeeper = ended[chatIdHex] == true
+                        Surface(tonalElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                when {
+                                    busy -> {
+                                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                                        Spacer(Modifier.width(8.dp))
+                                        Text(
+                                            text = stringResource(R.string.channel_history_pulling),
+                                            style = MaterialTheme.typography.labelSmall,
+                                        )
+                                    }
+                                    noDeeper -> {
+                                        Text(
+                                            text = stringResource(R.string.channel_history_end),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.outline,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        TextButton(onClick = { viewModel.pullOlderHistory(chatId) }) {
+                                            Text(stringResource(R.string.retry))
+                                        }
+                                    }
+                                    else -> {
+                                        Text(
+                                            text = stringResource(R.string.channel_history_pull),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        TextButton(onClick = { viewModel.pullOlderHistory(chatId) }) {
+                                            Text(stringResource(R.string.channel_history_pull))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     val torStatus by viewModel.torStatus.collectAsState()
                     val torEnabled by viewModel.torEnabled.collectAsState()
                     val isCompanionMode by viewModel.isCompanionMode.collectAsState()

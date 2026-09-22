@@ -83,6 +83,10 @@ class ModelsWithFakeBackendTest {
             calls += "client.admitToChannel:${chatId.toHexString()}:${peerIk.toHexString()}"
         }
 
+        override fun `pullOlderHistory`(`chatId`: kotlin.ByteArray) {
+            calls += "client.pullOlderHistory:${chatId.toHexString()}"
+        }
+
         override fun `setSeeding`(`chatId`: kotlin.ByteArray, `mode`: org.ratatosk.core.FfiSeeding) {
             calls += "client.setSeeding:$mode"
         }
@@ -641,5 +645,32 @@ class ModelsWithFakeBackendTest {
 
         waitUntil("сужение ушло") { seen().any { it.startsWith("client.setSharingLevel") } }
         assertTrue(seen().toString(), seen().contains("client.setSharingLevel:CONTACTS"))
+    }
+
+    /**
+     * Просьба о более ранней истории и ответ «глубже ничего нет» (§7.4).
+     *
+     * Вступление в канал историю не тянет: лента начинается с первого
+     * живого слова, а более раннее — по просьбе. У команды нет ответа,
+     * поэтому полоску снимает событие `ChannelHistoryEnd` — и только оно.
+     */
+    @Test
+    fun askingForOlderHistoryEndsOnTheCoreWord() {
+        val s = session(companion = false)
+        val chats = ChatsModel(s, previewFor = { null }, onChatOpened = {})
+        val files = FilesModel(s) { chats.loadMessages(it) }
+        val channels = channelsModel(s)
+        val client = clientModel(s, files, chats, channels)
+        client.ensureClientEvents()
+
+        channels.pullOlderHistory(chatA)
+
+        waitUntil("просьба ушла") { seen().any { it.startsWith("client.pullOlderHistory") } }
+        assertEquals(true, channels.historyPulling.value[chatA.toHexString()])
+
+        backend.eventFlow.tryEmit(FfiEvent.ChannelHistoryEnd(chatA))
+
+        waitUntil("полоска снята") { channels.historyPulling.value[chatA.toHexString()] != true }
+        assertEquals(true, channels.historyEnded.value[chatA.toHexString()])
     }
 }

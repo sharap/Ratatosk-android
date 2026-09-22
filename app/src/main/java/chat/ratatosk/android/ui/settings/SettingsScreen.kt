@@ -282,6 +282,16 @@ fun SettingsScreen(
                     } else {
                         SettingsDownloadPathSection(viewModel = viewModel)
 
+                    if (!isCompanionMode) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        SettingsGivingLimitsSection(viewModel = viewModel)
+                    }
+
+                        if (!isCompanionMode) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            SettingsGivingLimitsSection(viewModel = viewModel)
+                        }
+
                         Spacer(modifier = Modifier.height(24.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(24.dp))
@@ -1721,6 +1731,61 @@ fun SettingsPrivacySection(
     ) {
         Text(stringResource(R.string.show_message_text))
         Switch(checked = showText, onCheckedChange = onToggleShowText)
+    }
+}
+
+/**
+ * Пределы отдачи (§9.2).
+ *
+ * Числа живут в ядре на диске и переживают перезапуск. Сказано и почему
+ * они вообще есть: сервера здесь нет, значит ограничителя частоты нет
+ * ни у кого, кроме нас самих.
+ */
+@Composable
+fun SettingsGivingLimitsSection(viewModel: RatatoskViewModel) {
+    val limits by viewModel.givingLimits.collectAsState()
+
+    LaunchedEffect(Unit) { viewModel.refreshGivingLimits() }
+
+    var perPeer by remember(limits) { mutableStateOf(limits?.perPeer?.toString() ?: "") }
+    var total by remember(limits) { mutableStateOf(limits?.total?.toString() ?: "") }
+    val parsedPeer = perPeer.toUIntOrNull()
+    val parsedTotal = total.toUIntOrNull()
+    val changed = limits != null && parsedPeer != null && parsedTotal != null &&
+        (parsedPeer != limits?.perPeer || parsedTotal != limits?.total)
+
+    Text(text = stringResource(R.string.giving_limits), style = MaterialTheme.typography.titleMedium)
+    Text(
+        text = stringResource(R.string.giving_limits_desc),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(vertical = 8.dp),
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedTextField(
+            value = perPeer,
+            onValueChange = { perPeer = it.filter { ch -> ch.isDigit() }.take(6) },
+            label = { Text(stringResource(R.string.giving_limits_per_peer)) },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+        )
+        OutlinedTextField(
+            value = total,
+            onValueChange = { total = it.filter { ch -> ch.isDigit() }.take(6) },
+            label = { Text(stringResource(R.string.giving_limits_total)) },
+            singleLine = true,
+            modifier = Modifier.weight(1f),
+        )
+    }
+    Button(
+        onClick = { viewModel.setGivingLimits(parsedPeer!!, parsedTotal!!) },
+        enabled = changed,
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+    ) {
+        Text(stringResource(R.string.save))
     }
 }
 

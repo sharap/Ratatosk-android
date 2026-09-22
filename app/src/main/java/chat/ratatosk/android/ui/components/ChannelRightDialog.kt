@@ -234,36 +234,38 @@ fun ChannelNoticeDialog(
 }
 
 /**
- * Впустить контакт в канал, не дожидаясь заявки (§6.5, §10.4).
+ * Выбор контакта для канала.
  *
- * Ключ чтения запечатывается на карточку впускаемого — поэтому впустить
- * так можно только контакт, и список здесь из контактов. Ссылка при этом
- * никому не нужна: ядро само отдаёт поколение ключа и подписанную запись
- * о впуске.
+ * Годится и впуску, и выдаче права: и то и другое адресовано человеку,
+ * чья карточка у нас есть, — ключ чтения запечатывается на неё, а право
+ * выдаётся на его ключ. Список здесь из контактов именно поэтому.
  *
- * @param alreadyIn кого уже впустили: им это не нужно второй раз.
+ * @param exclude кого не предлагать: уже впущенных или уже одарённых.
+ * @param onPick что сделать с выбранным.
  */
 @Composable
-fun AdmitContactDialog(
+fun PickChannelContactDialog(
     viewModel: RatatoskViewModel,
-    chatId: ByteArray,
-    alreadyIn: List<ByteArray>,
+    title: String,
+    desc: String,
+    exclude: List<ByteArray>,
+    onPick: (peerIk: ByteArray, name: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val contacts by viewModel.contacts.collectAsState()
     val avatars by viewModel.contactAvatars.collectAsState()
 
-    val available = remember(contacts, alreadyIn) {
-        contacts.filterNot { contact -> alreadyIn.any { it.contentEquals(contact.peerIk) } }
+    val available = remember(contacts, exclude) {
+        contacts.filterNot { contact -> exclude.any { it.contentEquals(contact.peerIk) } }
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.channel_admit_contact)) },
+        title = { Text(title) },
         text = {
             Column {
                 Text(
-                    text = stringResource(R.string.channel_admit_contact_desc),
+                    text = desc,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -287,7 +289,7 @@ fun AdmitContactDialog(
                                     )
                                 },
                                 modifier = Modifier.clickable {
-                                    viewModel.admitToChannel(chatId, contact.peerIk)
+                                    onPick(contact.peerIk, name)
                                     onDismiss()
                                 },
                             )

@@ -525,4 +525,15 @@
     <string name="channel_readers_count">Читателей: %1$d</string>
     <string name="channel_open_short">Открытый канал</string>
     <string name="channel_private_short">Канал по приглашению</string>
+    <string name="channel_add_author">Добавить соавтора</string>
+    <string name="channel_add_author_desc">Выдать контакту право писать в этом канале. В открытом канале списка читателей нет — читает любой, у кого есть ссылка, — поэтому соавтора выбирают из контактов.</string>
+    <string name="channel_history_pull">Запросить раннее</string>
+    <string name="channel_history_pulling">Спрашиваем сидов о более раннем…</string>
+    <string name="channel_history_end">У тех, кого спросили, глубже ничего нет. Появится сид с более длинным архивом — стоит спросить снова.</string>
+    <string name="channel_history_failed">Не удалось запросить раннее</string>
+    <string name="giving_limits">Пределы отдачи</string>
+    <string name="giving_limits_desc">Сколько блоков в минуту вы отдаёте: одному и всем вместе. Сервера здесь нет, значит ограничителя частоты нет ни у кого, кроме вас самих.</string>
+    <string name="giving_limits_per_peer">Одному, в минуту</string>
+    <string name="giving_limits_total">Всем, в минуту</string>
+    <string name="giving_limits_failed">Не удалось изменить пределы</string>
 </resources>
