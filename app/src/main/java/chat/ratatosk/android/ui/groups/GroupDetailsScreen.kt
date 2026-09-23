@@ -684,6 +684,43 @@ private fun ChannelSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
+        // Что происходит с каналом: сперва один признак словами ядра,
+        // затем числа, из которых он сложен. «Раздавать некому» и «есть
+        // кому, а мы не дозвонились» — разные беды, и снаружи они
+        // неотличимы, поэтому числа стоят рядом.
+        if (channel.signal != org.ratatosk.core.FfiChannelSignal.FINE) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = viewModel.channelSignalText(channel.signal),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        // `null` — канал наш: себе не раздают.
+        channel.sourcesNow?.let { sources ->
+            Text(
+                text = if (sources > 0u) {
+                    stringResource(R.string.channel_sources, sources.toInt())
+                } else {
+                    stringResource(R.string.channel_sources_none)
+                },
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Text(
+            text = stringResource(R.string.channel_seeds_known, channel.seedsKnown.toInt()),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (channel.awaitingBlocks > 0u) {
+            Text(
+                text = stringResource(R.string.channel_awaiting_blocks, channel.awaitingBlocks.toInt()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
         // Раздача — дело каждого читателя: канал держится на том, что
         // читатели раздают друг другу (§7.5).
         Spacer(modifier = Modifier.height(16.dp))
@@ -823,6 +860,13 @@ private fun ChannelSection(
         // там уже учтены порода, право и нижний предел в неделю.
         if (channel.mayRotate) {
             Spacer(modifier = Modifier.height(16.dp))
+            if (channel.rotationOverdue) {
+                Text(
+                    text = stringResource(R.string.channel_rotation_overdue),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             OutlinedButton(onClick = { showRotate = true }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.channel_rotate))
             }

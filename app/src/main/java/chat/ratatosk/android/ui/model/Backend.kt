@@ -95,6 +95,15 @@ interface Backend {
     fun channelNotice(which: ChannelNotice): String
 
     /**
+     * Слова к признаку канала (§15).
+     *
+     * На границе, а не в клиенте: признак обязан говорить то, что
+     * протокол на самом деле знает, а строка в Kotlin разошлась бы
+     * с поведением на первой же правке.
+     */
+    fun channelSignalText(signal: org.ratatosk.core.FfiChannelSignal): String
+
+    /**
      * Чем платит сужение круга отдачи (§12).
      *
      * Отдельно от [channelNotice]: этот текст не про канал, а про то,
@@ -154,4 +163,7 @@ object CoreBackend : Backend {
     }
 
     override fun sharingLevelNotice(): String = org.ratatosk.core.sharingLevelNotice()
+
+    override fun channelSignalText(signal: org.ratatosk.core.FfiChannelSignal): String =
+        org.ratatosk.core.channelSignalText(signal)
 }

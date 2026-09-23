@@ -36,6 +36,11 @@ class ChannelInputTest {
         ownerQuietMs = null,
         ownerUnseen = false,
         grantsExpiring = 0u,
+        sourcesNow = 1u,
+        seedsKnown = 1u,
+        awaitingBlocks = 0u,
+        rotationOverdue = false,
+        signal = org.ratatosk.core.FfiChannelSignal.FINE,
     )
 
     private fun group(mine: Boolean = false, channel: FfiChannel? = null) = FfiGroup(

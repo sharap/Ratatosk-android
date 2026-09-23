@@ -536,4 +536,9 @@
     <string name="giving_limits_per_peer">Одному, в минуту</string>
     <string name="giving_limits_total">Всем, в минуту</string>
     <string name="giving_limits_failed">Не удалось изменить пределы</string>
+    <string name="channel_sources">Источников сейчас: %1$d</string>
+    <string name="channel_sources_none">Никто из достижимых не отдаёт этот канал</string>
+    <string name="channel_seeds_known">Знаем записей каталога: %1$d</string>
+    <string name="channel_awaiting_blocks">Объявлено и ещё едет: %1$d</string>
+    <string name="channel_rotation_overdue">Ключу чтения больше месяца</string>
 </resources>

@@ -160,6 +160,15 @@ interface ChannelsApi {
     fun channelNotice(which: ChannelNotice): String
 
     /**
+     * Чем объяснить тишину в канале — **одним** признаком (§15).
+     *
+     * Выбор главного из шести фактов делает ядро (`ChannelFacts::signal`):
+     * повтори мы его здесь, правило зажило бы в двух местах и разошлось
+     * бы на первой правке.
+     */
+    fun channelSignalText(signal: org.ratatosk.core.FfiChannelSignal): String
+
+    /**
      * Заводит канал. Порода задаётся один раз и не меняется: «открытый»
      * и «по приглашению» — два разных обещания (§6.1).
      */
@@ -342,6 +351,9 @@ class ChannelsModel(
     }
 
     override fun channelNotice(which: ChannelNotice): String = session.core.channelNotice(which)
+
+    override fun channelSignalText(signal: org.ratatosk.core.FfiChannelSignal): String =
+        session.core.channelSignalText(signal)
 
     override fun createChannel(title: String, open: Boolean) {
         session.io("Failed to create channel", R.string.channel_create_failed) {

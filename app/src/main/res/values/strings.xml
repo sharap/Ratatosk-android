@@ -532,4 +532,9 @@
     <string name="giving_limits_per_peer">To one peer, per minute</string>
     <string name="giving_limits_total">To everyone, per minute</string>
     <string name="giving_limits_failed">Could not change the limits</string>
+    <string name="channel_sources">Sources right now: %1$d</string>
+    <string name="channel_sources_none">Nobody reachable is giving this channel out</string>
+    <string name="channel_seeds_known">Seed records known: %1$d</string>
+    <string name="channel_awaiting_blocks">Announced and still on the way: %1$d</string>
+    <string name="channel_rotation_overdue">The reading key is more than a month old</string>
 </resources>

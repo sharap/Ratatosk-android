@@ -128,8 +128,12 @@ fun ChatScreen(
     val channelBlockText = when (channelInput) {
         chat.ratatosk.android.ui.model.ChannelInput.ALLOWED -> null
         chat.ratatosk.android.ui.model.ChannelInput.NO_RIGHT -> stringResource(R.string.channel_no_write_right)
-        chat.ratatosk.android.ui.model.ChannelInput.AWAITING -> stringResource(R.string.channel_awaiting)
-        chat.ratatosk.android.ui.model.ChannelInput.NOT_READABLE -> stringResource(R.string.channel_not_readable)
+        // Здесь ровно те же две причины, что у признака канала, — и слова
+        // берём оттуда же, чтобы полоса и поле не говорили разного.
+        chat.ratatosk.android.ui.model.ChannelInput.AWAITING ->
+            viewModel.channelSignalText(org.ratatosk.core.FfiChannelSignal.AWAITING)
+        chat.ratatosk.android.ui.model.ChannelInput.NOT_READABLE ->
+            viewModel.channelSignalText(org.ratatosk.core.FfiChannelSignal.NOT_READABLE)
     }
 
     var highlightedMsgId by remember { mutableStateOf<String?>(null) }
@@ -513,6 +517,26 @@ fun ChatScreen(
                         ),
                         windowInsets = TopAppBarDefaults.windowInsets
                     )
+
+                    // Чем объяснить тишину — **один** признак, и слова
+                    // к нему ядра (§15): выбор главного из шести фактов
+                    // сделан там же, где сами факты.
+                    group?.channel?.let { channel ->
+                        if (channel.signal != org.ratatosk.core.FfiChannelSignal.FINE) {
+                            Surface(
+                                tonalElevation = 1.dp,
+                                color = MaterialTheme.colorScheme.secondaryContainer,
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(
+                                    text = viewModel.channelSignalText(channel.signal),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                )
+                            }
+                        }
+                    }
 
                     // Вступление в канал историю не тянет (§7.4): лента
                     // начинается с первого живого слова, а более раннее —

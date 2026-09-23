@@ -773,6 +773,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_channel_refusal_text(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_channel_signal_text(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_chunk_bytes(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_default_auto_accept_bytes(
@@ -1608,6 +1610,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_channel_refusal_text(`reason`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_channel_signal_text(`signal`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_chunk_bytes(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
     external fun uniffi_ratatosk_ffi_fn_func_default_auto_accept_bytes(uniffi_out_err: UniffiRustCallStatus, 
@@ -1823,6 +1827,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_channel_refusal_text() != 26785) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_channel_signal_text() != 58662) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_chunk_bytes() != 36065) {
@@ -12183,6 +12190,61 @@ data class FfiChannel (
      * в «зайти строго на третий месяц».
      */
     val `grantsExpiring`: kotlin.UInt
+    , 
+    /**
+     * Сколько у нас **сейчас** живых источников этого канала (§7.5.1).
+     *
+     * Ноль — это §15: «никто из достижимых не отдаёт этот канал».
+     * Не «канал пуст» и не «мы без сети»: связь может быть, а брать
+     * блоки не у кого.
+     *
+     * **Владелец считается источником в канале по приглашению**: там
+     * он развозит по составу (§3.2), привязки к нему не заводится.
+     * Поэтому у впущенного читателя здесь всегда хотя бы единица,
+     * а о том, жив ли владелец, отвечает [`FfiChannel::owner_quiet_ms`].
+     * В открытом канале состава нет, и ноль здесь — настоящий ноль.
+     *
+     * `null` — канал наш: себе не раздают.
+     */
+    val `sourcesNow`: kotlin.UInt?
+    , 
+    /**
+     * Сколько годных записей каталога мы знаем (§7.5).
+     *
+     * Рядом с [`FfiChannel::sources_now`] нарочно: «раздавать некому»
+     * и «есть кому, а мы не дозвонились» — разные беды, и снаружи
+     * они неотличимы.
+     */
+    val `seedsKnown`: kotlin.UInt
+    , 
+    /**
+     * Сколько объявленных блоков мы ждём прямо сейчас (§7.1, шаг 4).
+     *
+     * «Видимая дыра» из §15: сосед позвал, значит блок есть, а у нас
+     * его нет. Число живое — приедет, и оно уменьшится само.
+     *
+     * Пропуск, видимый по номерам в чужом have-векторе, сюда **не**
+     * попадает: у читателя такие дыры есть всегда (адресные блоки
+     * чужих), и счётчик не обнулялся бы никогда.
+     */
+    val `awaitingBlocks`: kotlin.UInt
+    , 
+    /**
+     * Владельцу: ключу чтения больше месяца (§6.4).
+     *
+     * У остальных `false`: чужой ключ повернуть нечем.
+     */
+    val `rotationOverdue`: kotlin.Boolean
+    , 
+    /**
+     * Чем объяснить тишину — один признак на экран (§15).
+     *
+     * Складывается из полей выше и ничего к ним не добавляет: клиенту
+     * нужен **один** ответ на вопрос «почему пусто», а выбор главного
+     * из шести — то самое правило, которое в каждом клиенте написали бы
+     * по-своему.
+     */
+    val `signal`: FfiChannelSignal
     
 ){
     
@@ -12212,6 +12274,11 @@ public object FfiConverterTypeFfiChannel: FfiConverterRustBuffer<FfiChannel> {
             FfiConverterOptionalULong.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterUInt.read(buf),
+            FfiConverterOptionalUInt.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterUInt.read(buf),
+            FfiConverterBoolean.read(buf),
+            FfiConverterTypeFfiChannelSignal.read(buf),
         )
     }
 
@@ -12228,7 +12295,12 @@ public object FfiConverterTypeFfiChannel: FfiConverterRustBuffer<FfiChannel> {
             FfiConverterBoolean.allocationSize(value.`mayRotate`) +
             FfiConverterOptionalULong.allocationSize(value.`ownerQuietMs`) +
             FfiConverterBoolean.allocationSize(value.`ownerUnseen`) +
-            FfiConverterUInt.allocationSize(value.`grantsExpiring`)
+            FfiConverterUInt.allocationSize(value.`grantsExpiring`) +
+            FfiConverterOptionalUInt.allocationSize(value.`sourcesNow`) +
+            FfiConverterUInt.allocationSize(value.`seedsKnown`) +
+            FfiConverterUInt.allocationSize(value.`awaitingBlocks`) +
+            FfiConverterBoolean.allocationSize(value.`rotationOverdue`) +
+            FfiConverterTypeFfiChannelSignal.allocationSize(value.`signal`)
     )
 
     override fun write(value: FfiChannel, buf: ByteBuffer) {
@@ -12245,6 +12317,11 @@ public object FfiConverterTypeFfiChannel: FfiConverterRustBuffer<FfiChannel> {
             FfiConverterOptionalULong.write(value.`ownerQuietMs`, buf)
             FfiConverterBoolean.write(value.`ownerUnseen`, buf)
             FfiConverterUInt.write(value.`grantsExpiring`, buf)
+            FfiConverterOptionalUInt.write(value.`sourcesNow`, buf)
+            FfiConverterUInt.write(value.`seedsKnown`, buf)
+            FfiConverterUInt.write(value.`awaitingBlocks`, buf)
+            FfiConverterBoolean.write(value.`rotationOverdue`, buf)
+            FfiConverterTypeFfiChannelSignal.write(value.`signal`, buf)
     }
 }
 
@@ -15577,6 +15654,86 @@ public object FfiConverterTypeFfiChannelRefusal: FfiConverterRustBuffer<FfiChann
     override fun allocationSize(value: FfiChannelRefusal) = 4UL
 
     override fun write(value: FfiChannelRefusal, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
+ * Почему канал молчит — признак интерфейса (§15).
+ *
+ * Зеркало `channel::Signal`: правило, по которому из фактов выбирается
+ * главный признак, живёт в ядре (`ChannelFacts::signal`), а здесь
+ * только перевод наружу. Повтори мы выбор тут, он зажил бы в двух
+ * местах и разошёлся бы на первой правке.
+ */
+
+enum class FfiChannelSignal {
+    
+    /**
+     * Объяснять нечего: канал живёт обычной жизнью.
+     *
+     * Это не «всё доехало»: пустой канал, в котором просто ничего
+     * не говорили, выглядит так же, и обещать обратное ядру нечем.
+     */
+    FINE,
+    /**
+     * Ждём впуска владельцем (§10.4, §10.5).
+     */
+    AWAITING,
+    /**
+     * Читать нечем: ключа чтения нет (§6.4).
+     */
+    NOT_READABLE,
+    /**
+     * Никто из достижимых не отдаёт этот канал (§7.5, §15).
+     */
+    NOBODY_SERVES,
+    /**
+     * Раздающие известны, но ни один сейчас не отвечает (§7.5.1).
+     *
+     * Отдельно от [`FfiChannelSignal::NobodyServes`], и разница
+     * не косметическая: там раздавать некому и помочь может только
+     * новый сид, здесь дело в связи — и человеку стоит проверить её,
+     * а не искать ссылку заново.
+     */
+    SEEDS_UNREACHABLE,
+    /**
+     * От владельца ничего не приходило дольше порога §6.3.
+     */
+    OWNER_UNSEEN,
+    /**
+     * Блоки объявлены и ещё едут (§7.1, шаг 4).
+     */
+    WAITING,
+    /**
+     * Владельцу: поворот ключа просрочен (§6.4).
+     */
+    ROTATION_OVERDUE;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiChannelSignal: FfiConverterRustBuffer<FfiChannelSignal> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiChannelSignal.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiChannelSignal) = 4UL
+
+    override fun write(value: FfiChannelSignal, buf: ByteBuffer) {
         buf.putInt(value.ordinal + 1)
     }
 }
@@ -20077,6 +20234,25 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     
         
         FfiConverterTypeFfiChannelRefusal.lower(`reason`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Точные слова к признаку канала (§15).
+         *
+         * На границе, а не в клиенте, по той же причине, что [`honest_notices`]
+         * и [`channel_refusal_text`]: признак обязан говорить то, что протокол
+         * на самом деле знает, а строка в Kotlin разошлась бы с поведением
+         * на первой же правке.
+         */ fun `channelSignalText`(`signal`: FfiChannelSignal): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_channel_signal_text(
+    
+        
+        FfiConverterTypeFfiChannelSignal.lower(`signal`),_status)
 }
     )
     }
