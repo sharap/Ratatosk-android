@@ -717,6 +717,17 @@ fun ChatScreen(
                                             }
                                         }
                                     )
+                                    // Пустое поле и нет вложений — значит человек
+                                    // хочет сказать голосом, а не написать.
+                                    if (text.isBlank() && attachedFiles.isEmpty() && editingMessage == null) {
+                                        VoiceRecordButton(
+                                            viewModel = viewModel,
+                                            chatId = chatId,
+                                            onError = { message ->
+                                                scope.launch { snackbarHostState.showSnackbar(message) }
+                                            },
+                                        )
+                                    }
                                     Spacer(modifier = Modifier.width(8.dp))
                                     IconButton(
                                         onClick = {
@@ -1755,7 +1766,53 @@ fun FileAttachment(
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         val isMedia = FileUtils.isImage(file.name) || FileUtils.isVideo(file.name) || FileUtils.isAudio(file.name)
-        
+
+        // Голосовое узнаётся по имени — отдельного поля у ядра нет.
+        // Показываем его записью, а не файлом: у записи другой смысл,
+        // и «12345.voice.ogg» человеку не говорит ничего.
+        val voiceMs = chat.ratatosk.android.util.VoiceFile.durationMsOf(file.name)
+        if (voiceMs != null) {
+            val previews by viewModel.filePreviews.collectAsState()
+            // Просить превью — делом, а не из отрисовки: запрос в теле
+            // composable повторялся бы на каждую перерисовку.
+            LaunchedEffect(fileIdHex) { viewModel.requestFilePreview(file.fileId) }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(contentColor.copy(alpha = 0.1f))
+                    .padding(horizontal = 8.dp)
+            ) {
+                // Слушать можно принятое: расшифрованную копию готовит
+                // ядро, и до неё файл надо сохранить.
+                if (file.complete || !file.incoming) {
+                    VoiceBubble(
+                        viewModel = viewModel,
+                        file = file,
+                        durationMs = voiceMs,
+                        preview = previews[fileIdHex],
+                        onError = { message -> scope.launch { snackbarHostState.showSnackbar(message) } },
+                    )
+                } else {
+                    // Ещё не приехало: волна и длительность уже известны
+                    // из превью, а кнопка — обычная «принять».
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
+                        Text(
+                            text = stringResource(R.string.voice_message) + ", " + formatVoiceDuration(voiceMs),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = contentColor,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { viewModel.acceptFile(chatId, file.fileId) }) {
+                            Text(stringResource(R.string.accept))
+                        }
+                    }
+                }
+            }
+            return@forEach
+        }
+
         Column(modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)

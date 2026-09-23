@@ -196,6 +196,17 @@ class RatatoskViewModel private constructor(
         _error.value = null
     }
 
+    /**
+     * Отправляет записанное голосовое.
+     *
+     * Волна кладётся в превью до отправки: ядро просит его в момент
+     * отправки, а после — неоткуда взять.
+     */
+    fun sendVoice(chatId: ByteArray, file: java.io.File, waveform: ByteArray?) {
+        if (waveform != null) models.rememberVoiceWaveform(file.absolutePath, waveform)
+        sendFiles(chatId, listOf(file), "")
+    }
+
     fun setPendingAvatarUri(uri: android.net.Uri?, chatId: ByteArray? = null) {
         _pendingAvatarUri.value = uri
         _pendingAvatarChatId.value = chatId

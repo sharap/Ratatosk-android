@@ -537,4 +537,14 @@
     <string name="channel_seeds_known">Seed records known: %1$d</string>
     <string name="channel_awaiting_blocks">Announced and still on the way: %1$d</string>
     <string name="channel_rotation_overdue">The reading key is more than a month old</string>
+    <string name="voice_record">Record a voice message</string>
+    <string name="voice_recording">Recording… %1$s</string>
+    <string name="voice_send">Send</string>
+    <string name="voice_cancel">Discard</string>
+    <string name="voice_message">Voice message</string>
+    <string name="voice_too_short">Too short — nothing was recorded</string>
+    <string name="voice_unsupported">This phone cannot record Opus: Android 10 or newer is needed</string>
+    <string name="voice_permission">Recording needs permission to use the microphone</string>
+    <string name="voice_play">Play</string>
+    <string name="voice_pause">Pause</string>
 </resources>

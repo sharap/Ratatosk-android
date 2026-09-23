@@ -541,4 +541,14 @@
     <string name="channel_seeds_known">Знаем записей каталога: %1$d</string>
     <string name="channel_awaiting_blocks">Объявлено и ещё едет: %1$d</string>
     <string name="channel_rotation_overdue">Ключу чтения больше месяца</string>
+    <string name="voice_record">Записать голосовое</string>
+    <string name="voice_recording">Запись… %1$s</string>
+    <string name="voice_send">Отправить</string>
+    <string name="voice_cancel">Не отправлять</string>
+    <string name="voice_message">Голосовое</string>
+    <string name="voice_too_short">Слишком коротко — записать ничего не успели</string>
+    <string name="voice_unsupported">Этот телефон не умеет писать Opus: нужен Android 10 или новее</string>
+    <string name="voice_permission">Для записи нужно разрешение на микрофон</string>
+    <string name="voice_play">Слушать</string>
+    <string name="voice_pause">Пауза</string>
 </resources>

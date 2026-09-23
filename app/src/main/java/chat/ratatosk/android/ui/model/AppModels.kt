@@ -58,6 +58,9 @@ class AppModels(
 
     val share: ShareModel = ShareModel(session)
 
+    /** Записанная волна — к превью вложения; ставит запись голосового. */
+    fun rememberVoiceWaveform(path: String, png: ByteArray) = share.rememberWaveform(path, png)
+
     val chats: ChatsModel = ChatsModel(
         session = session,
         previewFor = { share.previewFor(it) },

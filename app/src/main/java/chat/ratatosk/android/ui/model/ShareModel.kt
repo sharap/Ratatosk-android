@@ -73,12 +73,28 @@ class ShareModel(private val session: SessionContext) : ShareApi {
     }
 
     /**
+     * Волны записей, снятые при записи, по пути файла.
+     *
+     * Превью вложения ядро просит у нас в момент отправки, а декодировать
+     * Opus ради картинки нечем: громкость известна только записи. Поэтому
+     * она кладёт готовую волну сюда, а [previewFor] её оттуда берёт.
+     */
+    private val recordedWaveforms = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
+
+    /** Запомнить волну записи до отправки. */
+    fun rememberWaveform(path: String, png: ByteArray) {
+        recordedWaveforms[path] = png
+    }
+
+    /**
      * Уменьшенная картинка к исходящему вложению.
      *
      * `null` — превью не будет: либо это не картинка, либо оно не влезает
      * в отведённые ядром байты, и лучше без него, чем с обрезанным.
      */
     fun previewFor(file: java.io.File): ByteArray? {
+        // Голосовое: волна уже нарисована записью — decode тут нечем.
+        recordedWaveforms.remove(file.absolutePath)?.let { return it }
         try {
             val bitmap = android.graphics.BitmapFactory.decodeFile(file.absolutePath) ?: return null
             val reqWidth = 320
@@ -102,5 +118,6 @@ class ShareModel(private val session: SessionContext) : ShareApi {
     /** Сессия закрыта: чужие файлы из прошлого аккаунта здесь не ждут. */
     fun reset() {
         _sharedDraft.value = null
+        recordedWaveforms.clear()
     }
 }
