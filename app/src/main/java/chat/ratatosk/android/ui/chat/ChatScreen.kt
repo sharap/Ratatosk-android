@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -771,24 +772,43 @@ fun ChatScreen(
                                     // кнопка микрофона занимала бы место ради
                                     // того, что нужно раз в день. Отпустили —
                                     // ушло, увели палец — стёрлось.
-                                    val sendGesture = Modifier.pointerInput(chatId, text.isBlank(), attachedFiles.size, editingMessage) {
-                                        detectTapGestures(
-                                            onLongPress = {
-                                                if (text.isBlank() && attachedFiles.isEmpty() && editingMessage == null) {
+                                    // Отмену считаем по расстоянию, а не по
+                                    // границам кнопки: `tryAwaitRelease` сообщает
+                                    // «отпустили» и когда палец уехал за экран,
+                                    // и запись уходила, куда бы его ни увели.
+                                    val cancelThresholdPx = with(LocalDensity.current) { 56.dp.toPx() }
+                                    val voiceEnabled = text.isBlank() && attachedFiles.isEmpty() && editingMessage == null
+                                    val sendGesture = Modifier
+                                        .pointerInput(chatId, voiceEnabled, canSend) {
+                                            detectTapGestures(
+                                                onTap = {
+                                                    // Короткое нажатие — обычная отправка;
+                                                    // после записи она уже случилась.
+                                                    if (canSend && !voiceRecording.isRecording) sendCurrent()
+                                                },
+                                            )
+                                        }
+                                        .pointerInput(chatId, voiceEnabled) {
+                                            var travelled = androidx.compose.ui.geometry.Offset.Zero
+                                            detectDragGesturesAfterLongPress(
+                                                onDragStart = {
+                                                    travelled = androidx.compose.ui.geometry.Offset.Zero
+                                                    if (!voiceEnabled) return@detectDragGesturesAfterLongPress
                                                     if (hasAudioPermission(context)) {
                                                         voiceRecording.begin()
                                                     } else {
                                                         askAudioPermission.launch(android.Manifest.permission.RECORD_AUDIO)
                                                     }
-                                                }
-                                            },
-                                            onPress = {
-                                                val released = tryAwaitRelease()
-                                                if (voiceRecording.isRecording) voiceRecording.finish(send = released)
-                                            },
-                                            onTap = { if (canSend) sendCurrent() },
-                                        )
-                                    }
+                                                },
+                                                onDrag = { _, delta ->
+                                                    travelled += delta
+                                                    voiceRecording.dragged(travelled.getDistance(), cancelThresholdPx)
+                                                },
+                                                onDragEnd = { voiceRecording.finish(send = true) },
+                                                onDragCancel = { voiceRecording.finish(send = false) },
+                                            )
+                                        }
+
                                     Box(
                                         modifier = Modifier
                                             .size(48.dp)

@@ -77,6 +77,21 @@ class VoiceRecording(
     var elapsedMs by mutableStateOf(0L)
         private set
 
+    /**
+     * Палец увели достаточно далеко: отпускание **не** отправит.
+     *
+     * Компоуз про выход за границы кнопки молчит: `tryAwaitRelease`
+     * возвращает «отпустили» и когда палец уехал на другой конец экрана.
+     * Поэтому отмену считаем сами — по расстоянию, и человек видит её
+     * до того, как отпустит.
+     */
+    var willCancel by mutableStateOf(false)
+        private set
+
+    fun dragged(distancePx: Float, thresholdPx: Float) {
+        if (isRecording) willCancel = distancePx > thresholdPx
+    }
+
     /** Начать запись; разрешение спрашивает экран — из него это виднее. */
     fun begin() {
         if (isRecording) return
@@ -86,6 +101,7 @@ class VoiceRecording(
         }
         isRecording = true
         elapsedMs = 0
+        willCancel = false
     }
 
     /** Снимает громкость и время; звать из цикла, пока идёт запись. */
@@ -103,8 +119,10 @@ class VoiceRecording(
      */
     fun finish(send: Boolean) {
         if (!isRecording) return
+        val keep = send && !willCancel
         isRecording = false
-        if (!send) {
+        willCancel = false
+        if (!keep) {
             recorder.cancel()
             return
         }
@@ -115,6 +133,7 @@ class VoiceRecording(
     fun cancelIfRecording() {
         if (isRecording) {
             isRecording = false
+            willCancel = false
             recorder.cancel()
         }
     }
@@ -175,9 +194,17 @@ fun VoiceRecordingBar(recording: VoiceRecording) {
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = stringResource(R.string.voice_release_to_send),
+                text = if (recording.willCancel) {
+                    stringResource(R.string.voice_release_to_discard)
+                } else {
+                    stringResource(R.string.voice_release_to_send)
+                },
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onErrorContainer,
+                color = if (recording.willCancel) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onErrorContainer
+                },
             )
         }
     }

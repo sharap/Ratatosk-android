@@ -548,4 +548,5 @@
     <string name="voice_play">Play</string>
     <string name="voice_pause">Pause</string>
     <string name="voice_release_to_send">release to send, slide away to discard</string>
+    <string name="voice_release_to_discard">let go now and nothing will be sent</string>
 </resources>

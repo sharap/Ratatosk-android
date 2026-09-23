@@ -552,4 +552,5 @@
     <string name="voice_play">Слушать</string>
     <string name="voice_pause">Пауза</string>
     <string name="voice_release_to_send">отпустите — отправится, уведите палец — нет</string>
+    <string name="voice_release_to_discard">отпустите — запись не отправится</string>
 </resources>
