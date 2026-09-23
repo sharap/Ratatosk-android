@@ -547,4 +547,5 @@
     <string name="voice_permission">Recording needs permission to use the microphone</string>
     <string name="voice_play">Play</string>
     <string name="voice_pause">Pause</string>
+    <string name="voice_release_to_send">release to send, slide away to discard</string>
 </resources>

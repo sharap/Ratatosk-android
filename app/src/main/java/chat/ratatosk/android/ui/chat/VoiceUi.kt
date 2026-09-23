@@ -43,6 +43,13 @@ import chat.ratatosk.android.util.Waveform
 import kotlinx.coroutines.delay
 import org.ratatosk.core.FfiFile
 
+/** Выдано ли разрешение на микрофон прямо сейчас. */
+fun hasAudioPermission(context: android.content.Context): Boolean =
+    androidx.core.content.ContextCompat.checkSelfPermission(
+        context,
+        android.Manifest.permission.RECORD_AUDIO,
+    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
 /** Длительность словами: 0:07, 1:23. */
 fun formatVoiceDuration(ms: Long): String {
     val total = (ms / 1000).toInt()
@@ -50,98 +57,128 @@ fun formatVoiceDuration(ms: Long): String {
 }
 
 /**
- * Кнопка записи и сама запись.
+ * Запись голосового: состояние, которое держит экран.
  *
- * Запись идёт в Ogg/Opus прямо с микрофона, волна снимается по ходу
- * (декодировать Opus ради картинки нечем), и отправляется она обычным
- * вложением: голосовое узнаётся по имени файла ([VoiceFile]).
- *
- * @param onError сказать человеку словами: разрешения нет, писать нечем,
- *   записать не успели.
+ * Отдельной кнопки нет — запись начинается удержанием «отправить»,
+ * поэтому состояние вынуто из кнопки: жест снаружи, а микрофон,
+ * громкость и отправка здесь.
  */
+class VoiceRecording(
+    private val recorder: VoiceRecorder,
+    private val onError: (String) -> Unit,
+    private val onSend: (java.io.File, ByteArray?) -> Unit,
+    private val texts: Texts,
+) {
+    class Texts(val unsupported: String, val tooShort: String)
+
+    var isRecording by mutableStateOf(false)
+        private set
+
+    var elapsedMs by mutableStateOf(0L)
+        private set
+
+    /** Начать запись; разрешение спрашивает экран — из него это виднее. */
+    fun begin() {
+        if (isRecording) return
+        if (!VoiceRecorder.SUPPORTED || !recorder.start()) {
+            onError(texts.unsupported)
+            return
+        }
+        isRecording = true
+        elapsedMs = 0
+    }
+
+    /** Снимает громкость и время; звать из цикла, пока идёт запись. */
+    fun tick() {
+        if (!isRecording) return
+        recorder.sample()
+        elapsedMs = recorder.elapsedMs()
+    }
+
+    /**
+     * Закончить запись.
+     *
+     * @param send отправить записанное; `false` — человек передумал,
+     *   и файл стирается, не долетев никуда.
+     */
+    fun finish(send: Boolean) {
+        if (!isRecording) return
+        isRecording = false
+        if (!send) {
+            recorder.cancel()
+            return
+        }
+        val done = recorder.stop()
+        if (done == null) onError(texts.tooShort) else onSend(done.file, Waveform.png(done.levels))
+    }
+
+    fun cancelIfRecording() {
+        if (isRecording) {
+            isRecording = false
+            recorder.cancel()
+        }
+    }
+}
+
+/** Заводит запись для этого чата и следит за её временем. */
 @Composable
-fun VoiceRecordButton(
+fun rememberVoiceRecording(
     viewModel: RatatoskViewModel,
     chatId: ByteArray,
     onError: (String) -> Unit,
-) {
+): VoiceRecording {
     val context = LocalContext.current
-    val recorder = remember { VoiceRecorder(context) }
-    var recording by remember { mutableStateOf(false) }
-    var elapsedMs by remember { mutableStateOf(0L) }
-
-    val unsupported = stringResource(R.string.voice_unsupported)
-    val needPermission = stringResource(R.string.voice_permission)
-    val tooShort = stringResource(R.string.voice_too_short)
-
-    fun begin() {
-        if (!VoiceRecorder.SUPPORTED) {
-            onError(unsupported)
-            return
-        }
-        if (recorder.start()) {
-            recording = true
-        } else {
-            onError(unsupported)
-        }
+    val texts = VoiceRecording.Texts(
+        unsupported = stringResource(R.string.voice_unsupported),
+        tooShort = stringResource(R.string.voice_too_short),
+    )
+    val recording = remember(chatId.contentHashCode()) {
+        VoiceRecording(
+            recorder = VoiceRecorder(context),
+            onError = onError,
+            onSend = { file, waveform -> viewModel.sendVoice(chatId, file, waveform) },
+            texts = texts,
+        )
     }
 
-    val askPermission = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted -> if (granted) begin() else onError(needPermission) }
-
-    // Пока идёт запись — снимаем громкость и показываем время.
-    LaunchedEffect(recording) {
-        while (recording) {
-            recorder.sample()
-            elapsedMs = recorder.elapsedMs()
+    LaunchedEffect(recording.isRecording) {
+        while (recording.isRecording) {
+            recording.tick()
             delay(50)
         }
     }
 
     // Уход с экрана посреди записи не должен оставлять микрофон занятым.
-    DisposableEffect(Unit) {
-        onDispose { if (recorder.isRecording) recorder.cancel() }
-    }
+    DisposableEffect(Unit) { onDispose { recording.cancelIfRecording() } }
 
-    if (!recording) {
-        IconButton(onClick = {
-            val granted = androidx.core.content.ContextCompat.checkSelfPermission(
-                context,
-                android.Manifest.permission.RECORD_AUDIO,
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            if (granted) begin() else askPermission.launch(android.Manifest.permission.RECORD_AUDIO)
-        }) {
-            Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.voice_record))
-        }
-        return
-    }
+    return recording
+}
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = {
-            recorder.cancel()
-            recording = false
-        }) {
+/** Полоса записи: сколько идёт и как её бросить. */
+@Composable
+fun VoiceRecordingBar(recording: VoiceRecording) {
+    Surface(color = MaterialTheme.colorScheme.errorContainer, modifier = Modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        ) {
             Icon(
-                Icons.Default.Delete,
-                contentDescription = stringResource(R.string.voice_cancel),
+                Icons.Default.Mic,
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(18.dp),
             )
-        }
-        Text(
-            text = stringResource(R.string.voice_recording, formatVoiceDuration(elapsedMs)),
-            style = MaterialTheme.typography.labelMedium,
-        )
-        IconButton(onClick = {
-            recording = false
-            val done = recorder.stop()
-            if (done == null) {
-                onError(tooShort)
-            } else {
-                viewModel.sendVoice(chatId, done.file, Waveform.png(done.levels))
-            }
-        }) {
-            Icon(Icons.Default.Send, contentDescription = stringResource(R.string.voice_send))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.voice_recording, formatVoiceDuration(recording.elapsedMs)),
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringResource(R.string.voice_release_to_send),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
         }
     }
 }
@@ -165,12 +202,23 @@ fun VoiceBubble(
     var player by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
     var playing by remember { mutableStateOf(false) }
     var preparing by remember { mutableStateOf(false) }
+    // Сколько проиграно: по нему считается остаток и ползёт полоса.
+    var positionMs by remember { mutableStateOf(0L) }
     val unavailable = stringResource(R.string.file_unavailable)
 
     DisposableEffect(Unit) {
         onDispose {
             player?.release()
             player = null
+        }
+    }
+
+    // Пока играет — показываем, сколько осталось. Иначе полоса стоит
+    // на месте, и непонятно, играет ли вообще.
+    LaunchedEffect(playing) {
+        while (playing) {
+            positionMs = player?.currentPosition?.toLong() ?: positionMs
+            delay(200)
         }
     }
 
@@ -186,6 +234,7 @@ fun VoiceBubble(
             media.setDataSource(path)
             media.setOnCompletionListener {
                 playing = false
+                positionMs = 0
                 it.release()
                 player = null
             }
@@ -242,13 +291,30 @@ fun VoiceBubble(
             }
         }
         if (wave != null) {
-            Image(
-                bitmap = wave.asImageBitmap(),
-                contentDescription = stringResource(R.string.voice_message),
-                modifier = Modifier.height(28.dp).width(120.dp),
-            )
+            androidx.compose.foundation.layout.Column {
+                Image(
+                    bitmap = wave.asImageBitmap(),
+                    contentDescription = stringResource(R.string.voice_message),
+                    modifier = Modifier.height(28.dp).width(120.dp),
+                )
+                if (playing || positionMs > 0) {
+                    androidx.compose.material3.LinearProgressIndicator(
+                        progress = { (positionMs.toFloat() / durationMs.coerceAtLeast(1)).coerceIn(0f, 1f) },
+                        modifier = Modifier.width(120.dp).height(2.dp),
+                    )
+                }
+            }
             Spacer(Modifier.width(8.dp))
         }
-        Text(formatVoiceDuration(durationMs), style = MaterialTheme.typography.labelMedium)
+        Text(
+            // Пока играет — остаток: человеку важно, сколько ещё слушать,
+            // а не сколько было всего.
+            text = if (playing || positionMs > 0) {
+                "−" + formatVoiceDuration((durationMs - positionMs).coerceAtLeast(0))
+            } else {
+                formatVoiceDuration(durationMs)
+            },
+            style = MaterialTheme.typography.labelMedium,
+        )
     }
 }

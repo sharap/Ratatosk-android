@@ -143,6 +143,22 @@ fun ChatScreen(
     var showInviteDialog by remember { mutableStateOf(false) }
     var showRenameGroupDialog by remember { mutableStateOf(false) }
     var showUnsubscribeDialog by remember { mutableStateOf(false) }
+
+    // Голосовое пишется удержанием «отправить»; состояние держит экран.
+    val voiceRecording = rememberVoiceRecording(
+        viewModel = viewModel,
+        chatId = chatId,
+        onError = { message -> scope.launch { snackbarHostState.showSnackbar(message) } },
+    )
+    val voicePermissionDenied = stringResource(R.string.voice_permission)
+    val askAudioPermission = rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        // Разрешение спрашивается в момент записи: до неё оно ни к чему.
+        // Дали — писать надо снова удержанием, иначе запись началась бы
+        // тогда, когда палец уже отпущен.
+        if (!granted) scope.launch { snackbarHostState.showSnackbar(voicePermissionDenied) }
+    }
     var showChannelLinkDialog by remember { mutableStateOf(false) }
     var editGroupTitleText by remember { mutableStateOf("") }
     
@@ -615,6 +631,7 @@ fun ChatScreen(
                     if (isMember && channelBlockText == null) {
                         Surface(tonalElevation = 2.dp) {
                             Column {
+                                if (voiceRecording.isRecording) VoiceRecordingBar(voiceRecording)
                                 replyingTo?.let { reply ->
                                     Row(
                                         modifier = Modifier
@@ -717,57 +734,94 @@ fun ChatScreen(
                                             }
                                         }
                                     )
-                                    // Пустое поле и нет вложений — значит человек
-                                    // хочет сказать голосом, а не написать.
-                                    if (text.isBlank() && attachedFiles.isEmpty() && editingMessage == null) {
-                                        VoiceRecordButton(
-                                            viewModel = viewModel,
-                                            chatId = chatId,
-                                            onError = { message ->
-                                                scope.launch { snackbarHostState.showSnackbar(message) }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    val canSend = text.isNotBlank() || attachedFiles.isNotEmpty()
+                                    val sendCurrent: () -> Unit = {
+                                        val currentEditing = editingMessage
+                                        val currentReply = replyingTo
+                                        if (attachedFiles.isNotEmpty()) {
+                                            // Вложения идут одним сообщением, и ответа
+                                            // ядро к нему не прикрепляет: `send_files`
+                                            // цитаты не принимает. Значит ответ надо
+                                            // отправить отдельно — молча терять его
+                                            // нельзя, человек его набрал.
+                                            if (currentReply != null && text.isNotBlank()) {
+                                                viewModel.reply(chatId, currentReply.msgId, text)
+                                                viewModel.sendFiles(chatId, attachedFiles, "")
+                                            } else {
+                                                viewModel.sendFiles(chatId, attachedFiles, text)
+                                            }
+                                            attachedFiles = emptyList()
+                                        } else if (currentEditing != null) {
+                                            viewModel.editMessage(chatId, currentEditing.msgId, text)
+                                        } else if (currentReply != null) {
+                                            viewModel.reply(chatId, currentReply.msgId, text)
+                                        } else {
+                                            viewModel.sendText(chatId, text)
+                                        }
+                                        // Панели снимаем всегда: иначе ответ и правка
+                                        // остаются висеть после отправки, и кажется,
+                                        // что сообщение ушло не туда.
+                                        editingMessage = null
+                                        replyingTo = null
+                                        text = ""
+                                    }
+
+                                    // Запись — удержанием «отправить»: отдельная
+                                    // кнопка микрофона занимала бы место ради
+                                    // того, что нужно раз в день. Отпустили —
+                                    // ушло, увели палец — стёрлось.
+                                    val sendGesture = Modifier.pointerInput(chatId, text.isBlank(), attachedFiles.size, editingMessage) {
+                                        detectTapGestures(
+                                            onLongPress = {
+                                                if (text.isBlank() && attachedFiles.isEmpty() && editingMessage == null) {
+                                                    if (hasAudioPermission(context)) {
+                                                        voiceRecording.begin()
+                                                    } else {
+                                                        askAudioPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+                                                    }
+                                                }
                                             },
+                                            onPress = {
+                                                val released = tryAwaitRelease()
+                                                if (voiceRecording.isRecording) voiceRecording.finish(send = released)
+                                            },
+                                            onTap = { if (canSend) sendCurrent() },
                                         )
                                     }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    IconButton(
-                                        onClick = {
-                                            if (text.isNotBlank() || attachedFiles.isNotEmpty()) {
-                                                val currentEditing = editingMessage
-                                                val currentReply = replyingTo
-                                                if (attachedFiles.isNotEmpty()) {
-                                                    // Вложения идут одним сообщением, и ответа
-                                                    // ядро к нему не прикрепляет: `send_files`
-                                                    // цитаты не принимает. Значит ответ надо
-                                                    // отправить отдельно — молча терять его
-                                                    // нельзя, человек его набрал.
-                                                    if (currentReply != null && text.isNotBlank()) {
-                                                        viewModel.reply(chatId, currentReply.msgId, text)
-                                                        viewModel.sendFiles(chatId, attachedFiles, "")
-                                                    } else {
-                                                        viewModel.sendFiles(chatId, attachedFiles, text)
-                                                    }
-                                                    attachedFiles = emptyList()
-                                                } else if (currentEditing != null) {
-                                                    viewModel.editMessage(chatId, currentEditing.msgId, text)
-                                                } else if (currentReply != null) {
-                                                    viewModel.reply(chatId, currentReply.msgId, text)
-                                                } else {
-                                                    viewModel.sendText(chatId, text)
-                                                }
-                                                // Панели снимаем всегда: иначе ответ и правка
-                                                // остаются висеть после отправки, и кажется,
-                                                // что сообщение ушло не туда.
-                                                editingMessage = null
-                                                replyingTo = null
-                                                text = ""
-                                            }
-                                        },
-                                        enabled = text.isNotBlank() || attachedFiles.isNotEmpty()
+                                    Box(
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(CircleShape)
+                                            .then(sendGesture),
+                                        contentAlignment = Alignment.Center,
                                     ) {
-                                        if (editingMessage != null) {
-                                            Icon(Icons.Default.Check, contentDescription = stringResource(R.string.save))
+                                        val tint = if (canSend || voiceRecording.isRecording) {
+                                            MaterialTheme.colorScheme.primary
                                         } else {
-                                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.send))
+                                            MaterialTheme.colorScheme.outline
+                                        }
+                                        if (editingMessage != null) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = stringResource(R.string.save),
+                                                tint = tint,
+                                            )
+                                        } else if (voiceRecording.isRecording) {
+                                            Icon(
+                                                Icons.Default.Mic,
+                                                contentDescription = stringResource(R.string.voice_record),
+                                                tint = MaterialTheme.colorScheme.error,
+                                            )
+                                        } else {
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.Send,
+                                                // Долгое нажатие здесь записывает голосовое —
+                                                // подсказка нужна и незрячему.
+                                                contentDescription = stringResource(R.string.send) +
+                                                    ", " + stringResource(R.string.voice_record),
+                                                tint = tint,
+                                            )
                                         }
                                     }
                                 }

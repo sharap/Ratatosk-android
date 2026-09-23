@@ -551,4 +551,5 @@
     <string name="voice_permission">Для записи нужно разрешение на микрофон</string>
     <string name="voice_play">Слушать</string>
     <string name="voice_pause">Пауза</string>
+    <string name="voice_release_to_send">отпустите — отправится, уведите палец — нет</string>
 </resources>
