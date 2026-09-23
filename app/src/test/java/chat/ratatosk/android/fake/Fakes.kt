@@ -234,6 +234,8 @@ class FakeBackend(
     override fun sharingLevelNotice(): String = "текст:SHARING_LEVEL"
 
     override fun channelSignalText(signal: FfiChannelSignal): String = "признак:$signal"
+
+    override fun messageNotInTheChannelText(): String = "не доехало"
 }
 
 /**

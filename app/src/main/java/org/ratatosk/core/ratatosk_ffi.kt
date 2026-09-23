@@ -829,6 +829,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_max_text_bytes(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_message_not_in_the_channel_text(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_no_pin_warning(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_nostr_direct_warning(
@@ -1666,6 +1668,8 @@ internal object UniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_fn_func_max_text_bytes(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
+    external fun uniffi_ratatosk_ffi_fn_func_message_not_in_the_channel_text(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_no_pin_warning(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_nostr_direct_warning(uniffi_out_err: UniffiRustCallStatus, 
@@ -1911,6 +1915,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_max_text_bytes() != 24996) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_message_not_in_the_channel_text() != 30993) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_no_pin_warning() != 45718) {
@@ -2231,7 +2238,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_channel_right() != 24987) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground() != 14011) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground() != 21335) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_giving_limits() != 26284) {
@@ -6822,10 +6829,23 @@ public interface RatatoskClientInterface {
      * Onion и почты не касается: они не объявляют присутствия, а ждут
      * входящих по адресу из карточки.
      *
-     * **Раздачу канала (§7) это гасит** — §12: «активен ровно один
-     * аккаунт… его сидирование прекращается, `PeerRecord` выпадает
-     * по сроку». Ушедший с экрана перестаёт отдавать блоки и перестаёт
-     * продлевать свою запись в каталоге; принимать он продолжает.
+     * **Это не «приложение свернули».** Признак говорит ровно одно:
+     * «этот аккаунт сейчас активный» — и приложению с одним аккаунтом
+     * звать его не нужно **никогда**. Передайте сюда состояние окна —
+     * и получите канал, который работает, только пока человек смотрит
+     * в экран; свёрнутое приложение продолжает принимать и отправлять
+     * своё, а вот **раздавать чужое** перестаёт.
+     *
+     * **Раздачу чужого канала (§7) это гасит** — §12: «активен ровно
+     * один аккаунт… его сидирование прекращается, `PeerRecord` выпадает
+     * по сроку». Ушедший с экрана перестаёт отдавать блоки чужих
+     * каналов и продлевать свою запись в каталоге; принимать
+     * он продолжает.
+     *
+     * **Свой канал отдаётся всегда.** Владелец — источник, а не сид
+     * (§7.5.2: «ноль сидов — это звезда, и она обязана работать как
+     * состояние»); погаси его признак экрана, канал перестал бы
+     * существовать для всех разом.
      * Довод не про батарею: два аккаунта, раздающие с одного
      * устройства, связываются на проводе объёмом и временем.
      *
@@ -9228,10 +9248,23 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
      * Onion и почты не касается: они не объявляют присутствия, а ждут
      * входящих по адресу из карточки.
      *
-     * **Раздачу канала (§7) это гасит** — §12: «активен ровно один
-     * аккаунт… его сидирование прекращается, `PeerRecord` выпадает
-     * по сроку». Ушедший с экрана перестаёт отдавать блоки и перестаёт
-     * продлевать свою запись в каталоге; принимать он продолжает.
+     * **Это не «приложение свернули».** Признак говорит ровно одно:
+     * «этот аккаунт сейчас активный» — и приложению с одним аккаунтом
+     * звать его не нужно **никогда**. Передайте сюда состояние окна —
+     * и получите канал, который работает, только пока человек смотрит
+     * в экран; свёрнутое приложение продолжает принимать и отправлять
+     * своё, а вот **раздавать чужое** перестаёт.
+     *
+     * **Раздачу чужого канала (§7) это гасит** — §12: «активен ровно
+     * один аккаунт… его сидирование прекращается, `PeerRecord` выпадает
+     * по сроку». Ушедший с экрана перестаёт отдавать блоки чужих
+     * каналов и продлевать свою запись в каталоге; принимать
+     * он продолжает.
+     *
+     * **Свой канал отдаётся всегда.** Владелец — источник, а не сид
+     * (§7.5.2: «ноль сидов — это звезда, и она обязана работать как
+     * состояние»); погаси его признак экрана, канал перестал бы
+     * существовать для всех разом.
      * Довод не про батарею: два аккаунта, раздающие с одного
      * устройства, связываются на проводе объёмом и временем.
      *
@@ -14495,6 +14528,24 @@ data class FfiMessage (
     val `author`: kotlin.String?
     , 
     /**
+     * Есть ли это сообщение у владельца канала (§7.2, §7.3).
+     *
+     * `null` — судить не по чему: это не канал, канал наш собственный,
+     * вектор от владельца ещё не приезжал, либо номер лежит **вне**
+     * того, что владелец о себе сказал (архив обрезается окном §9.3,
+     * и о старом он молчит не потому, что его нет).
+     *
+     * `false` означает ровно одно: **до владельца это не доехало**,
+     * и пришедший в канал завтра этого не увидит. Не «удалили» —
+     * удаления §11.4 у канала нет вовсе — и не «подделка»: подпись
+     * проверена, иначе сообщение не показалось бы.
+     *
+     * Слова к метке — [`message_not_in_the_channel_text`]; писать свои
+     * не надо, они разойдутся с поведением на первой же правке.
+     */
+    val `inTheChannel`: kotlin.Boolean?
+    , 
+    /**
      * Ключ автора — рядом с именем и по тому же правилу.
      *
      * Нужен не для подписи, а для всего, что к автору привязано:
@@ -14589,6 +14640,7 @@ public object FfiConverterTypeFfiMessage: FfiConverterRustBuffer<FfiMessage> {
             FfiConverterString.read(buf),
             FfiConverterBoolean.read(buf),
             FfiConverterOptionalString.read(buf),
+            FfiConverterOptionalBoolean.read(buf),
             FfiConverterOptionalByteArray.read(buf),
             FfiConverterULong.read(buf),
             FfiConverterOptionalTypeFfiDeliveryStatus.read(buf),
@@ -14606,6 +14658,7 @@ public object FfiConverterTypeFfiMessage: FfiConverterRustBuffer<FfiMessage> {
             FfiConverterString.allocationSize(value.`body`) +
             FfiConverterBoolean.allocationSize(value.`mine`) +
             FfiConverterOptionalString.allocationSize(value.`author`) +
+            FfiConverterOptionalBoolean.allocationSize(value.`inTheChannel`) +
             FfiConverterOptionalByteArray.allocationSize(value.`authorIk`) +
             FfiConverterULong.allocationSize(value.`wallMs`) +
             FfiConverterOptionalTypeFfiDeliveryStatus.allocationSize(value.`status`) +
@@ -14622,6 +14675,7 @@ public object FfiConverterTypeFfiMessage: FfiConverterRustBuffer<FfiMessage> {
             FfiConverterString.write(value.`body`, buf)
             FfiConverterBoolean.write(value.`mine`, buf)
             FfiConverterOptionalString.write(value.`author`, buf)
+            FfiConverterOptionalBoolean.write(value.`inTheChannel`, buf)
             FfiConverterOptionalByteArray.write(value.`authorIk`, buf)
             FfiConverterULong.write(value.`wallMs`, buf)
             FfiConverterOptionalTypeFfiDeliveryStatus.write(value.`status`, buf)
@@ -20756,6 +20810,24 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
             return FfiConverterUInt.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_func_max_text_bytes(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Слова к сообщению, которого нет у владельца канала (§14, §7.3).
+         *
+         * На границе, а не в клиенте, по той же причине, что остальные тексты:
+         * строка обязана говорить то, что ядро на самом деле знает. А знает
+         * оно ровно одно — «до владельца это не доехало», — и всякая более
+         * сильная формулировка («удалено», «подделка») была бы выдумкой.
+         */ fun `messageNotInTheChannelText`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_message_not_in_the_channel_text(
     
         _status)
 }

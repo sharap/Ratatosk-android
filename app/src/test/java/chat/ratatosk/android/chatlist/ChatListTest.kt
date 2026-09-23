@@ -61,6 +61,7 @@ class ChatListTest {
         files = emptyList(),
         replyTo = null,
         sharedContact = null,
+        inTheChannel = null,
     )
 
     private fun messages(vararg pairs: Pair<ByteArray, ULong>) =

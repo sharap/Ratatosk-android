@@ -32,7 +32,8 @@ class ReactionNoticeTest {
         reactions = reactions,
         files = emptyList(),
         replyTo = null,
-        sharedContact = null
+        sharedContact = null,
+        inTheChannel = null,
     )
 
     @Test

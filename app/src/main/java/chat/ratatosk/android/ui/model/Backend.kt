@@ -104,6 +104,15 @@ interface Backend {
     fun channelSignalText(signal: org.ratatosk.core.FfiChannelSignal): String
 
     /**
+     * Слова к метке «до владельца канала не доехало» (§15).
+     *
+     * `false` у `FfiMessage::in_the_channel` значит ровно это — не
+     * «удалили» и не «подделка», — и объяснять разницу должен текст
+     * ядра, а не наша догадка.
+     */
+    fun messageNotInTheChannelText(): String
+
+    /**
      * Чем платит сужение круга отдачи (§12).
      *
      * Отдельно от [channelNotice]: этот текст не про канал, а про то,
@@ -166,4 +175,7 @@ object CoreBackend : Backend {
 
     override fun channelSignalText(signal: org.ratatosk.core.FfiChannelSignal): String =
         org.ratatosk.core.channelSignalText(signal)
+
+    override fun messageNotInTheChannelText(): String =
+        org.ratatosk.core.messageNotInTheChannelText()
 }

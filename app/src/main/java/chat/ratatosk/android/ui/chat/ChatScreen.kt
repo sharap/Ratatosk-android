@@ -1610,6 +1610,25 @@ fun MessageBubble(
                                 }
                             })
                         }
+                        // В канале «ушло» и «лежит в канале» — разные вещи:
+                        // `false` значит, что до владельца слово не доехало,
+                        // и пришедший завтра его не увидит. Не «удалили»
+                        // и не «подделка» — объясняет это текст ядра.
+                        if (message.inTheChannel == false) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.CloudOff,
+                                contentDescription = viewModel.messageNotInTheChannelText(),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .clickable {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar(viewModel.messageNotInTheChannelText())
+                                        }
+                                    },
+                            )
+                        }
                     }
                 }
             }

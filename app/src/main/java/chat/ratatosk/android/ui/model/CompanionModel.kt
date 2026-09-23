@@ -454,7 +454,10 @@ class CompanionModel(
             reactions = msg.reactions.map { FfiReaction(it.emoji, if (it.mine) contacts.fingerprint.value?.hexToByteArray() ?: ByteArray(0) else ByteArray(0), it.mine) },
             files = msg.files.map { mapCompanionAttachment(it, msg.mine) },
             replyTo = msg.replyTo,
-            sharedContact = mappedSharedContact
+            sharedContact = mappedSharedContact,
+            // Доехало ли слово до владельца канала, второй экран не знает:
+            // у него нет ни канальных документов, ни состава (§3.2).
+            inTheChannel = null,
         )
     }
 

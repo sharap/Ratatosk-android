@@ -168,6 +168,9 @@ interface ChannelsApi {
      */
     fun channelSignalText(signal: org.ratatosk.core.FfiChannelSignal): String
 
+    /** Слова к метке «до владельца канала не доехало» (§15). */
+    fun messageNotInTheChannelText(): String
+
     /**
      * Заводит канал. Порода задаётся один раз и не меняется: «открытый»
      * и «по приглашению» — два разных обещания (§6.1).
@@ -354,6 +357,8 @@ class ChannelsModel(
 
     override fun channelSignalText(signal: org.ratatosk.core.FfiChannelSignal): String =
         session.core.channelSignalText(signal)
+
+    override fun messageNotInTheChannelText(): String = session.core.messageNotInTheChannelText()
 
     override fun createChannel(title: String, open: Boolean) {
         session.io("Failed to create channel", R.string.channel_create_failed) {
