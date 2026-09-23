@@ -68,7 +68,14 @@ interface ChatsApi {
 
 class ChatsModel(
     private val session: SessionContext,
-    /** Превью исходящей картинки делает тот, кто умеет читать файлы. */
+    /**
+     * Превью исходящего вложения делает тот, кто умеет читать файлы.
+     *
+     * Спрашивается у **каждого** файла, а не у одних картинок: у записи
+     * голоса превью — волна, нарисованная при записи, и отбор по
+     * расширению её отбрасывал. Решение «есть ли превью» живёт в одном
+     * месте, здесь его повторять нечем.
+     */
     private val previewFor: (java.io.File) -> ByteArray?,
     /** Открытый чат закрывает карточку человека: показываем что-то одно. */
     private val onChatOpened: () -> Unit,
@@ -224,19 +231,13 @@ class ChatsModel(
                         return@launch
                     }
                     val companionFiles = files.map { file ->
-                        val preview = if (file.extension.lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
-                            previewFor(file)
-                        } else null
-                        FfiCompanionOutgoing(file.absolutePath, preview)
+                        FfiCompanionOutgoing(file.absolutePath, previewFor(file))
                     }
                     session.core.companion().sendFiles(chatId, companionFiles, text)
                     loadMessages(chatId)
                 } else {
                     val outgoingFiles = files.map { file ->
-                        val preview = if (file.extension.lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
-                            previewFor(file)
-                        } else null
-                        FfiOutgoingFile(file.absolutePath, preview)
+                        FfiOutgoingFile(file.absolutePath, previewFor(file))
                     }
                     session.core.client().sendFiles(chatId, outgoingFiles, text)
                     loadMessages(chatId)

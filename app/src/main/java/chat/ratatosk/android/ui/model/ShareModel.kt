@@ -93,8 +93,11 @@ class ShareModel(private val session: SessionContext) : ShareApi {
      * в отведённые ядром байты, и лучше без него, чем с обрезанным.
      */
     fun previewFor(file: java.io.File): ByteArray? {
-        // Голосовое: волна уже нарисована записью — decode тут нечем.
+        // Голосовое: волна уже нарисована записью — декодировать Opus нечем.
         recordedWaveforms.remove(file.absolutePath)?.let { return it }
+        // Остальное превью имеет смысл только у картинок: ядро ждёт
+        // изображение, а не «что-нибудь про файл».
+        if (file.extension.lowercase() !in listOf("jpg", "jpeg", "png", "webp")) return null
         try {
             val bitmap = android.graphics.BitmapFactory.decodeFile(file.absolutePath) ?: return null
             val reqWidth = 320
