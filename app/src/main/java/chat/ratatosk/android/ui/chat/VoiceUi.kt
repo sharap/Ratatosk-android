@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -32,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -211,11 +215,14 @@ fun VoiceRecordingBar(recording: VoiceRecording) {
 }
 
 /**
- * Голосовое в пузыре: волна, длительность и проигрывание.
+ * Голосовое в пузыре: волна, время, проигрывание и перемотка.
  *
  * Волна берётся из превью вложения — оно приезжает **до** самого файла,
  * так что запись видно ещё до приёма. Слушать можно только принятое:
  * расшифрованную копию готовит ядро, и до неё файл надо сохранить.
+ *
+ * По волне можно возить пальцем: длинные записи иначе не послушать —
+ * промотать их нечем, а начинать заново каждый раз мучительно.
  */
 @Composable
 fun VoiceBubble(
@@ -231,6 +238,8 @@ fun VoiceBubble(
     var preparing by remember { mutableStateOf(false) }
     // Сколько проиграно: по нему считается остаток и ползёт полоса.
     var positionMs by remember { mutableStateOf(0L) }
+    // Длину знает сам файл; имя — только обещание отправителя.
+    var actualMs by remember { mutableStateOf(durationMs) }
     val unavailable = stringResource(R.string.file_unavailable)
 
     DisposableEffect(Unit) {
@@ -245,34 +254,76 @@ fun VoiceBubble(
     LaunchedEffect(playing) {
         while (playing) {
             positionMs = player?.currentPosition?.toLong() ?: positionMs
-            delay(200)
+            delay(100)
         }
     }
 
-    fun play(path: String) {
-        // Формат проверяем по сигнатуре, а не по имени: имя выбирает
-        // отправитель, и «голосовым» он может назвать что угодно.
-        if (!VoiceFile.looksLikeOgg(java.io.File(path))) {
-            onError(unavailable)
+    /** Готовит проигрыватель и делает с ним то, о чём просили. */
+    fun withPlayer(startAtMs: Long?, play: Boolean) {
+        val ready = player
+        if (ready != null) {
+            startAtMs?.let {
+                ready.seekTo(it.toInt())
+                positionMs = it
+            }
+            if (play) {
+                ready.start()
+                playing = true
+            }
             return
         }
-        try {
-            val media = android.media.MediaPlayer()
-            media.setDataSource(path)
-            media.setOnCompletionListener {
-                playing = false
-                positionMs = 0
-                it.release()
-                player = null
+
+        preparing = true
+        val dest = java.io.File(
+            java.io.File(context.cacheDir, "voice").apply { mkdirs() },
+            file.fileId.joinToString("") { "%02x".format(it) } + ".ogg",
+        )
+
+        fun open(path: String) {
+            preparing = false
+            // Формат проверяем по сигнатуре, а не по имени: имя выбирает
+            // отправитель, и «голосовым» он может назвать что угодно.
+            if (!VoiceFile.looksLikeOgg(java.io.File(path))) {
+                onError(unavailable)
+                return
             }
-            media.prepare()
-            media.start()
-            player = media
-            playing = true
-        } catch (t: Throwable) {
-            android.util.Log.w("RatatoskVM", "Failed to play a voice message", t)
-            onError(unavailable)
+            try {
+                val media = android.media.MediaPlayer()
+                media.setDataSource(path)
+                media.setOnCompletionListener {
+                    playing = false
+                    positionMs = 0
+                }
+                media.prepare()
+                // Длина из файла точнее имени; имя могло и соврать.
+                media.duration.takeIf { it > 0 }?.let { actualMs = it.toLong() }
+                startAtMs?.let {
+                    media.seekTo(it.toInt())
+                    positionMs = it
+                }
+                if (play) {
+                    media.start()
+                    playing = true
+                }
+                player = media
+            } catch (t: Throwable) {
+                android.util.Log.w("RatatoskVM", "Failed to play a voice message", t)
+                onError(unavailable)
+            }
         }
+
+        if (dest.exists() && dest.length() == file.sizeBytes.toLong()) {
+            open(dest.absolutePath)
+        } else {
+            viewModel.saveFile(file, dest) { saved -> open(saved.absolutePath) }
+        }
+    }
+
+    /** Перемотка по доле записи; работает и до первого проигрывания. */
+    fun seek(fraction: Float) {
+        val target = (actualMs * fraction.coerceIn(0f, 1f)).toLong()
+        positionMs = target
+        withPlayer(startAtMs = target, play = playing || player == null)
     }
 
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
@@ -284,28 +335,7 @@ fun VoiceBubble(
             }) {
                 Icon(Icons.Default.Stop, contentDescription = stringResource(R.string.voice_pause))
             }
-            else -> IconButton(onClick = {
-                val ready = player
-                if (ready != null) {
-                    ready.start()
-                    playing = true
-                    return@IconButton
-                }
-                preparing = true
-                val dest = java.io.File(
-                    java.io.File(context.cacheDir, "voice").apply { mkdirs() },
-                    file.fileId.let { id -> id.joinToString("") { "%02x".format(it) } } + ".ogg",
-                )
-                if (dest.exists() && dest.length() == file.sizeBytes.toLong()) {
-                    preparing = false
-                    play(dest.absolutePath)
-                } else {
-                    viewModel.saveFile(file, dest) { saved ->
-                        preparing = false
-                        play(saved.absolutePath)
-                    }
-                }
-            }) {
+            else -> IconButton(onClick = { withPlayer(startAtMs = null, play = true) }) {
                 Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.voice_play))
             }
         }
@@ -317,29 +347,45 @@ fun VoiceBubble(
                 runCatching { android.graphics.BitmapFactory.decodeByteArray(it, 0, it.size) }.getOrNull()
             }
         }
-        if (wave != null) {
-            androidx.compose.foundation.layout.Column {
+        // Возить можно и по волне, и по пустому месту там, где её нет:
+        // перемотка нужна и записям без превью.
+        androidx.compose.foundation.layout.Column(
+            modifier = Modifier
+                .width(140.dp)
+                .pointerInput(file.fileId.contentHashCode()) {
+                    val width = size.width.toFloat().coerceAtLeast(1f)
+                    detectTapGestures { offset -> seek(offset.x / width) }
+                }
+                .pointerInput(file.fileId.contentHashCode()) {
+                    val width = size.width.toFloat().coerceAtLeast(1f)
+                    detectHorizontalDragGestures { change, _ ->
+                        seek(change.position.x / width)
+                    }
+                }
+        ) {
+            if (wave != null) {
                 Image(
                     bitmap = wave.asImageBitmap(),
                     contentDescription = stringResource(R.string.voice_message),
-                    modifier = Modifier.height(28.dp).width(120.dp),
+                    modifier = Modifier.height(28.dp).fillMaxWidth(),
                 )
-                if (playing || positionMs > 0) {
-                    androidx.compose.material3.LinearProgressIndicator(
-                        progress = { (positionMs.toFloat() / durationMs.coerceAtLeast(1)).coerceIn(0f, 1f) },
-                        modifier = Modifier.width(120.dp).height(2.dp),
-                    )
-                }
-            }
-            Spacer(Modifier.width(8.dp))
-        }
-        Text(
-            // Пока играет — остаток: человеку важно, сколько ещё слушать,
-            // а не сколько было всего.
-            text = if (playing || positionMs > 0) {
-                "−" + formatVoiceDuration((durationMs - positionMs).coerceAtLeast(0))
             } else {
-                formatVoiceDuration(durationMs)
+                Spacer(Modifier.height(28.dp).fillMaxWidth())
+            }
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { (positionMs.toFloat() / actualMs.coerceAtLeast(1)).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(3.dp),
+            )
+        }
+
+        Spacer(Modifier.width(8.dp))
+        Text(
+            // Пока играет или промотано — остаток: человеку важно,
+            // сколько ещё слушать, а не сколько было всего.
+            text = if (playing || positionMs > 0) {
+                "\u2212" + formatVoiceDuration((actualMs - positionMs).coerceAtLeast(0))
+            } else {
+                formatVoiceDuration(actualMs)
             },
             style = MaterialTheme.typography.labelMedium,
         )
