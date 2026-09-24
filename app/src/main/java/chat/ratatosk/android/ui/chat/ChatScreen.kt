@@ -874,13 +874,30 @@ fun ChatScreen(
                                     // и запись уходила, куда бы его ни увели.
                                     val cancelThresholdPx = with(LocalDensity.current) { 56.dp.toPx() }
                                     val voiceEnabled = text.isBlank() && attachedFiles.isEmpty() && editingMessage == null
+                                    val openVideoRecorder: () -> Unit = {
+                                        if (hasVideoPermissions(context)) showVideoRecorder = true
+                                        else askVideoPermissions.launch(
+                                            arrayOf(
+                                                android.Manifest.permission.CAMERA,
+                                                android.Manifest.permission.RECORD_AUDIO,
+                                            )
+                                        )
+                                    }
                                     val sendGesture = Modifier
                                         .pointerInput(chatId, voiceEnabled, canSend) {
                                             detectTapGestures(
                                                 onTap = {
                                                     // Короткое нажатие — обычная отправка;
                                                     // после записи она уже случилась.
-                                                    if (canSend && !voiceRecording.isRecording) sendCurrent()
+                                                    if (voiceRecording.isRecording) Unit
+                                                    else if (canSend) sendCurrent()
+                                                    // Отправлять нечего — значит нажали ради
+                                                    // записи: кружок, а голосовое —
+                                                    // удержанием той же кнопки. Своей кнопки
+                                                    // ни у того, ни у другого нет: рядом
+                                                    // с «отправить» их было бы три, и все
+                                                    // три — про одно.
+                                                    else if (voiceEnabled) openVideoRecorder()
                                                 },
                                             )
                                         }
@@ -905,26 +922,6 @@ fun ChatScreen(
                                             )
                                         }
 
-                                    // Кружок — там же, где голосовое, и по тому же
-                                    // правилу: пока человеку есть что отправить
-                                    // словами, запись ему не предлагается.
-                                    if (voiceEnabled) {
-                                        IconButton(onClick = {
-                                            if (hasVideoPermissions(context)) showVideoRecorder = true
-                                            else askVideoPermissions.launch(
-                                                arrayOf(
-                                                    android.Manifest.permission.CAMERA,
-                                                    android.Manifest.permission.RECORD_AUDIO,
-                                                )
-                                            )
-                                        }) {
-                                            Icon(
-                                                Icons.Default.Videocam,
-                                                contentDescription = stringResource(R.string.video_message),
-                                            )
-                                        }
-                                    }
-
                                     Box(
                                         modifier = Modifier
                                             .size(48.dp)
@@ -948,6 +945,17 @@ fun ChatScreen(
                                                 Icons.Default.Mic,
                                                 contentDescription = stringResource(R.string.voice_record),
                                                 tint = MaterialTheme.colorScheme.error,
+                                            )
+                                        } else if (voiceEnabled) {
+                                            // Отправлять нечего: кнопка показывает, что
+                                            // сделает нажатие — кружок. Голосовое
+                                            // по-прежнему удержанием, и в подсказке
+                                              // названы оба: жест сам о себе не говорит.
+                                            Icon(
+                                                Icons.Default.Videocam,
+                                                contentDescription = stringResource(R.string.video_message) +
+                                                    ", " + stringResource(R.string.voice_record),
+                                                tint = MaterialTheme.colorScheme.primary,
                                             )
                                         } else {
                                             Icon(

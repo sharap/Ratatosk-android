@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -51,7 +52,9 @@ import androidx.core.content.ContextCompat
 import chat.ratatosk.android.R
 import chat.ratatosk.android.util.VideoFile
 import chat.ratatosk.android.util.VideoPoster
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -93,6 +96,48 @@ fun VideoMessageDialog(
                 break
             }
             delay(100)
+        }
+    }
+
+    // Камера, кадр и запись живут столько же, сколько окно: пересобирать
+    // их на перерисовку значит переподключать камеру по кругу — раньше
+    // это и делало кнопку «другая камера» бесполезной, а привязку заново
+    // рвало саму запись.
+    val previewView = remember {
+        PreviewView(context).also { it.scaleType = PreviewView.ScaleType.FILL_CENTER }
+    }
+    val preview = remember { Preview.Builder().build() }
+    // SD, а не «как получится»: кружок смотрят размером с ладонь,
+    // а ехать ему по сети, где каждый килобайт — чей-то трафик.
+    val videoCapture = remember {
+        VideoCapture.withOutput(
+            Recorder.Builder()
+                .setQualitySelector(QualitySelector.fromOrderedList(listOf(Quality.SD, Quality.HD)))
+                .build()
+        )
+    }
+
+    LaunchedEffect(front) {
+        preview.setSurfaceProvider(previewView.surfaceProvider)
+        val provider = try {
+            withContext(Dispatchers.IO) { ProcessCameraProvider.getInstance(context).get() }
+        } catch (t: Throwable) {
+            android.util.Log.w("RatatoskVM", "Failed to get the camera provider", t)
+            onError(failed)
+            return@LaunchedEffect
+        }
+        try {
+            provider.unbindAll()
+            provider.bindToLifecycle(
+                lifecycleOwner,
+                if (front) CameraSelector.DEFAULT_FRONT_CAMERA else CameraSelector.DEFAULT_BACK_CAMERA,
+                preview,
+                videoCapture,
+            )
+            capture = videoCapture
+        } catch (t: Throwable) {
+            android.util.Log.w("RatatoskVM", "Failed to open the camera", t)
+            onError(failed)
         }
     }
 
@@ -161,43 +206,7 @@ fun VideoMessageDialog(
                 ) {
                     AndroidView(
                         modifier = Modifier.fillMaxSize(),
-                        factory = { ctx ->
-                            PreviewView(ctx).also { view ->
-                                view.scaleType = PreviewView.ScaleType.FILL_CENTER
-                            }
-                        },
-                        update = { view ->
-                            val providerFuture = ProcessCameraProvider.getInstance(context)
-                            providerFuture.addListener({
-                                val provider = providerFuture.get()
-                                val preview = Preview.Builder().build().also {
-                                    it.setSurfaceProvider(view.surfaceProvider)
-                                }
-                                // SD, а не «как получится»: кружок смотрят
-                                // размером с ладонь, а ехать ему по сети,
-                                // где каждый килобайт — чей-то трафик.
-                                val recorder = Recorder.Builder()
-                                    .setQualitySelector(
-                                        QualitySelector.fromOrderedList(listOf(Quality.SD, Quality.HD))
-                                    )
-                                    .build()
-                                val videoCapture = VideoCapture.withOutput(recorder)
-                                try {
-                                    provider.unbindAll()
-                                    provider.bindToLifecycle(
-                                        lifecycleOwner,
-                                        if (front) CameraSelector.DEFAULT_FRONT_CAMERA
-                                        else CameraSelector.DEFAULT_BACK_CAMERA,
-                                        preview,
-                                        videoCapture,
-                                    )
-                                    capture = videoCapture
-                                } catch (t: Throwable) {
-                                    android.util.Log.w("RatatoskVM", "Failed to open the camera", t)
-                                    onError(failed)
-                                }
-                            }, executor)
-                        },
+                        factory = { previewView },
                     )
                 }
 
@@ -237,14 +246,20 @@ fun VideoMessageDialog(
                             modifier = Modifier.size(56.dp),
                         )
                     }
-                    // Камеру меняем только до записи: посреди неё это
-                    // разрыв файла, а не смена ракурса.
-                    IconButton(onClick = { front = !front }, enabled = recording == null) {
-                        Icon(
-                            Icons.Default.Cameraswitch,
-                            contentDescription = stringResource(R.string.video_flip),
-                            tint = MaterialTheme.colorScheme.inverseOnSurface,
-                        )
+                    // Камеру меняем только до записи, и во время неё кнопки
+                    // просто нет: CameraX держит запись на привязанной
+                    // камере, и переключение обрывает файл. Мёртвая кнопка
+                    // на экране выглядит поломкой, поэтому её не рисуем.
+                    if (recording == null) {
+                        IconButton(onClick = { front = !front }) {
+                            Icon(
+                                Icons.Default.Cameraswitch,
+                                contentDescription = stringResource(R.string.video_flip),
+                                tint = MaterialTheme.colorScheme.inverseOnSurface,
+                            )
+                        }
+                    } else {
+                        Spacer(Modifier.size(48.dp))
                     }
                 }
             }
