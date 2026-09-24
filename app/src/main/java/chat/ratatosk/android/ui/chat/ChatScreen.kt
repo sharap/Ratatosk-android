@@ -2039,31 +2039,24 @@ fun FileAttachment(
                     .padding(vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // Смотреть можно принятое: расшифрованную копию готовит
-                // ядро, и до неё файл надо сохранить.
-                if (file.complete || !file.incoming) {
-                    VideoBubble(
-                        viewModel = viewModel,
-                        file = file,
-                        durationMs = videoMs,
-                        preview = previews[fileIdHex],
-                        onError = { message -> scope.launch { snackbarHostState.showSnackbar(message) } },
-                    )
-                } else {
-                    // Ещё не приехало: обложка и длительность уже известны
-                    // из превью, а кнопка — обычная «принять».
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
-                        Text(
-                            text = stringResource(R.string.video_message) + ", " + formatVoiceDuration(videoMs),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = contentColor,
-                            modifier = Modifier.weight(1f),
-                        )
-                        TextButton(onClick = { viewModel.acceptFile(chatId, file.fileId) }) {
-                            Text(stringResource(R.string.accept))
-                        }
-                    }
-                }
+                // Кружок показывается всегда, и ход приёма идёт кольцом
+                // по его краю: обложка и длительность известны из превью
+                // ещё до файла, а «принять» и «сколько уже приехало» —
+                // про этот же кружок, и рядом с ним им и место.
+                VideoBubble(
+                    viewModel = viewModel,
+                    file = file,
+                    durationMs = videoMs,
+                    preview = previews[fileIdHex],
+                    // Смотреть можно принятое: расшифрованную копию готовит
+                    // ядро, и до неё файл надо сохранить.
+                    receiveFraction = if (file.complete || !file.incoming) null else currentProgress,
+                    sendFraction = sending[fileIdHex],
+                    // Почему передача стоит — словами ядра (§10.3).
+                    waitingText = if (file.complete) null else waiting[fileIdHex]?.let { viewModel.fileWaitingText(it) },
+                    onAccept = { viewModel.acceptFile(chatId, file.fileId) },
+                    onError = { message -> scope.launch { snackbarHostState.showSnackbar(message) } },
+                )
             }
             return@forEach
         }

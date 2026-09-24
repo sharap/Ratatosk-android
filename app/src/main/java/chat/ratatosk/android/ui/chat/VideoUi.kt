@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -66,8 +67,17 @@ fun VideoBubble(
     file: FfiFile,
     durationMs: Long,
     preview: ByteArray?,
+    /** Сколько кружка уже приехало; `null` — смотреть можно, приём ни при чём. */
+    receiveFraction: Float? = null,
+    /** Сколько ушло, если кружок наш и ещё едет. */
+    sendFraction: Float? = null,
+    /** Почему передача стоит — словами ядра; `null` — не стоит. */
+    waitingText: String? = null,
+    onAccept: () -> Unit = {},
     onError: (String) -> Unit,
 ) {
+    // Смотреть можно принятое: до этого файла на диске нет.
+    val ready = receiveFraction == null
     val context = LocalContext.current
     var player by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
     var surface by remember { mutableStateOf<Surface?>(null) }
@@ -156,7 +166,11 @@ fun VideoBubble(
                 .clip(CircleShape)
                 .background(Color.Black)
                 .clickable {
-                    if (playing) {
+                    // Нечего смотреть — значит нажатие про приём: кружок
+                    // сам и есть кнопка «принять», второй рядом не нужно.
+                    if (!ready) {
+                        if (!file.accepted) onAccept()
+                    } else if (playing) {
                         player?.pause()
                         playing = false
                     } else {
@@ -204,6 +218,20 @@ fun VideoBubble(
 
             when {
                 preparing -> CircularProgressIndicator(modifier = Modifier.size(48.dp), color = Color.White)
+                // Ещё не принято: видно, что делать — нажать.
+                !ready && !file.accepted -> Icon(
+                    Icons.Default.Download,
+                    contentDescription = stringResource(R.string.accept),
+                    tint = Color.White,
+                    modifier = Modifier.size(56.dp),
+                )
+                // Принято и едет: доля словами, потому что кольцо на
+                // четверти круга на глаз от половины не отличить.
+                !ready -> Text(
+                    text = "${((receiveFraction ?: 0f) * 100).toInt()}%",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                )
                 !playing -> Icon(
                     Icons.Default.PlayArrow,
                     contentDescription = stringResource(R.string.video_play),
@@ -212,26 +240,50 @@ fun VideoBubble(
                 )
             }
 
-            // Сколько проиграно — кольцом по краю кружка: полоса под
-            // круглым кадром выглядела бы приделанной сбоку.
-            if (playing || positionMs > 0) {
+            // Кольцо по краю кружка — одно на всё: сколько приехало, сколько
+            // ушло, сколько проиграно. Полоса под круглым кадром выглядела бы
+            // приделанной сбоку, а три полосы — тем более.
+            val ring = when {
+                !ready -> receiveFraction
+                sendFraction != null -> sendFraction
+                playing || positionMs > 0 -> fraction
+                else -> null
+            }
+            if (ring != null) {
                 CircularProgressIndicator(
-                    progress = { fraction },
+                    progress = { ring.coerceIn(0f, 1f) },
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.primary,
-                    trackColor = Color.Transparent,
+                    trackColor = Color.White.copy(alpha = 0.25f),
                     strokeWidth = 3.dp,
                 )
             }
         }
 
         Text(
-            text = formatVoiceDuration(
-                if (playing || positionMs > 0) (actualMs - positionMs).coerceAtLeast(0) else actualMs
-            ),
+            text = if (ready) {
+                formatVoiceDuration(
+                    if (playing || positionMs > 0) (actualMs - positionMs).coerceAtLeast(0) else actualMs
+                )
+            } else {
+                // Длительность известна из имени ещё до файла — она и
+                // говорит, сколько ждать, а не только «сколько байт».
+                stringResource(R.string.video_message) + ", " + formatVoiceDuration(durationMs)
+            },
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp),
         )
+
+        // Стоит не «просто так»: причину знает ядро, и словами её говорит оно.
+        waitingText?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
     }
 }
