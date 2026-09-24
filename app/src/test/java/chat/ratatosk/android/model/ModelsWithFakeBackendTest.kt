@@ -783,4 +783,34 @@ class ModelsWithFakeBackendTest {
         assertEquals(true, preview.open)
         assertEquals(12u, preview.powBits)
     }
+
+    /**
+     * Опоздавший ответ на предпросмотр не всплывает в следующем окне.
+     *
+     * Человек посмотрел канал, передумал и закрыл окно; владелец ответил
+     * через минуту. Без этого ответ ложился в состояние и встречал
+     * человека в следующий раз — с чужой ссылкой и чужим названием.
+     */
+    @Test
+    fun aLatePreviewAnswerIsDropped() {
+        val s = session(companion = false)
+        val chats = ChatsModel(s, previewFor = { null }, onChatOpened = {})
+        val files = FilesModel(s) { chats.loadMessages(it) }
+        val channels = channelsModel(s)
+        val client = clientModel(s, files, chats, channels)
+        client.ensureClientEvents()
+
+        channels.previewChannel("ratatosk:v0:channel:AAAA")
+        waitUntil("спросили") { seen().any { it.startsWith("client.previewChannel") } }
+
+        // Окно закрыли, не дождавшись.
+        channels.clearChannelPreview()
+
+        backend.eventFlow.tryEmit(
+            FfiEvent.ChannelPreviewed(chatA, "Поздний ответ", true, 1UL, 0u)
+        )
+
+        Thread.sleep(150)
+        assertEquals(null, channels.channelPreview.value)
+    }
 }

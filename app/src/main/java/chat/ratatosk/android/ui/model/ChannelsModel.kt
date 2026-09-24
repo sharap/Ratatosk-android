@@ -412,14 +412,26 @@ class ChannelsModel(
     private val _channelPreview = MutableStateFlow<ChannelPreview?>(null)
     override val channelPreview = _channelPreview.asStateFlow()
 
+    /**
+     * Ждём ли ответа прямо сейчас.
+     *
+     * Ответа может и не быть вовремя: человек закрыл окно, а владелец
+     * ответил через минуту. Без этого признака ответ ложился в состояние
+     * и всплывал в следующем окне — с чужой ссылкой и чужим названием.
+     */
+    @Volatile
+    private var awaitingPreview = false
+
     override fun previewChannel(uri: String) {
         _channelPreview.value = null
+        awaitingPreview = true
         session.io("Failed to preview a channel", R.string.channel_preview_failed) {
             session.core.client().previewChannel(uri)
         }
     }
 
     override fun clearChannelPreview() {
+        awaitingPreview = false
         _channelPreview.value = null
     }
 
@@ -498,6 +510,10 @@ class ChannelsModel(
             }
             is org.ratatosk.core.FfiEvent.ChannelPreviewed -> {
                 // Ответ на предпросмотр: теперь породу можно не угадывать.
+                // Но только если его ещё ждут: опоздавший ответ всплыл бы
+                // в следующем окне, рассказывая про чужую ссылку.
+                if (!awaitingPreview) return
+                awaitingPreview = false
                 _channelPreview.value = ChannelPreview(
                     chatId = event.chatId,
                     title = event.title,
@@ -530,5 +546,6 @@ class ChannelsModel(
         _historyPulling.value = emptyMap()
         _historyEnded.value = emptyMap()
         _channelPreview.value = null
+        awaitingPreview = false
     }
 }
