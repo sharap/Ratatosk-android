@@ -42,6 +42,9 @@ class ChannelInputTest {
         rotationOverdue = false,
         waiting = null,
         signal = org.ratatosk.core.FfiChannelSignal.FINE,
+        // Глубина истории (§5.4) в ядре только появилась; поле входа
+        // не касается — входом правят права, а не архив.
+        historyAll = true,
     )
 
     private fun group(mine: Boolean = false, channel: FfiChannel? = null) = FfiGroup(

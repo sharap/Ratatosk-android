@@ -204,7 +204,20 @@ class RatatoskViewModel private constructor(
      * отправки, а после — неоткуда взять.
      */
     fun sendVoice(chatId: ByteArray, file: java.io.File, waveform: ByteArray?) {
-        if (waveform != null) models.rememberVoiceWaveform(file.absolutePath, waveform)
+        if (waveform != null) models.rememberRecordedPreview(file.absolutePath, waveform)
+        sendFiles(chatId, listOf(file), "")
+    }
+
+    /**
+     * Отправляет записанный кружок.
+     *
+     * Кадр-обложка кладётся в превью до отправки — по той же причине,
+     * что и волна голосового: ядро просит превью в момент отправки,
+     * а после — неоткуда взять. Обложка важнее, чем у голосового:
+     * по ней кружок виден ещё не принятым.
+     */
+    fun sendVideo(chatId: ByteArray, file: java.io.File, poster: ByteArray?) {
+        if (poster != null) models.rememberRecordedPreview(file.absolutePath, poster)
         sendFiles(chatId, listOf(file), "")
     }
 

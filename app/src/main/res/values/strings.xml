@@ -572,4 +572,14 @@
     <string name="notify_mute_expired">The mute has run out — we are speaking again</string>
     <string name="notify_muted">Muted</string>
     <string name="notify_failed">Failed to change notifications</string>
+
+    <!-- Видеосообщения (кружки) -->
+    <string name="video_message">Video message</string>
+    <string name="video_message_hint">Tap to record, tap again to send</string>
+    <string name="video_record">Record</string>
+    <string name="video_stop">Stop and send</string>
+    <string name="video_flip">Switch camera</string>
+    <string name="video_play">Play</string>
+    <string name="video_failed">Could not record the video message</string>
+    <string name="video_needs_permissions">Camera and microphone are needed for a video message</string>
 </resources>

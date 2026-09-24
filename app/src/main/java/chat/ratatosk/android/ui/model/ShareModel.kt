@@ -73,17 +73,19 @@ class ShareModel(private val session: SessionContext) : ShareApi {
     }
 
     /**
-     * Волны записей, снятые при записи, по пути файла.
+     * Готовые превью записей, по пути файла.
      *
-     * Превью вложения ядро просит у нас в момент отправки, а декодировать
-     * Opus ради картинки нечем: громкость известна только записи. Поэтому
-     * она кладёт готовую волну сюда, а [previewFor] её оттуда берёт.
+     * Превью вложения ядро просит у нас в момент отправки, а взять его
+     * из файла нечем: у голосового это громкость, известная только
+     * записи (Opus нам не декодировать), у кружка — кадр, снятый
+     * камерой. Поэтому запись кладёт готовую картинку сюда, а
+     * [previewFor] её оттуда берёт.
      */
-    private val recordedWaveforms = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
+    private val recordedPreviews = java.util.concurrent.ConcurrentHashMap<String, ByteArray>()
 
-    /** Запомнить волну записи до отправки. */
-    fun rememberWaveform(path: String, png: ByteArray) {
-        recordedWaveforms[path] = png
+    /** Запомнить превью записи до отправки. */
+    fun rememberPreview(path: String, png: ByteArray) {
+        recordedPreviews[path] = png
     }
 
     /**
@@ -93,8 +95,9 @@ class ShareModel(private val session: SessionContext) : ShareApi {
      * в отведённые ядром байты, и лучше без него, чем с обрезанным.
      */
     fun previewFor(file: java.io.File): ByteArray? {
-        // Голосовое: волна уже нарисована записью — декодировать Opus нечем.
-        recordedWaveforms.remove(file.absolutePath)?.let { return it }
+        // Запись: волна голосового или кадр кружка уже готовы —
+        // добывать их из файла было бы нечем.
+        recordedPreviews.remove(file.absolutePath)?.let { return it }
         // Остальное превью имеет смысл только у картинок: ядро ждёт
         // изображение, а не «что-нибудь про файл».
         if (file.extension.lowercase() !in listOf("jpg", "jpeg", "png", "webp")) return null
@@ -121,6 +124,6 @@ class ShareModel(private val session: SessionContext) : ShareApi {
     /** Сессия закрыта: чужие файлы из прошлого аккаунта здесь не ждут. */
     fun reset() {
         _sharedDraft.value = null
-        recordedWaveforms.clear()
+        recordedPreviews.clear()
     }
 }

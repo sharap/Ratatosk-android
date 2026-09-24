@@ -121,6 +121,7 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.camera.video)
     testImplementation(libs.junit)
     // Проверки моделей без ядра: `Dispatchers.setMain` и управляемое время.
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")

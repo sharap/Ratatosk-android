@@ -34,7 +34,7 @@ open class FakeClient : RatatoskClientInterface {
     override fun `clearChat`(`chatId`: kotlin.ByteArray): Unit = notCalled("clearChat")
     override fun `clearMailAccount`(): Unit = notCalled("clearMailAccount")
     override fun `contacts`(): List<FfiContact> = notCalled("contacts")
-    override fun `createChannel`(`title`: kotlin.String, `open`: kotlin.Boolean): Unit = notCalled("createChannel")
+    override fun `createChannel`(`title`: kotlin.String, `open`: kotlin.Boolean, `historyAll`: kotlin.Boolean): Unit = notCalled("createChannel")
     override fun `createGroup`(`title`: kotlin.String): Unit = notCalled("createGroup")
     override fun `createMailAccount`(`url`: kotlin.String, `viaTor`: kotlin.Boolean): Unit = notCalled("createMailAccount")
     override fun `declineFile`(`fileId`: kotlin.ByteArray): Unit = notCalled("declineFile")

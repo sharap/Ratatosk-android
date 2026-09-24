@@ -576,4 +576,14 @@
     <string name="notify_mute_expired">Срок молчания истёк — говорим снова</string>
     <string name="notify_muted">Уведомления выключены</string>
     <string name="notify_failed">Не удалось изменить уведомления</string>
+
+    <!-- Видеосообщения (кружки) -->
+    <string name="video_message">Видеосообщение</string>
+    <string name="video_message_hint">Нажмите, чтобы записать; ещё раз — отправить</string>
+    <string name="video_record">Записать</string>
+    <string name="video_stop">Остановить и отправить</string>
+    <string name="video_flip">Другая камера</string>
+    <string name="video_play">Смотреть</string>
+    <string name="video_failed">Не удалось записать видеосообщение</string>
+    <string name="video_needs_permissions">Для видеосообщения нужны камера и микрофон</string>
 </resources>

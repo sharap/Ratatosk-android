@@ -769,7 +769,13 @@ internal object IntegrityCheckingUniffiLib {
         uniffiCheckContractApiVersion(this)
         uniffiCheckApiChecksums(this)
     }
+    external fun uniffi_ratatosk_ffi_checksum_func_account_second_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_account_switch_notice(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_admitter_grant_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_channel_history_none_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_channel_preview_notice(
     ): Int
@@ -1334,7 +1340,7 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_contacts(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_channel(`ptr`: Long,`title`: RustBuffer.ByValue,`open`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_channel(`ptr`: Long,`title`: RustBuffer.ByValue,`open`: Byte,`historyAll`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_create_group(`ptr`: Long,`title`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -1628,7 +1634,13 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskcompanion_share_contact(`ptr`: Long,`chatId`: RustBuffer.ByValue,`whoChatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_func_account_second_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_account_switch_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_admitter_grant_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_channel_history_none_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_channel_preview_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1855,7 +1867,16 @@ private fun uniffiCheckContractApiVersion(lib: IntegrityCheckingUniffiLib) {
 }
 @Suppress("UNUSED_PARAMETER")
 private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
+    if (lib.uniffi_ratatosk_ffi_checksum_func_account_second_notice() != 49782) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_account_switch_notice() != 64344) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_admitter_grant_notice() != 8868) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_channel_history_none_notice() != 27801) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_channel_preview_notice() != 60449) {
@@ -2119,7 +2140,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_contacts() != 31413) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_channel() != 57050) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_channel() != 36558) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_create_group() != 15828) {
@@ -6159,8 +6180,17 @@ public interface RatatoskClientInterface {
      *
      * Идентификатор придёт событием [`FfiEvent::ChannelCreated`] —
      * и только им: он случаен.
+     * `history_all` — глубина истории для новичка (§5.4): «всё»
+     * или «ничего», и третьего нет. У **открытого** канала поле
+     * не читается: §5.4 говорит «подразумевает „всё“».
+     *
+     * Цена «всего» названа в §5.4 и её стоит показать: ключ чтения —
+     * долгоживущий симметричный ключ у каждого читателя, и изъятие
+     * базы любого из них раскрывает весь архив. Цена «ничего» —
+     * [`channel_history_none_notice`]: пришедший завтра не увидит
+     * ничего из сказанного сегодня, и **передумать нельзя**.
      */
-    fun `createChannel`(`title`: kotlin.String, `open`: kotlin.Boolean)
+    fun `createChannel`(`title`: kotlin.String, `open`: kotlin.Boolean, `historyAll`: kotlin.Boolean)
     
     /**
      * Заводит группу (§11).
@@ -7975,8 +8005,17 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
      *
      * Идентификатор придёт событием [`FfiEvent::ChannelCreated`] —
      * и только им: он случаен.
+     * `history_all` — глубина истории для новичка (§5.4): «всё»
+     * или «ничего», и третьего нет. У **открытого** канала поле
+     * не читается: §5.4 говорит «подразумевает „всё“».
+     *
+     * Цена «всего» названа в §5.4 и её стоит показать: ключ чтения —
+     * долгоживущий симметричный ключ у каждого читателя, и изъятие
+     * базы любого из них раскрывает весь архив. Цена «ничего» —
+     * [`channel_history_none_notice`]: пришедший завтра не увидит
+     * ничего из сказанного сегодня, и **передумать нельзя**.
      */
-    @Throws(RatatoskException::class)override fun `createChannel`(`title`: kotlin.String, `open`: kotlin.Boolean)
+    @Throws(RatatoskException::class)override fun `createChannel`(`title`: kotlin.String, `open`: kotlin.Boolean, `historyAll`: kotlin.Boolean)
         = 
     callWithHandle {
     uniffiRustCallWithError(RatatoskException) { _status ->
@@ -7984,7 +8023,8 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         it,
         
         FfiConverterString.lower(`title`),
-        FfiConverterBoolean.lower(`open`),_status)
+        FfiConverterBoolean.lower(`open`),
+        FfiConverterBoolean.lower(`historyAll`),_status)
 }
     }
     
@@ -12498,6 +12538,19 @@ data class FfiChannel (
     val `rotationOverdue`: kotlin.Boolean
     , 
     /**
+     * Отдаётся ли новичку вся история канала (§5.4).
+     *
+     * `false` — «ничего»: пришедший завтра не увидит сказанного
+     * сегодня. Это настройка владельца, а не поломка, и рядом
+     * с пустой лентой её надо объяснить —
+     * [`channel_history_none_notice`].
+     *
+     * У открытого канала всегда `true`: ключ чтения лежит в ссылке
+     * и статичен, «ничего» там не выражается ничем.
+     */
+    val `historyAll`: kotlin.Boolean
+    , 
+    /**
      * Что показывать, пока канал не открылся (§10.5).
      *
      * `null` — ждать нечего: канал открыт, либо это не канал.
@@ -12550,6 +12603,7 @@ public object FfiConverterTypeFfiChannel: FfiConverterRustBuffer<FfiChannel> {
             FfiConverterUInt.read(buf),
             FfiConverterUInt.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterBoolean.read(buf),
             FfiConverterOptionalTypeFfiWaiting.read(buf),
             FfiConverterTypeFfiChannelSignal.read(buf),
         )
@@ -12573,6 +12627,7 @@ public object FfiConverterTypeFfiChannel: FfiConverterRustBuffer<FfiChannel> {
             FfiConverterUInt.allocationSize(value.`seedsKnown`) +
             FfiConverterUInt.allocationSize(value.`awaitingBlocks`) +
             FfiConverterBoolean.allocationSize(value.`rotationOverdue`) +
+            FfiConverterBoolean.allocationSize(value.`historyAll`) +
             FfiConverterOptionalTypeFfiWaiting.allocationSize(value.`waiting`) +
             FfiConverterTypeFfiChannelSignal.allocationSize(value.`signal`)
     )
@@ -12595,6 +12650,7 @@ public object FfiConverterTypeFfiChannel: FfiConverterRustBuffer<FfiChannel> {
             FfiConverterUInt.write(value.`seedsKnown`, buf)
             FfiConverterUInt.write(value.`awaitingBlocks`, buf)
             FfiConverterBoolean.write(value.`rotationOverdue`, buf)
+            FfiConverterBoolean.write(value.`historyAll`, buf)
             FfiConverterOptionalTypeFfiWaiting.write(value.`waiting`, buf)
             FfiConverterTypeFfiChannelSignal.write(value.`signal`, buf)
     }
@@ -20768,6 +20824,41 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     }
 }
         /**
+         * Что значит завести второй аккаунт (§12, §15).
+         *
+         * Показать **до** заведения: после будет поздно, а человек, заводящий
+         * второй аккаунт ради «второго номера», ждёт от него обратного —
+         * напрямую тот недостижим, пока открыт первый.
+         */ fun `accountSecondNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_account_second_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Что видно со стороны при переключении аккаунтов (§12, §15).
+         *
+         * Показать **до** переключения: один адрес гаснет, другой встаёт
+         * в тот же миг и по тому же подключению, и связать их между собой
+         * сможет всякий, кто смотрит на сеть. Скрыть это протоколу нечем,
+         * и §14 велит сказать прямо.
+         */ fun `accountSwitchNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_account_switch_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
          * Что означает передача права «впускать» (фаза 2, §15, §6.5).
          *
          * Показывается при **назначении** права, а не при снятии, и это
@@ -20777,6 +20868,24 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_func_admitter_grant_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Что значит канал без истории для новичка (§5.4, §15).
+         *
+         * Показать **до** подписки на такой канал и рядом с его пустой лентой:
+         * человек видит канал, который ведётся давно, и ни одной записи —
+         * а это настройка владельца, а не поломка. Признак —
+         * [`FfiChannel::history_all`].
+         */ fun `channelHistoryNoneNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_channel_history_none_notice(
     
         _status)
 }

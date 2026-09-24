@@ -166,6 +166,18 @@ fun ChatScreen(
         // тогда, когда палец уже отпущен.
         if (!granted) scope.launch { snackbarHostState.showSnackbar(voicePermissionDenied) }
     }
+    // Кружок пишется в своём окне: в него надо смотреть, а держать
+    // при этом палец на кнопке — значит снимать себе палец.
+    var showVideoRecorder by remember { mutableStateOf(false) }
+    val videoPermissionDenied = stringResource(R.string.video_needs_permissions)
+    val askVideoPermissions = rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) { granted ->
+        // Камера и микрофон спрашиваются в момент записи: до неё они ни
+        // к чему. Дали — окно открываем сразу, второй раз нажимать незачем.
+        if (granted.values.all { it }) showVideoRecorder = true
+        else scope.launch { snackbarHostState.showSnackbar(videoPermissionDenied) }
+    }
     var showChannelLinkDialog by remember { mutableStateOf(false) }
     var editGroupTitleText by remember { mutableStateOf("") }
     
@@ -893,6 +905,26 @@ fun ChatScreen(
                                             )
                                         }
 
+                                    // Кружок — там же, где голосовое, и по тому же
+                                    // правилу: пока человеку есть что отправить
+                                    // словами, запись ему не предлагается.
+                                    if (voiceEnabled) {
+                                        IconButton(onClick = {
+                                            if (hasVideoPermissions(context)) showVideoRecorder = true
+                                            else askVideoPermissions.launch(
+                                                arrayOf(
+                                                    android.Manifest.permission.CAMERA,
+                                                    android.Manifest.permission.RECORD_AUDIO,
+                                                )
+                                            )
+                                        }) {
+                                            Icon(
+                                                Icons.Default.Videocam,
+                                                contentDescription = stringResource(R.string.video_message),
+                                            )
+                                        }
+                                    }
+
                                     Box(
                                         modifier = Modifier
                                             .size(48.dp)
@@ -1159,6 +1191,14 @@ fun ChatScreen(
                 performBack()
             },
             onDismiss = { showUnsubscribeDialog = false },
+        )
+    }
+
+    if (showVideoRecorder) {
+        VideoMessageDialog(
+            onSend = { file, poster -> viewModel.sendVideo(chatId, file, poster) },
+            onDismiss = { showVideoRecorder = false },
+            onError = { message -> scope.launch { snackbarHostState.showSnackbar(message) } },
         )
     }
 
@@ -1977,6 +2017,48 @@ fun FileAttachment(
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
         val isMedia = FileUtils.isImage(file.name) || FileUtils.isVideo(file.name) || FileUtils.isAudio(file.name)
+
+        // Кружок узнаётся по имени — как и голосовое. Показываем его
+        // записью, а не файлом: «12345.video.mp4» человеку не говорит
+        // ничего, а обложка и длительность говорят всё.
+        val videoMs = chat.ratatosk.android.util.VideoFile.durationMsOf(file.name)
+        if (videoMs != null) {
+            val previews by viewModel.filePreviews.collectAsState()
+            LaunchedEffect(fileIdHex) { viewModel.requestFilePreview(file.fileId) }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // Смотреть можно принятое: расшифрованную копию готовит
+                // ядро, и до неё файл надо сохранить.
+                if (file.complete || !file.incoming) {
+                    VideoBubble(
+                        viewModel = viewModel,
+                        file = file,
+                        durationMs = videoMs,
+                        preview = previews[fileIdHex],
+                        onError = { message -> scope.launch { snackbarHostState.showSnackbar(message) } },
+                    )
+                } else {
+                    // Ещё не приехало: обложка и длительность уже известны
+                    // из превью, а кнопка — обычная «принять».
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
+                        Text(
+                            text = stringResource(R.string.video_message) + ", " + formatVoiceDuration(videoMs),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = contentColor,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(onClick = { viewModel.acceptFile(chatId, file.fileId) }) {
+                            Text(stringResource(R.string.accept))
+                        }
+                    }
+                }
+            }
+            return@forEach
+        }
 
         // Голосовое узнаётся по имени — отдельного поля у ядра нет.
         // Показываем его записью, а не файлом: у записи другой смысл,
