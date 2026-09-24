@@ -155,6 +155,17 @@ class RatatoskService : Service() {
                 if (event is FfiEvent.ChannelRequested && !RatatoskCore.isCompanionMode()) {
                     showChannelRequestNotification(event)
                 }
+                // Канал открылся — об этом просили сказать (§10.5).
+                // Смотрим по событиям представления: «ожидание кончилось»
+                // отдельным событием ядро не называет, это состояние.
+                if (!RatatoskCore.isCompanionMode() && (
+                        event is FfiEvent.ChannelCreated ||
+                            event is FfiEvent.ChannelChanged ||
+                            event is FfiEvent.ChannelSubscribed
+                        )
+                ) {
+                    announceOpenedChannels()
+                }
             }
             .launchIn(serviceScope)
 
@@ -712,6 +723,77 @@ class RatatoskService : Service() {
                     .notify(("reaction:" + msgIdHex).hashCode(), notification)
             } catch (e: SecurityException) {
                 // Разрешение на уведомления ещё не выдано.
+            }
+        }
+    }
+
+    /**
+     * Говорит о каналах, которые открылись, — тем, кто просил сказать.
+     *
+     * Просьба лежит на диске: ожидание тянется часами, и человек за это
+     * время закроет приложение. Сказать ему может только служба — окна
+     * к тому времени нет.
+     *
+     * «Открылся» — это `waiting == null` у канала, а не отдельное
+     * событие: ядро называет ожидание состоянием, а не происшествием.
+     */
+    private fun announceOpenedChannels() {
+        serviceScope.launch {
+            val settings = SettingsRepository(applicationContext)
+            val asked = settings.channelsToAnnounce.firstOrNull().orEmpty()
+            if (asked.isEmpty()) return@launch
+
+            val groups = try {
+                RatatoskCore.getClient().groups()
+            } catch (t: Throwable) {
+                android.util.Log.w("RatatoskService", "Failed to read groups", t)
+                return@launch
+            }
+
+            groups.forEach { group ->
+                val hex = group.chatId.toHexString()
+                if (hex !in asked) return@forEach
+                val channel = group.channel ?: return@forEach
+                if (channel.waiting != null) return@forEach
+
+                // Сказали — и просьбу сняли: второй раз об этом же
+                // канале говорить незачем.
+                settings.announceChannelWhenOpen(hex, false)
+
+                val accountId = RatatoskCore.getActiveAccountId()
+                val showName = accountId?.let { settings.getNotificationsShowName(it).first() } ?: true
+                val body = if (showName && group.title.isNotBlank()) {
+                    getString(R.string.channel_opened_body, group.title)
+                } else {
+                    getString(R.string.channel_opened_body_plain)
+                }
+
+                val intent = Intent(this@RatatoskService, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("chatId", hex)
+                }
+                val pendingIntent = PendingIntent.getActivity(
+                    this@RatatoskService,
+                    ("channel-open:" + hex).hashCode(),
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                )
+
+                val notification = NotificationCompat.Builder(this@RatatoskService, MESSAGE_CHANNEL_ID)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle(getString(R.string.channel_opened_title))
+                    .setContentText(body)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent)
+                    .build()
+
+                try {
+                    NotificationManagerCompat.from(this@RatatoskService)
+                        .notify(("channel-open:" + hex).hashCode(), notification)
+                } catch (e: SecurityException) {
+                    // Разрешение на уведомления ещё не выдано.
+                }
             }
         }
     }

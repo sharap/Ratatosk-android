@@ -555,4 +555,9 @@
     <string name="channel_preview_pow">Each post costs work: %1$d bits</string>
     <string name="channel_subscribe_anyway">Subscribe without looking</string>
     <string name="channel_opening">Opening the channel…</string>
+    <string name="channel_announce_when_open">Tell me when it opens</string>
+    <string name="channel_announce_asked">We will tell you when it opens</string>
+    <string name="channel_opened_title">The channel has opened</string>
+    <string name="channel_opened_body">%1$s is open — you can read it now</string>
+    <string name="channel_opened_body_plain">A channel you were waiting for has opened</string>
 </resources>

@@ -550,17 +550,41 @@ fun ChatScreen(
                     // словами ядра (§10.5). Молчание — не тупик, поэтому
                     // и текст про ожидание, а не про отказ.
                     group?.channel?.waiting?.let { waiting ->
+                        val announcing by viewModel.channelsToAnnounce.collectAsState()
                         Surface(
                             tonalElevation = 1.dp,
                             color = MaterialTheme.colorScheme.tertiaryContainer,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            Text(
-                                text = viewModel.channelWaitingText(waiting),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            Row(
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            )
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = viewModel.channelWaitingText(waiting),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                // Кнопку предлагает ядро: когда ожидание ушло
+                                // на медленный путь, ждать у экрана незачем
+                                // (§10.5). Раньше — незачем и предлагать.
+                                if (viewModel.channelWaitingOffersNotification(waiting)) {
+                                    if (chatIdHex in announcing) {
+                                        Text(
+                                            text = stringResource(R.string.channel_announce_asked),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        )
+                                    } else {
+                                        TextButton(onClick = {
+                                            viewModel.announceChannelWhenOpen(chatId, true)
+                                        }) {
+                                            Text(stringResource(R.string.channel_announce_when_open))
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 

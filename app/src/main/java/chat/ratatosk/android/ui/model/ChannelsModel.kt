@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -190,6 +191,18 @@ interface ChannelsApi {
 
     /** Предлагать ли кнопку «сообщить, когда откроется». */
     fun channelWaitingOffersNotification(waiting: org.ratatosk.core.FfiWaiting): Boolean
+
+    /** Каналы, о которых просили сообщить, когда откроются (§10.5). */
+    val channelsToAnnounce: StateFlow<Set<String>>
+
+    /**
+     * Просит сообщить, когда канал откроется.
+     *
+     * Просьба живёт на диске: ожидание тянется часами, и человек за это
+     * время закроет приложение. Сказать ему потом — дело службы, она
+     * переживает закрытое окно.
+     */
+    fun announceChannelWhenOpen(chatId: ByteArray, announce: Boolean)
 
     /**
      * Предпросмотр канала по ссылке (§10.3, шаг 5).
@@ -408,6 +421,19 @@ class ChannelsModel(
 
     override fun channelWaitingOffersNotification(waiting: org.ratatosk.core.FfiWaiting): Boolean =
         session.core.channelWaitingOffersNotification(waiting)
+
+    override val channelsToAnnounce: StateFlow<Set<String>> =
+        session.settings.channelsToAnnounce.stateIn(
+            session.scope,
+            kotlinx.coroutines.flow.SharingStarted.WhileSubscribed(5000),
+            emptySet(),
+        )
+
+    override fun announceChannelWhenOpen(chatId: ByteArray, announce: Boolean) {
+        session.scope.launch {
+            session.settings.announceChannelWhenOpen(chatId.toHexString(), announce)
+        }
+    }
 
     private val _channelPreview = MutableStateFlow<ChannelPreview?>(null)
     override val channelPreview = _channelPreview.asStateFlow()

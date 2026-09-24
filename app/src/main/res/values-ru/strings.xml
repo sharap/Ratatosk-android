@@ -559,4 +559,9 @@
     <string name="channel_preview_pow">Каждое слово стоит работы: %1$d бит</string>
     <string name="channel_subscribe_anyway">Подписаться, не глядя</string>
     <string name="channel_opening">Открываем канал…</string>
+    <string name="channel_announce_when_open">Сообщить, когда откроется</string>
+    <string name="channel_announce_asked">Сообщим, когда откроется</string>
+    <string name="channel_opened_title">Канал открылся</string>
+    <string name="channel_opened_body">«%1$s» открылся — можно читать</string>
+    <string name="channel_opened_body_plain">Канал, которого вы ждали, открылся</string>
 </resources>

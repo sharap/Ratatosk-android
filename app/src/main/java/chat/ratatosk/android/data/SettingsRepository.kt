@@ -35,6 +35,7 @@ class SettingsRepository(private val context: Context) {
         val ACCOUNTS_MAP = stringPreferencesKey("accounts_map")
         val COMPANION_LINKS = stringPreferencesKey("companion_links")
         val LAST_ACCOUNT_ID = stringPreferencesKey("last_account_id")
+        val CHANNELS_TO_ANNOUNCE = stringPreferencesKey("channels_to_announce")
 
         // Журнал ядра в файл. Общий на приложение, а не на аккаунт:
         // подписчик у tracing один на процесс.
@@ -128,6 +129,26 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setDeviceBound(accountId: String, bound: Boolean) {
         context.dataStore.edit { it[booleanPreferencesKey(accountKey(accountId, "device_bound"))] = bound }
+    }
+
+    /**
+     * Каналы, о которых просили сообщить, когда откроются (§10.5).
+     *
+     * Лежат на диске, а не в памяти: ожидание может тянуться часами,
+     * а человек за это время закроет и экран, и приложение — ровно
+     * поэтому §10.5 и велит держать ожидание в списке чатов.
+     */
+    val channelsToAnnounce: Flow<Set<String>> = context.dataStore.data.map { preferences ->
+        preferences[Keys.CHANNELS_TO_ANNOUNCE]?.split(",")?.filter { it.isNotBlank() }?.toSet() ?: emptySet()
+    }
+
+    suspend fun announceChannelWhenOpen(chatIdHex: String, announce: Boolean) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[Keys.CHANNELS_TO_ANNOUNCE]
+                ?.split(",")?.filter { it.isNotBlank() }?.toMutableSet() ?: mutableSetOf()
+            if (announce) current.add(chatIdHex) else current.remove(chatIdHex)
+            preferences[Keys.CHANNELS_TO_ANNOUNCE] = current.joinToString(",")
+        }
     }
 
     val chatTheme: Flow<ChatThemeData> = context.dataStore.data.map { preferences ->
