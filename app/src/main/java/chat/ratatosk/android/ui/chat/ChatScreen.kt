@@ -102,6 +102,11 @@ fun ChatScreen(
     val contactAvatars by viewModel.contactAvatars.collectAsState()
     
     val chatIdHex = remember(chatId) { chatId.toHexString() }
+
+    // Уведомления этого чата (§14). Чего ядро ещё не сказало — «говорить»:
+    // ошибиться в сторону молчания значит потерять сообщение молча.
+    val notifyByChat by viewModel.chatNotify.collectAsState()
+    val chatNotify = notifyByChat[chatIdHex] ?: chat.ratatosk.android.ui.model.ChatNotify.SPEAKING
     val messages = allMessages[chatIdHex] ?: emptyList()
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
@@ -144,6 +149,7 @@ fun ChatScreen(
     var showInviteDialog by remember { mutableStateOf(false) }
     var showRenameGroupDialog by remember { mutableStateOf(false) }
     var showUnsubscribeDialog by remember { mutableStateOf(false) }
+    var showNotifyDialog by remember { mutableStateOf(false) }
 
     // Голосовое пишется удержанием «отправить»; состояние держит экран.
     val voiceRecording = rememberVoiceRecording(
@@ -315,6 +321,8 @@ fun ChatScreen(
 
     LaunchedEffect(chatIdHex) {
         viewModel.loadMessages(chatId)
+        // Выбор по уведомлениям держит ядро: спрашиваем его, а не помним.
+        viewModel.loadChatNotify(chatId)
     }
 
     // Auto-scroll and mark as read when new messages arrive
@@ -504,6 +512,25 @@ fun ChatScreen(
                                             showInviteDialog = true
                                         },
                                         leadingIcon = { Icon(Icons.Default.PersonAdd, contentDescription = null) }
+                                    )
+                                }
+                                // Уведомления этого чата (§14). У второго экрана
+                                // их нет: настройка по сети не ездит и живёт
+                                // там, где лежит переписка.
+                                if (!viewModel.isCompanionMode.value) {
+                                    DropdownMenuItem(
+                                        text = { Text(stringResource(R.string.notify_settings)) },
+                                        onClick = {
+                                            showChatMenu = false
+                                            showNotifyDialog = true
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                if (chatNotify.speaksNow) Icons.Default.Notifications
+                                                else Icons.Default.NotificationsOff,
+                                                contentDescription = null,
+                                            )
+                                        }
                                     )
                                 }
                                 DropdownMenuItem(
@@ -1132,6 +1159,17 @@ fun ChatScreen(
                 performBack()
             },
             onDismiss = { showUnsubscribeDialog = false },
+        )
+    }
+
+    if (showNotifyDialog) {
+        ChatNotifyDialog(
+            notify = chatNotify,
+            onChoose = { silent, untilMs ->
+                viewModel.setChatNotify(chatId, silent, untilMs)
+                showNotifyDialog = false
+            },
+            onDismiss = { showNotifyDialog = false },
         )
     }
 

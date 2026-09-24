@@ -37,6 +37,7 @@ interface ClientApi {
 class ClientModel(
     private val session: SessionContext,
     private val chats: ChatsModel,
+    private val notify: NotifyModel,
     private val contacts: ContactsModel,
     private val groups: GroupsModel,
     private val files: FilesModel,
@@ -375,6 +376,9 @@ class ClientModel(
                     }
                 }
             }
+            // Настройка уведомлений правится только отсюда и по сети
+            // не ездит: событие — подтверждение нашей же команды (§14).
+            is FfiEvent.ChatNotifyChanged -> notify.onChatNotifyChanged(event.chatId)
             is FfiEvent.ChannelCreated,
             is FfiEvent.ChannelChanged,
             is FfiEvent.ChannelSubscribed,

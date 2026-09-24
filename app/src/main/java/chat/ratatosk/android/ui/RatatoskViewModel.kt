@@ -40,7 +40,8 @@ class RatatoskViewModel private constructor(
     chat.ratatosk.android.ui.model.ClientApi by models.client,
     chat.ratatosk.android.ui.model.ShareApi by models.share,
     chat.ratatosk.android.ui.model.PrefsApi by models.prefs,
-    chat.ratatosk.android.ui.model.ChannelsApi by models.channels {
+    chat.ratatosk.android.ui.model.ChannelsApi by models.channels,
+    chat.ratatosk.android.ui.model.NotifyApi by models.notify {
 
     constructor(application: Application) : this(application, chat.ratatosk.android.ui.model.AppModels(application))
 

@@ -168,6 +168,25 @@ class ModelsWithFakeBackendTest {
             calls += "client.messages:${chatId.toHexString()}"
             return currentPage
         }
+
+        override fun `setChatNotify`(
+            `chatId`: kotlin.ByteArray,
+            `silent`: kotlin.Boolean,
+            `untilMs`: kotlin.ULong,
+        ) {
+            calls += "client.setChatNotify:${chatId.toHexString()}:молчать=$silent:срок=${untilMs > 0UL}"
+            // Ядро считает срок само; подставное — тоже, и ровно так же.
+            notifyRecord = org.ratatosk.core.FfiNotify(
+                silent = silent,
+                untilMs = untilMs,
+                speaksNow = !silent,
+            )
+        }
+
+        override fun `chatNotify`(`chatId`: kotlin.ByteArray): org.ratatosk.core.FfiNotify {
+            calls += "client.chatNotify:${chatId.toHexString()}"
+            return notifyRecord
+        }
     }
 
     private inner class RecordingCompanion : FakeCompanion() {
@@ -196,6 +215,13 @@ class ModelsWithFakeBackendTest {
 
     /** Что уже показано: окно, которое отдаёт `messages`. */
     private var currentPage: List<FfiMessage> = emptyList()
+
+    /** Что ядро думает об уведомлениях чата (§14). */
+    private var notifyRecord = org.ratatosk.core.FfiNotify(
+        silent = false,
+        untilMs = 0UL,
+        speaksNow = true,
+    )
 
     private fun session(companion: Boolean = false): SessionContext {
         backend.isCompanion = companion
@@ -303,6 +329,7 @@ class ModelsWithFakeBackendTest {
         return ClientModel(
             session = s,
             chats = chats,
+            notify = chat.ratatosk.android.ui.model.NotifyModel(s),
             contacts = ContactsModel(s, groups, loadMessages = {}, openContact = {}),
             groups = groups,
             files = files,
@@ -812,5 +839,72 @@ class ModelsWithFakeBackendTest {
 
         Thread.sleep(150)
         assertEquals(null, channels.channelPreview.value)
+    }
+
+    /**
+     * Выбор по уведомлениям уходит в ядро и возвращается оттуда же.
+     *
+     * Хранить его у себя нельзя: экран настроек, полоска в списке
+     * и решение «показывать ли шторку» обязаны читать одно и то же,
+     * а служба живёт отдельно от моделей и в их память не смотрит.
+     */
+    @Test
+    fun mutingAChatGoesToTheCoreAndComesBack() {
+        val s = session(companion = false)
+        val notify = chat.ratatosk.android.ui.model.NotifyModel(s)
+
+        notify.setChatNotify(chatA, silent = true, untilMs = 1_700_000_000_000UL)
+        // Ждём не команду, а ответ: состояние ложится уже после записи вызова.
+        waitUntil("ответ ядра") { notify.chatNotify.value.containsKey(chatA.toHexString()) }
+
+        assertTrue(seen().contains("client.setChatNotify:${chatA.toHexString()}:молчать=true:срок=true"))
+        val chosen = notify.chatNotify.value[chatA.toHexString()]!!
+        assertTrue(chosen.silent)
+        assertEquals(false, chosen.speaksNow)
+    }
+
+    /**
+     * Истёкший срок не стирает выбора, но говорить мы снова начинаем.
+     *
+     * `speaks_now` отличается от `!silent` ровно этим случаем — самым
+     * частым: «замолчать до утра» ставят чаще всего, а снять забывают.
+     * Считает срок ядро, и клиент его не пересчитывает.
+     */
+    @Test
+    fun anExpiredMuteSpeaksAgainWithoutForgettingTheChoice() {
+        val s = session(companion = false)
+        notifyRecord = org.ratatosk.core.FfiNotify(
+            silent = true,
+            untilMs = 1_600_000_000_000UL,
+            speaksNow = true,
+        )
+        val notify = chat.ratatosk.android.ui.model.NotifyModel(s)
+
+        notify.loadChatNotify(chatA)
+        waitUntil("ответ ядра") { notify.chatNotify.value.containsKey(chatA.toHexString()) }
+
+        val chosen = notify.chatNotify.value[chatA.toHexString()]!!
+        assertTrue("выбор человека остаётся виден", chosen.silent)
+        assertTrue("срок кончился — говорим", chosen.speaksNow)
+    }
+
+    /**
+     * У второго экрана настройки нет вовсе.
+     *
+     * По сети она не ездит (§14), и у компаньона такой команды в ядре
+     * нет: ушедшая туда бросила бы исключение, которое модель проглотит,
+     * — снаружи это «кнопка не работает» без единого слова о причине.
+     */
+    @Test
+    fun theSecondScreenHasNoSuchSetting() {
+        val s = session(companion = true)
+        val notify = chat.ratatosk.android.ui.model.NotifyModel(s)
+
+        notify.setChatNotify(chatA, silent = true, untilMs = 0UL)
+        notify.loadChatNotify(chatA)
+
+        Thread.sleep(100)
+        assertTrue("во второй экран команда не уходит: ${seen()}", seen().isEmpty())
+        assertEquals(emptyMap<String, chat.ratatosk.android.ui.model.ChatNotify>(), notify.chatNotify.value)
     }
 }

@@ -564,4 +564,16 @@
     <string name="channel_opened_title">Канал открылся</string>
     <string name="channel_opened_body">«%1$s» открылся — можно читать</string>
     <string name="channel_opened_body_plain">Канал, которого вы ждали, открылся</string>
+
+    <!-- Уведомления чата (§14) -->
+    <string name="notify_settings">Уведомления</string>
+    <string name="notify_local_only">Настройка живёт на этом устройстве: ни собеседник, ни ваш десктоп о ней не узнают.</string>
+    <string name="notify_speak">Говорить</string>
+    <string name="notify_mute_hour">Молчать час</string>
+    <string name="notify_mute_8h">Молчать 8 часов</string>
+    <string name="notify_mute_always">Молчать до отмены</string>
+    <string name="notify_muted_until">Молчит до %1$s</string>
+    <string name="notify_mute_expired">Срок молчания истёк — говорим снова</string>
+    <string name="notify_muted">Уведомления выключены</string>
+    <string name="notify_failed">Не удалось изменить уведомления</string>
 </resources>

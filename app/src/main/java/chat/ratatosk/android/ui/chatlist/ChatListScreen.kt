@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -48,6 +49,7 @@ fun ChatListScreen(
     val contacts by viewModel.contacts.collectAsState()
     val groups by viewModel.groups.collectAsState()
     val unreadCounts by viewModel.unreadCounts.collectAsState()
+    val notifyByChat by viewModel.chatNotify.collectAsState()
     val allMessages by viewModel.messages.collectAsState()
     val contactAvatars by viewModel.contactAvatars.collectAsState()
     val isCompanionMode by viewModel.isCompanionMode.collectAsState()
@@ -217,6 +219,11 @@ fun ChatListScreen(
                         val chatItem = chats[index]
                         val hexId = chatItem.chatId.toHexString()
                         val unreadCount = unreadCounts[hexId] ?: 0
+                        // Спрашивает строка, а не список: выбор лежит в ядре,
+                        // и звать его за все чаты разом незачем — видно от
+                        // силы десяток.
+                        LaunchedEffect(hexId) { viewModel.loadChatNotify(chatItem.chatId) }
+                        val speaksNow = notifyByChat[hexId]?.speaksNow ?: true
                         val lastMessage = allMessages[hexId]?.lastOrNull()
                         
                         val isSelected = activeChatId?.contentEquals(chatItem.chatId) == true
@@ -319,9 +326,23 @@ fun ChatListScreen(
                                 }
                             },
                             trailingContent = {
-                                if (unreadCount > 0) {
-                                    Badge {
-                                        Text(unreadCount.toString())
+                                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                                    // Перечёркнутый колокольчик — по ответу ядра
+                                    // «говорить ли сейчас», а не по выбору: срок
+                                    // молчания кончается сам, и рисовать молчание,
+                                    // которого уже нет, значит врать (§14).
+                                    if (!speaksNow) {
+                                        Icon(
+                                            Icons.Default.NotificationsOff,
+                                            contentDescription = stringResource(R.string.notify_muted),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(18.dp).padding(end = 4.dp),
+                                        )
+                                    }
+                                    if (unreadCount > 0) {
+                                        Badge {
+                                            Text(unreadCount.toString())
+                                        }
                                     }
                                 }
                             },

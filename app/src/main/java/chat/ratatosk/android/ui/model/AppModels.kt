@@ -114,9 +114,13 @@ class AppModels(
         loadMessages = { chats.loadMessages(it) },
     )
 
+    /** Уведомления чата (§14): выбор человека держит ядро. */
+    val notify: NotifyModel = NotifyModel(session)
+
     val client: ClientModel = ClientModel(
         session = session,
         chats = chats,
+        notify = notify,
         contacts = contacts,
         groups = groups,
         files = files,
@@ -131,6 +135,7 @@ class AppModels(
 
     fun resetAll() {
         accounts.reset()
+        notify.reset()
         channels.reset()
         client.reset()
         share.reset()

@@ -516,9 +516,31 @@ class RatatoskService : Service() {
         notifiedMsgIds.put(msgIdHex, true) != null
     }
 
+    /**
+     * Говорить ли об этом чате прямо сейчас (§14).
+     *
+     * Спрашиваем ядро: срок молчания истекает сам, и вычитать даты
+     * здесь значило бы завести второе место, где живёт одно правило.
+     * Звук и вид шторки — наше дело, а «говорить или молчать» — его.
+     *
+     * Не спросилось — говорим: ошибиться в сторону молчания значит
+     * потерять сообщение молча.
+     */
+    private fun speaksNow(chatId: ByteArray): Boolean = try {
+        if (RatatoskCore.isInitialized() && !RatatoskCore.isCompanionMode()) {
+            RatatoskCore.getClient().chatNotify(chatId).speaksNow
+        } else {
+            true
+        }
+    } catch (t: Throwable) {
+        android.util.Log.w("RatatoskService", "Failed to read chat notify", t)
+        true
+    }
+
     private fun showIncomingMessageNotification(event: FfiEvent.MessageReceived) {
         val chatIdHex = event.chatId.toHexString()
         val accountId = RatatoskCore.getActiveAccountId() ?: return
+        if (!speaksNow(event.chatId)) return
         if (alreadyNotified(event.msgId.toHexString())) return
         // Человек смотрит в этот чат — уведомлять его о том, что он и так
         // видит, незачем; заодно снимаем прежнее по этому чату.
@@ -651,6 +673,7 @@ class RatatoskService : Service() {
      */
     private fun showReactionNotification(event: FfiEvent.ReactionChanged) {
         val accountId = RatatoskCore.getActiveAccountId() ?: return
+        if (!speaksNow(event.chatId)) return
         val chatIdHex = event.chatId.toHexString()
         val msgIdHex = event.msgId.toHexString()
 
@@ -737,6 +760,13 @@ class RatatoskService : Service() {
      * «Открылся» — это `waiting == null` у канала, а не отдельное
      * событие: ядро называет ожидание состоянием, а не происшествием.
      */
+    /**
+     * Канал, которого ждали, открылся (§10.5).
+     *
+     * Молчание чата (§14) здесь не спрашивается нарочно: об открытии
+     * человек попросил сам и отдельной кнопкой, а приглушал он поток
+     * сообщений, которого в незаоткрывшемся канале ещё и не было.
+     */
     private fun announceOpenedChannels() {
         serviceScope.launch {
             val settings = SettingsRepository(applicationContext)
@@ -810,6 +840,7 @@ class RatatoskService : Service() {
      * человек попросил имён не показывать.
      */
     private fun showChannelRequestNotification(event: FfiEvent.ChannelRequested) {
+        if (!speaksNow(event.chatId)) return
         serviceScope.launch {
             val accountId = RatatoskCore.getActiveAccountId() ?: return@launch
             val chatIdHex = event.chatId.toHexString()

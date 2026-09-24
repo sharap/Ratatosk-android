@@ -937,6 +937,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_chat_id_for(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_chat_notify(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_clear_chat(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_clear_mail_account(
@@ -1052,6 +1054,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_channel_pow(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_channel_right(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_chat_notify(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground(
     ): Int
@@ -1322,6 +1326,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_chat_id_for(`ptr`: Long,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_chat_notify(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_clear_chat(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_clear_mail_account(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1437,6 +1443,8 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_channel_pow(`ptr`: Long,`chatId`: RustBuffer.ByValue,`bits`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_channel_right(`ptr`: Long,`chatId`: RustBuffer.ByValue,`who`: RustBuffer.ByValue,`rights`: RustBuffer.ByValue,`untilMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_chat_notify(`ptr`: Long,`chatId`: RustBuffer.ByValue,`silent`: Byte,`untilMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_foreground(`ptr`: Long,`front`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
@@ -2099,6 +2107,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_chat_id_for() != 27868) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_chat_notify() != 24586) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_clear_chat() != 2164) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2271,6 +2282,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_channel_right() != 24987) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_chat_notify() != 11992) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_foreground() != 21335) {
@@ -6089,6 +6103,20 @@ public interface RatatoskClientInterface {
     fun `chatIdFor`(`peerIk`: kotlin.ByteArray): kotlin.ByteArray
     
     /**
+     * Что человек выбрал для этого чата (§14).
+     *
+     * **Выбор, а не «молчим ли сейчас»**: на экране настроек нужен
+     * именно он — с выключателем и сроком, каким его поставили.
+     * Ответ на «молчать ли сейчас» даёт [`FfiNotify::speaks_now`]
+     * в этой же записи, и считает его ядро.
+     *
+     * # Errors
+     *
+     * Отказ хранилища.
+     */
+    fun `chatNotify`(`chatId`: kotlin.ByteArray): FfiNotify
+    
+    /**
      * Очищает чат целиком — **у себя**.
      *
      * Отзыва здесь нет: просьба удалить всю переписку — это решение
@@ -6878,6 +6906,32 @@ public interface RatatoskClientInterface {
      * Перед выдачей права «впускать» обязателен [`admitter_grant_notice`].
      */
     fun `setChannelRight`(`chatId`: kotlin.ByteArray, `who`: kotlin.ByteArray, `rights`: FfiChannelRights, `untilMs`: kotlin.ULong)
+    
+    /**
+     * Настраивает уведомления чата (§14).
+     *
+     * # Что решает ядро, а что клиент
+     *
+     * Ядро держит выбор человека и отвечает на один вопрос: говорить
+     * об этом чате или молчать **сейчас**. Звук, вибрация и вид
+     * шторки — показ, и решает их клиент (§13.3).
+     *
+     * # Срок
+     *
+     * `until_ms` — момент, когда молчание кончается само; ноль значит
+     * «пока не передумаю». У `silent = false` срок не читается: снятое
+     * молчание не должно включаться обратно.
+     *
+     * # Чат годится любой
+     *
+     * В том числе тот, в котором ещё нет ни сообщения: замолчать
+     * вправе и до первого слова.
+     *
+     * # Errors
+     *
+     * Отказ хранилища.
+     */
+    fun `setChatNotify`(`chatId`: kotlin.ByteArray, `silent`: kotlin.Boolean, `untilMs`: kotlin.ULong)
     
     /**
      * Этот аккаунт вышел на экран или ушёл с него (§5.1).
@@ -7809,6 +7863,33 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         it,
         
         FfiConverterByteArray.lower(`peerIk`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Что человек выбрал для этого чата (§14).
+     *
+     * **Выбор, а не «молчим ли сейчас»**: на экране настроек нужен
+     * именно он — с выключателем и сроком, каким его поставили.
+     * Ответ на «молчать ли сейчас» даёт [`FfiNotify::speaks_now`]
+     * в этой же записи, и считает его ядро.
+     *
+     * # Errors
+     *
+     * Отказ хранилища.
+     */
+    @Throws(RatatoskException::class)override fun `chatNotify`(`chatId`: kotlin.ByteArray): FfiNotify {
+            return FfiConverterTypeFfiNotify.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_chat_notify(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),_status)
 }
     }
     )
@@ -9333,6 +9414,46 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         FfiConverterByteArray.lower(`chatId`),
         FfiConverterByteArray.lower(`who`),
         FfiConverterTypeFfiChannelRights.lower(`rights`),
+        FfiConverterULong.lower(`untilMs`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Настраивает уведомления чата (§14).
+     *
+     * # Что решает ядро, а что клиент
+     *
+     * Ядро держит выбор человека и отвечает на один вопрос: говорить
+     * об этом чате или молчать **сейчас**. Звук, вибрация и вид
+     * шторки — показ, и решает их клиент (§13.3).
+     *
+     * # Срок
+     *
+     * `until_ms` — момент, когда молчание кончается само; ноль значит
+     * «пока не передумаю». У `silent = false` срок не читается: снятое
+     * молчание не должно включаться обратно.
+     *
+     * # Чат годится любой
+     *
+     * В том числе тот, в котором ещё нет ни сообщения: замолчать
+     * вправе и до первого слова.
+     *
+     * # Errors
+     *
+     * Отказ хранилища.
+     */
+    @Throws(RatatoskException::class)override fun `setChatNotify`(`chatId`: kotlin.ByteArray, `silent`: kotlin.Boolean, `untilMs`: kotlin.ULong)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_chat_notify(
+        it,
+        
+        FfiConverterByteArray.lower(`chatId`),
+        FfiConverterBoolean.lower(`silent`),
         FfiConverterULong.lower(`untilMs`),_status)
 }
     }
@@ -14876,6 +14997,72 @@ public object FfiConverterTypeFfiNostrRelay: FfiConverterRustBuffer<FfiNostrRela
 
 
 /**
+ * Настройка уведомлений чата (§14).
+ */
+data class FfiNotify (
+    /**
+     * Молчать ли по выбору человека.
+     */
+    val `silent`: kotlin.Boolean
+    , 
+    /**
+     * До какого момента, мс. `0` — бессрочно.
+     *
+     * Показывать стоит: «молчу» и «молчу до утра» — разные вещи,
+     * и вторая сама кончится.
+     */
+    val `untilMs`: kotlin.ULong
+    , 
+    /**
+     * Говорить ли об этом чате **сейчас**.
+     *
+     * Считает ядро, а не клиент: срок истекает сам, и вычитание дат
+     * на этой стороне границы означало бы второе место, где живёт
+     * одно правило (§13.3).
+     *
+     * Отличается от `!silent` ровно истёкшим сроком — и это самый
+     * частый случай: «замолчать до утра» человек ставит чаще всего,
+     * а снять забывает.
+     */
+    val `speaksNow`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiNotify: FfiConverterRustBuffer<FfiNotify> {
+    override fun read(buf: ByteBuffer): FfiNotify {
+        return FfiNotify(
+            FfiConverterBoolean.read(buf),
+            FfiConverterULong.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiNotify) = (
+            FfiConverterBoolean.allocationSize(value.`silent`) +
+            FfiConverterULong.allocationSize(value.`untilMs`) +
+            FfiConverterBoolean.allocationSize(value.`speaksNow`)
+    )
+
+    override fun write(value: FfiNotify, buf: ByteBuffer) {
+            FfiConverterBoolean.write(value.`silent`, buf)
+            FfiConverterULong.write(value.`untilMs`, buf)
+            FfiConverterBoolean.write(value.`speaksNow`, buf)
+    }
+}
+
+
+
+/**
  * Файл, который клиент просит отправить.
  */
 data class FfiOutgoingFile (
@@ -17310,6 +17497,26 @@ sealed class FfiEvent {
     }
     
     /**
+     * Настройка уведомлений чата изменилась (§14).
+     *
+     * Приходит в ответ на [`RatatoskClient::set_chat_notify`] и ни
+     * от чего другого: по сети настройка не ездит — молчание дело
+     * **этого** устройства, и ни собеседник, ни свой же десктоп
+     * о нём не узнают.
+     */
+    data class ChatNotifyChanged(
+        /**
+         * Чат.
+         */
+        val `chatId`: kotlin.ByteArray) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
      * Канал показан по ссылке — **до** подписки (фаза 2, §10.3, шаг 5).
      *
      * Приходит в ответ на [`RatatoskClient::preview_channel`]: документ
@@ -17988,99 +18195,102 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            16 -> FfiEvent.ChannelPreviewed(
+            16 -> FfiEvent.ChatNotifyChanged(
+                FfiConverterByteArray.read(buf),
+                )
+            17 -> FfiEvent.ChannelPreviewed(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 FfiConverterBoolean.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterUInt.read(buf),
                 )
-            17 -> FfiEvent.ChannelChanged(
+            18 -> FfiEvent.ChannelChanged(
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterString.read(buf),
                 )
-            18 -> FfiEvent.ChannelRequested(
+            19 -> FfiEvent.ChannelRequested(
                 FfiConverterByteArray.read(buf),
                 FfiConverterByteArray.read(buf),
                 )
-            19 -> FfiEvent.SeedingChanged(
+            20 -> FfiEvent.SeedingChanged(
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            20 -> FfiEvent.ChannelHistoryEnd(
+            21 -> FfiEvent.ChannelHistoryEnd(
                 FfiConverterByteArray.read(buf),
                 )
-            21 -> FfiEvent.SeedAnnounced(
+            22 -> FfiEvent.SeedAnnounced(
                 FfiConverterByteArray.read(buf),
                 FfiConverterByteArray.read(buf),
                 )
-            22 -> FfiEvent.ChannelUnsubscribed(
+            23 -> FfiEvent.ChannelUnsubscribed(
                 FfiConverterByteArray.read(buf),
                 )
-            23 -> FfiEvent.ChannelCreated(
+            24 -> FfiEvent.ChannelCreated(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 FfiConverterOptionalBoolean.read(buf),
                 )
-            24 -> FfiEvent.GroupRenamed(
+            25 -> FfiEvent.GroupRenamed(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            25 -> FfiEvent.GroupMembershipChanged(
+            26 -> FfiEvent.GroupMembershipChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            26 -> FfiEvent.GroupAvatarChanged(
+            27 -> FfiEvent.GroupAvatarChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            27 -> FfiEvent.FileWaitsForChannel(
+            28 -> FfiEvent.FileWaitsForChannel(
                 FfiConverterByteArray.read(buf),
                 FfiConverterTypeFfiFileWaitReason.read(buf),
                 )
-            28 -> FfiEvent.FileProgress(
+            29 -> FfiEvent.FileProgress(
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            29 -> FfiEvent.FileSending(
+            30 -> FfiEvent.FileSending(
                 FfiConverterByteArray.read(buf),
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            30 -> FfiEvent.FileGone(
+            31 -> FfiEvent.FileGone(
                 FfiConverterByteArray.read(buf),
                 )
-            31 -> FfiEvent.HonestNotice(
+            32 -> FfiEvent.HonestNotice(
                 FfiConverterString.read(buf),
                 )
-            32 -> FfiEvent.CommandRefused(
+            33 -> FfiEvent.CommandRefused(
                 FfiConverterString.read(buf),
                 )
-            33 -> FfiEvent.MailAccountReady(
+            34 -> FfiEvent.MailAccountReady(
                 FfiConverterString.read(buf),
                 )
-            34 -> FfiEvent.MailAccountFailed(
+            35 -> FfiEvent.MailAccountFailed(
                 FfiConverterString.read(buf),
                 )
-            35 -> FfiEvent.MailLoginFailed(
+            36 -> FfiEvent.MailLoginFailed(
                 FfiConverterString.read(buf),
                 )
-            36 -> FfiEvent.MailLimits(
+            37 -> FfiEvent.MailLimits(
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterBoolean.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            37 -> FfiEvent.PairingReady(
+            38 -> FfiEvent.PairingReady(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            38 -> FfiEvent.PairingRevoked(
+            39 -> FfiEvent.PairingRevoked(
                 FfiConverterByteArray.read(buf),
                 )
-            39 -> FfiEvent.DeviceLink(
+            40 -> FfiEvent.DeviceLink(
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
@@ -18206,6 +18416,13 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 4UL
                 + FfiConverterByteArray.allocationSize(value.`chatId`)
                 + FfiConverterBoolean.allocationSize(value.`awaiting`)
+            )
+        }
+        is FfiEvent.ChatNotifyChanged -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
             )
         }
         is FfiEvent.ChannelPreviewed -> {
@@ -18493,8 +18710,13 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterBoolean.write(value.`awaiting`, buf)
                 Unit
             }
-            is FfiEvent.ChannelPreviewed -> {
+            is FfiEvent.ChatNotifyChanged -> {
                 buf.putInt(16)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                Unit
+            }
+            is FfiEvent.ChannelPreviewed -> {
+                buf.putInt(17)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterString.write(value.`title`, buf)
                 FfiConverterBoolean.write(value.`open`, buf)
@@ -18503,78 +18725,78 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.ChannelChanged -> {
-                buf.putInt(17)
+                buf.putInt(18)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterULong.write(value.`version`, buf)
                 FfiConverterString.write(value.`title`, buf)
                 Unit
             }
             is FfiEvent.ChannelRequested -> {
-                buf.putInt(18)
+                buf.putInt(19)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterByteArray.write(value.`who`, buf)
                 Unit
             }
             is FfiEvent.SeedingChanged -> {
-                buf.putInt(19)
+                buf.putInt(20)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterBoolean.write(value.`announced`, buf)
                 Unit
             }
             is FfiEvent.ChannelHistoryEnd -> {
-                buf.putInt(20)
+                buf.putInt(21)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
             is FfiEvent.SeedAnnounced -> {
-                buf.putInt(21)
+                buf.putInt(22)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterByteArray.write(value.`who`, buf)
                 Unit
             }
             is FfiEvent.ChannelUnsubscribed -> {
-                buf.putInt(22)
+                buf.putInt(23)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
             is FfiEvent.ChannelCreated -> {
-                buf.putInt(23)
+                buf.putInt(24)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterString.write(value.`title`, buf)
                 FfiConverterOptionalBoolean.write(value.`open`, buf)
                 Unit
             }
             is FfiEvent.GroupRenamed -> {
-                buf.putInt(24)
+                buf.putInt(25)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterString.write(value.`title`, buf)
                 Unit
             }
             is FfiEvent.GroupMembershipChanged -> {
-                buf.putInt(25)
-                FfiConverterByteArray.write(value.`chatId`, buf)
-                Unit
-            }
-            is FfiEvent.GroupAvatarChanged -> {
                 buf.putInt(26)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
-            is FfiEvent.FileWaitsForChannel -> {
+            is FfiEvent.GroupAvatarChanged -> {
                 buf.putInt(27)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                Unit
+            }
+            is FfiEvent.FileWaitsForChannel -> {
+                buf.putInt(28)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterTypeFfiFileWaitReason.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.FileProgress -> {
-                buf.putInt(28)
+                buf.putInt(29)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterULong.write(value.`received`, buf)
                 FfiConverterULong.write(value.`total`, buf)
                 Unit
             }
             is FfiEvent.FileSending -> {
-                buf.putInt(29)
+                buf.putInt(30)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterByteArray.write(value.`peerIk`, buf)
                 FfiConverterULong.write(value.`sent`, buf)
@@ -18582,37 +18804,37 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.FileGone -> {
-                buf.putInt(30)
+                buf.putInt(31)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 Unit
             }
             is FfiEvent.HonestNotice -> {
-                buf.putInt(31)
+                buf.putInt(32)
                 FfiConverterString.write(value.`text`, buf)
                 Unit
             }
             is FfiEvent.CommandRefused -> {
-                buf.putInt(32)
+                buf.putInt(33)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.MailAccountReady -> {
-                buf.putInt(33)
+                buf.putInt(34)
                 FfiConverterString.write(value.`address`, buf)
                 Unit
             }
             is FfiEvent.MailAccountFailed -> {
-                buf.putInt(34)
-                FfiConverterString.write(value.`reason`, buf)
-                Unit
-            }
-            is FfiEvent.MailLoginFailed -> {
                 buf.putInt(35)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
-            is FfiEvent.MailLimits -> {
+            is FfiEvent.MailLoginFailed -> {
                 buf.putInt(36)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is FfiEvent.MailLimits -> {
+                buf.putInt(37)
                 FfiConverterOptionalULong.write(value.`letterBytes`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxUsed`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxLimit`, buf)
@@ -18621,18 +18843,18 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.PairingReady -> {
-                buf.putInt(37)
+                buf.putInt(38)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterString.write(value.`uri`, buf)
                 Unit
             }
             is FfiEvent.PairingRevoked -> {
-                buf.putInt(38)
+                buf.putInt(39)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 Unit
             }
             is FfiEvent.DeviceLink -> {
-                buf.putInt(39)
+                buf.putInt(40)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterBoolean.write(value.`connected`, buf)
                 Unit
