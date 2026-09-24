@@ -381,6 +381,7 @@ class ClientModel(
             is FfiEvent.ChannelUnsubscribed,
             is FfiEvent.ChannelAdmitted,
             is FfiEvent.ChannelKeyRotated,
+            is FfiEvent.ChannelPreviewed,
             is FfiEvent.ChannelRequested,
             is FfiEvent.ChannelHistoryEnd,
             is FfiEvent.SeedingChanged,

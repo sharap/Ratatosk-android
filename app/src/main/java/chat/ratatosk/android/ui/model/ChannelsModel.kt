@@ -63,6 +63,20 @@ fun channelInput(group: FfiGroup?): ChannelInput {
     }
 }
 
+/**
+ * Что рассказал предпросмотр: название, порода и цена слова.
+ *
+ * Всё это — из документа, подписанного владельцем и проверенного ключом
+ * из ссылки. Обещанию самой ссылки верить нельзя (§10.2), а этому можно.
+ */
+class ChannelPreview(
+    val chatId: ByteArray,
+    val title: String,
+    val open: Boolean,
+    val version: ULong,
+    val powBits: UInt,
+)
+
 /** Что окно знает о каналах и что с ними делает. */
 interface ChannelsApi {
     /** Заявки на впуск, по каналам; §10.4 обещает, что они ждут. */
@@ -170,6 +184,35 @@ interface ChannelsApi {
 
     /** Слова к метке «до владельца канала не доехало» (§15). */
     fun messageNotInTheChannelText(): String
+
+    /** Что показывать, пока канал не открылся (§10.5). */
+    fun channelWaitingText(waiting: org.ratatosk.core.FfiWaiting): String
+
+    /** Предлагать ли кнопку «сообщить, когда откроется». */
+    fun channelWaitingOffersNotification(waiting: org.ratatosk.core.FfiWaiting): Boolean
+
+    /**
+     * Предпросмотр канала по ссылке (§10.3, шаг 5).
+     *
+     * Спрашивает документ у владельца, проверяет подпись ключом
+     * **из ссылки** и отдаёт название, породу и цену слова событием.
+     * В базе не заводится ничего: согласие — это подписка той же
+     * ссылкой.
+     *
+     * Перед вызовом обязателен текст §15: владелец узнает, что кто-то
+     * интересуется каналом, даже если человек потом откажется. Отменить
+     * это задним числом нечем.
+     */
+    fun previewChannel(uri: String)
+
+    /**
+     * Что рассказал предпросмотр; `null` — ещё не спрашивали или ответа
+     * нет. Ответа может и не быть, и это не отказ (§10.5).
+     */
+    val channelPreview: StateFlow<ChannelPreview?>
+
+    /** Забыть предпросмотр: окно закрыли. */
+    fun clearChannelPreview()
 
     /**
      * Заводит канал. Порода задаётся один раз и не меняется: «открытый»
@@ -360,6 +403,26 @@ class ChannelsModel(
 
     override fun messageNotInTheChannelText(): String = session.core.messageNotInTheChannelText()
 
+    override fun channelWaitingText(waiting: org.ratatosk.core.FfiWaiting): String =
+        session.core.channelWaitingText(waiting)
+
+    override fun channelWaitingOffersNotification(waiting: org.ratatosk.core.FfiWaiting): Boolean =
+        session.core.channelWaitingOffersNotification(waiting)
+
+    private val _channelPreview = MutableStateFlow<ChannelPreview?>(null)
+    override val channelPreview = _channelPreview.asStateFlow()
+
+    override fun previewChannel(uri: String) {
+        _channelPreview.value = null
+        session.io("Failed to preview a channel", R.string.channel_preview_failed) {
+            session.core.client().previewChannel(uri)
+        }
+    }
+
+    override fun clearChannelPreview() {
+        _channelPreview.value = null
+    }
+
     override fun createChannel(title: String, open: Boolean) {
         session.io("Failed to create channel", R.string.channel_create_failed) {
             session.core.client().createChannel(title, open)
@@ -433,6 +496,16 @@ class ChannelsModel(
                 refreshGroups()
                 loadMessages(event.chatId)
             }
+            is org.ratatosk.core.FfiEvent.ChannelPreviewed -> {
+                // Ответ на предпросмотр: теперь породу можно не угадывать.
+                _channelPreview.value = ChannelPreview(
+                    chatId = event.chatId,
+                    title = event.title,
+                    open = event.open,
+                    version = event.version,
+                    powBits = event.powBits,
+                )
+            }
             is org.ratatosk.core.FfiEvent.ChannelRequested -> refreshRequests(event.chatId)
             is org.ratatosk.core.FfiEvent.ChannelHistoryEnd -> {
                 // Полоску пора убрать: у тех, кого спросили, глубже ничего нет.
@@ -456,5 +529,6 @@ class ChannelsModel(
         _sharingLevel.value = emptyMap()
         _historyPulling.value = emptyMap()
         _historyEnded.value = emptyMap()
+        _channelPreview.value = null
     }
 }

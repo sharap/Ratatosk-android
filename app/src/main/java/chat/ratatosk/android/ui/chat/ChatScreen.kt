@@ -174,6 +174,17 @@ fun ChatScreen(
     // и переход к сообщению ждал догрузки, которой некому было случиться.
     val currentDisplay by rememberUpdatedState(displayMessages)
 
+    // Доскроллили до старого края — просим ещё окно. Список перевёрнут,
+    // поэтому «старое» — это последние видимые позиции.
+    LaunchedEffect(listState, chatIdHex, displayMessages.size) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0 }
+            .collect { lastVisible ->
+                if (displayMessages.isNotEmpty() && lastVisible >= displayMessages.size - 3) {
+                    viewModel.loadOlderMessages(chatId)
+                }
+            }
+    }
+
     val performBack = {
         onBack()
     }
@@ -535,11 +546,33 @@ fun ChatScreen(
                         windowInsets = TopAppBarDefaults.windowInsets
                     )
 
+                    // Канал ещё не открылся: показываем расписание ожидания
+                    // словами ядра (§10.5). Молчание — не тупик, поэтому
+                    // и текст про ожидание, а не про отказ.
+                    group?.channel?.waiting?.let { waiting ->
+                        Surface(
+                            tonalElevation = 1.dp,
+                            color = MaterialTheme.colorScheme.tertiaryContainer,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                text = viewModel.channelWaitingText(waiting),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                        }
+                    }
+
                     // Чем объяснить тишину — **один** признак, и слова
                     // к нему ядра (§15): выбор главного из шести фактов
                     // сделан там же, где сами факты.
                     group?.channel?.let { channel ->
-                        if (channel.signal != org.ratatosk.core.FfiChannelSignal.FINE) {
+                        // Пока канал открывается, объяснять тишину нечем —
+                        // об этом уже сказано выше, и повторяться незачем.
+                        if (channel.waiting == null &&
+                            channel.signal != org.ratatosk.core.FfiChannelSignal.FINE
+                        ) {
                             Surface(
                                 tonalElevation = 1.dp,
                                 color = MaterialTheme.colorScheme.secondaryContainer,
@@ -943,6 +976,29 @@ fun ChatScreen(
                         reverseLayout = true,
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // Список перевёрнут: старое в конце. Доехали до него —
+                        // просим у ядра окно перед самым старым (§7.4 про
+                        // каналы, `messages_before` про всё остальное).
+                        item(key = "older") {
+                            val loadingOlder by viewModel.olderLoading.collectAsState()
+                            val atStart by viewModel.historyAtStart.collectAsState()
+                            when {
+                                chatIdHex in atStart -> Text(
+                                    text = stringResource(R.string.history_at_start),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                )
+                                chatIdHex in loadingOlder -> Box(
+                                    modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                }
+                                else -> Spacer(Modifier.height(1.dp))
+                            }
+                        }
                         items(displayMessages, key = { it.msgId.toHexString() }) { msg ->
                             val status = messageStatuses[msg.msgId.toHexString()] ?: msg.status
                             Box(modifier = Modifier.fillMaxWidth().animateItem()) {

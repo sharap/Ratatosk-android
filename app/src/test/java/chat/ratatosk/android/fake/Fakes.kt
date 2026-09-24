@@ -70,6 +70,7 @@ open class FakeClient : RatatoskClientInterface {
     override fun `openFile`(`fileId`: kotlin.ByteArray): FfiFileReader? = notCalled("openFile")
     override fun `pairDevice`(`label`: kotlin.String): Unit = notCalled("pairDevice")
     override fun `pauseFile`(`fileId`: kotlin.ByteArray): Unit = notCalled("pauseFile")
+    override fun `previewChannel`(`uri`: kotlin.String): Unit = notCalled("previewChannel")
     override fun `previewOf`(`fileId`: kotlin.ByteArray): kotlin.ByteArray? = notCalled("previewOf")
     override fun `pullOlderHistory`(`chatId`: kotlin.ByteArray): Unit = notCalled("pullOlderHistory")
     override fun `renameGroup`(`chatId`: kotlin.ByteArray, `title`: kotlin.String): Unit = notCalled("renameGroup")
@@ -236,6 +237,11 @@ class FakeBackend(
     override fun channelSignalText(signal: FfiChannelSignal): String = "признак:$signal"
 
     override fun messageNotInTheChannelText(): String = "не доехало"
+
+    override fun channelWaitingText(waiting: FfiWaiting): String = "ожидание:$waiting"
+
+    override fun channelWaitingOffersNotification(waiting: FfiWaiting): Boolean =
+        waiting == FfiWaiting.SLOW_PATH
 }
 
 /**

@@ -2,6 +2,8 @@ package chat.ratatosk.android.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -12,10 +14,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -93,16 +98,19 @@ fun CreateChannelDialog(
 }
 
 /**
- * Подписка по ссылке.
+ * Подписка по ссылке — через предпросмотр.
  *
- * Оба текста §15 — и с условием: порода канала до подписки неизвестна.
- * Ссылка ничем не подписана (§10.2), и выдать её обещание за установленное
- * нельзя; разбирать её тело у себя — значит повторять формат ядра
- * в клиенте. Поэтому человеку показывают оба последствия, а какое из них
- * сбудется, скажет уже ядро.
+ * Сначала спрашиваем у владельца документ (§10.3, шаг 5): он приходит
+ * подписанным, и из него видно название, породу и цену слова. До этого
+ * порода — только обещание ссылки, которому верить нельзя (§10.2),
+ * поэтому раньше здесь стояли оба текста §15 с условием.
  *
- * @param uri заранее известная ссылка (пришли по ней снаружи); `null` —
- *   человек вставит её сам.
+ * Предпросмотр не бесплатен, и об этом сказано **до** него: владелец
+ * узнает, что кто-то интересуется каналом, даже если человек потом
+ * откажется. Отменить это задним числом нечем.
+ *
+ * Ответа может и не быть — и это не отказ: ждём, а не объявляем тупик.
+ * На такой случай остаётся «подписаться, не глядя» с обоими текстами.
  */
 @Composable
 fun SubscribeChannelDialog(
@@ -111,41 +119,100 @@ fun SubscribeChannelDialog(
     onDismiss: () -> Unit,
 ) {
     var link by remember { mutableStateOf(uri.orEmpty()) }
+    var asked by remember { mutableStateOf(false) }
+    var blindly by remember { mutableStateOf(false) }
+    val preview by viewModel.channelPreview.collectAsState()
+
+    val previewNotice = remember { viewModel.channelNotice(ChannelNotice.PREVIEW) }
     val openNotice = remember { viewModel.channelNotice(ChannelNotice.OPEN) }
     val privateNotice = remember { viewModel.channelNotice(ChannelNotice.PRIVATE) }
+    val slowPathNotice = remember { viewModel.channelNotice(ChannelNotice.SLOW_PATH) }
+
+    // Закрыли окно — забываем ответ: он про эту ссылку, а не про все.
+    DisposableEffect(Unit) { onDispose { viewModel.clearChannelPreview() } }
+
+    val shown = preview
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.channel_subscribe)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                if (uri == null) {
+                if (uri == null && shown == null) {
                     OutlinedTextField(
                         value = link,
                         onValueChange = { link = it },
                         label = { Text(stringResource(R.string.channel_subscribe_hint)) },
                         modifier = Modifier.fillMaxWidth(),
+                        enabled = !asked,
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(12.dp))
                 }
-                Text(
-                    text = stringResource(R.string.channel_subscribe_open_if),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Text(text = openNotice, style = MaterialTheme.typography.bodySmall)
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = stringResource(R.string.channel_subscribe_private_if),
-                    style = MaterialTheme.typography.labelMedium,
-                )
-                Text(text = privateNotice, style = MaterialTheme.typography.bodySmall)
+
+                when {
+                    // Ответ пришёл: показываем то, что подписано владельцем,
+                    // и ровно один текст §15 — по настоящей породе.
+                    shown != null -> {
+                        Text(shown.title, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = stringResource(
+                                if (shown.open) R.string.channel_kind_open_short
+                                else R.string.channel_kind_private_short
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        if (shown.powBits > 0u) {
+                            Text(
+                                text = stringResource(R.string.channel_preview_pow, shown.powBits.toInt()),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            text = if (shown.open) openNotice else privateNotice,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    // Спросили и ждём. Молчание — не тупик (§10.5).
+                    asked -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.channel_opening),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text(slowPathNotice, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                    }
+                    // Ещё не спрашивали: цена предпросмотра — до кнопки.
+                    blindly -> {
+                        Text(stringResource(R.string.channel_subscribe_open_if), style = MaterialTheme.typography.labelMedium)
+                        Text(openNotice, style = MaterialTheme.typography.bodySmall)
+                        Spacer(Modifier.height(12.dp))
+                        Text(stringResource(R.string.channel_subscribe_private_if), style = MaterialTheme.typography.labelMedium)
+                        Text(privateNotice, style = MaterialTheme.typography.bodySmall)
+                    }
+                    else -> Text(previewNotice, style = MaterialTheme.typography.bodySmall)
+                }
             }
         },
         confirmButton = {
-            Button(
-                onClick = { viewModel.subscribeToChannel(link.trim()); onDismiss() },
-                enabled = link.isNotBlank(),
-            ) { Text(stringResource(R.string.channel_subscribe_action)) }
+            when {
+                shown != null || blindly -> Button(
+                    onClick = { viewModel.subscribeToChannel(link.trim()); onDismiss() },
+                    enabled = link.isNotBlank(),
+                ) { Text(stringResource(R.string.channel_subscribe_action)) }
+                asked -> Button(onClick = { blindly = true }) {
+                    Text(stringResource(R.string.channel_subscribe_anyway))
+                }
+                else -> Button(
+                    onClick = { asked = true; viewModel.previewChannel(link.trim()) },
+                    enabled = link.isNotBlank(),
+                ) { Text(stringResource(R.string.channel_preview)) }
+            }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }

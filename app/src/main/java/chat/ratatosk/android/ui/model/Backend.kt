@@ -19,6 +19,15 @@ import org.ratatosk.core.RatatoskCompanionInterface
  * и своему человеку.
  */
 enum class ChannelNotice {
+    /**
+     * До предпросмотра: владелец узнает, что кто-то интересуется
+     * каналом, — даже если человек потом откажется (§15).
+     */
+    PREVIEW,
+
+    /** Когда ожидание ушло на медленный путь (§10.5). */
+    SLOW_PATH,
+
     /** До заведения открытого канала, до подписки на него и до показа ссылки. */
     OPEN,
 
@@ -112,6 +121,12 @@ interface Backend {
      */
     fun messageNotInTheChannelText(): String
 
+    /** Что показывать, пока канал не открылся (§10.5) — словами ядра. */
+    fun channelWaitingText(waiting: org.ratatosk.core.FfiWaiting): String
+
+    /** Предлагать ли кнопку «сообщить, когда откроется» (§10.5). */
+    fun channelWaitingOffersNotification(waiting: org.ratatosk.core.FfiWaiting): Boolean
+
     /**
      * Чем платит сужение круга отдачи (§12).
      *
@@ -169,6 +184,8 @@ object CoreBackend : Backend {
         ChannelNotice.KEY_ROTATION -> org.ratatosk.core.keyRotationNotice()
         ChannelNotice.SHARING -> org.ratatosk.core.sharingNotice()
         ChannelNotice.SEEDING -> org.ratatosk.core.seedingNotice()
+        ChannelNotice.PREVIEW -> org.ratatosk.core.channelPreviewNotice()
+        ChannelNotice.SLOW_PATH -> org.ratatosk.core.channelSlowPathNotice()
     }
 
     override fun sharingLevelNotice(): String = org.ratatosk.core.sharingLevelNotice()
@@ -178,4 +195,10 @@ object CoreBackend : Backend {
 
     override fun messageNotInTheChannelText(): String =
         org.ratatosk.core.messageNotInTheChannelText()
+
+    override fun channelWaitingText(waiting: org.ratatosk.core.FfiWaiting): String =
+        org.ratatosk.core.channelWaitingText(waiting)
+
+    override fun channelWaitingOffersNotification(waiting: org.ratatosk.core.FfiWaiting): Boolean =
+        org.ratatosk.core.channelWaitingOffersANotification(waiting)
 }

@@ -83,6 +83,19 @@ class ModelsWithFakeBackendTest {
             calls += "client.admitToChannel:${chatId.toHexString()}:${peerIk.toHexString()}"
         }
 
+        override fun `previewChannel`(`uri`: kotlin.String) {
+            calls += "client.previewChannel:$uri"
+        }
+
+        override fun `messagesBefore`(
+            `chatId`: kotlin.ByteArray,
+            `before`: kotlin.ByteArray,
+            `limit`: kotlin.UInt,
+        ): List<FfiMessage> {
+            calls += "client.messagesBefore:${before.toHexString()}:$limit"
+            return olderPage
+        }
+
         override fun `pullOlderHistory`(`chatId`: kotlin.ByteArray) {
             calls += "client.pullOlderHistory:${chatId.toHexString()}"
         }
@@ -153,7 +166,7 @@ class ModelsWithFakeBackendTest {
 
         override fun `messages`(`chatId`: kotlin.ByteArray, `limit`: kotlin.UInt): List<FfiMessage> {
             calls += "client.messages:${chatId.toHexString()}"
-            return emptyList()
+            return currentPage
         }
     }
 
@@ -177,6 +190,12 @@ class ModelsWithFakeBackendTest {
 
     private val backend = FakeBackend()
     private val secrets = FakeSecrets()
+
+    /** Что отдаст ядро на просьбу о более раннем окне. */
+    private var olderPage: List<FfiMessage> = emptyList()
+
+    /** Что уже показано: окно, которое отдаёт `messages`. */
+    private var currentPage: List<FfiMessage> = emptyList()
 
     private fun session(companion: Boolean = false): SessionContext {
         backend.isCompanion = companion
@@ -672,5 +691,96 @@ class ModelsWithFakeBackendTest {
 
         waitUntil("полоска снята") { channels.historyPulling.value[chatA.toHexString()] != true }
         assertEquals(true, channels.historyEnded.value[chatA.toHexString()])
+    }
+
+    private fun message(id: Byte, wallMs: ULong): FfiMessage = FfiMessage(
+        msgId = byteArrayOf(id),
+        body = "x",
+        mine = false,
+        author = null,
+        authorIk = null,
+        wallMs = wallMs,
+        status = null,
+        editedAtMs = null,
+        forwarded = false,
+        reactions = emptyList(),
+        files = emptyList(),
+        replyTo = null,
+        sharedContact = null,
+        inTheChannel = null,
+    )
+
+    /**
+     * Листание назад дописывает окно сверху, а не заменяет список,
+     * и не повторяет уже показанное.
+     *
+     * Окна могут наложиться: ядро отдаёт страницу перед якорем, а он
+     * сам мог попасть в неё же. Повтор человек увидел бы сразу — одно
+     * и то же сообщение дважды.
+     */
+    @Test
+    fun olderMessagesAreAddedOnTopWithoutRepeats() {
+        val s = session(companion = false)
+        val chats = ChatsModel(s, previewFor = { null }, onChatOpened = {})
+        val hex = chatA.toHexString()
+
+        currentPage = listOf(message(3, 300UL))
+        chats.loadMessages(chatA)
+        waitUntil("окно загружено") { chats.messages.value[hex]?.isNotEmpty() == true }
+
+        // В ответе — две старых и та же, что уже показана.
+        olderPage = listOf(message(1, 100UL), message(2, 200UL), message(3, 300UL))
+        chats.loadOlderMessages(chatA)
+
+        waitUntil("раннее дописано") { (chats.messages.value[hex]?.size ?: 0) == 3 }
+        assertEquals(
+            listOf<Byte>(1, 2, 3),
+            chats.messages.value[hex]!!.map { it.msgId.first() },
+        )
+        assertTrue(seen().toString(), seen().any { it.startsWith("client.messagesBefore:03:") })
+    }
+
+    /** Пустой ответ означает начало переписки, а не «спросить снова». */
+    @Test
+    fun anEmptyPageMeansTheBeginning() {
+        val s = session(companion = false)
+        val chats = ChatsModel(s, previewFor = { null }, onChatOpened = {})
+        val hex = chatA.toHexString()
+
+        currentPage = listOf(message(3, 300UL))
+        chats.loadMessages(chatA)
+        waitUntil("окно загружено") { chats.messages.value[hex]?.isNotEmpty() == true }
+
+        olderPage = emptyList()
+        chats.loadOlderMessages(chatA)
+
+        waitUntil("начало отмечено") { hex in chats.historyAtStart.value }
+        val asked = seen().count { it.startsWith("client.messagesBefore") }
+        chats.loadOlderMessages(chatA)
+        assertEquals("у начала переписки просить нечего", asked, seen().count { it.startsWith("client.messagesBefore") })
+    }
+
+    /** Предпросмотр отвечает событием, и из него видна настоящая порода. */
+    @Test
+    fun aPreviewTellsTheRealKind() {
+        val s = session(companion = false)
+        val chats = ChatsModel(s, previewFor = { null }, onChatOpened = {})
+        val files = FilesModel(s) { chats.loadMessages(it) }
+        val channels = channelsModel(s)
+        val client = clientModel(s, files, chats, channels)
+        client.ensureClientEvents()
+
+        channels.previewChannel("ratatosk:v0:channel:AAAA")
+        waitUntil("спросили у владельца") { seen().any { it.startsWith("client.previewChannel") } }
+
+        backend.eventFlow.tryEmit(
+            FfiEvent.ChannelPreviewed(chatA, "Канал Пети", true, 7UL, 12u)
+        )
+
+        waitUntil("ответ разобран") { channels.channelPreview.value != null }
+        val preview = channels.channelPreview.value!!
+        assertEquals("Канал Пети", preview.title)
+        assertEquals(true, preview.open)
+        assertEquals(12u, preview.powBits)
     }
 }

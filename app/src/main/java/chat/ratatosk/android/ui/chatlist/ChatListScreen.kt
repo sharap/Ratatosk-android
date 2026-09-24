@@ -250,8 +250,19 @@ fun ChatListScreen(
                                     }
                                 }
                             },
-                            supportingContent = { 
-                                if (lastMessage != null) {
+                            supportingContent = {
+                                // Ожидание живёт в списке чатов, а не на экране
+                                // канала: иначе человек закроет экран и потеряет
+                                // ссылку (§10.5).
+                                val waiting = (chatItem as? ChatItem.Group)?.group?.channel?.waiting
+                                if (waiting != null) {
+                                    Text(
+                                        text = viewModel.channelWaitingText(waiting),
+                                        maxLines = 2,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.tertiary,
+                                    )
+                                } else if (lastMessage != null) {
                                     // Тем же помощником, что и уведомления: снимает
                                     // разметку и подписывает вложение, когда текста
                                     // нет — раньше такая строка была просто пустой.

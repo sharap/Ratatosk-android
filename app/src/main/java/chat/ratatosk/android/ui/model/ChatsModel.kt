@@ -40,6 +40,30 @@ interface ChatsApi {
     val pendingScrollToMsgId: StateFlow<String?>
 
     fun loadMessages(chatId: ByteArray, limit: Int? = null)
+
+    /**
+     * Идёт ли сейчас подгрузка более ранних сообщений, по чатам в hex.
+     */
+    val olderLoading: StateFlow<Set<String>>
+
+    /**
+     * Чаты, у которых дальше некуда листать: приехало пустое окно.
+     *
+     * Пустой ответ значит либо начало переписки, либо что якоря больше
+     * нет (его удалили) — во втором случае листать не от чего, и
+     * показывать вместо этого конец переписки было бы обманом.
+     */
+    val historyAtStart: StateFlow<Set<String>>
+
+    /**
+     * Догружает окно сообщений **перед** самым старым известным.
+     *
+     * Якорь — `msg_id` того, что сейчас первое в списке: клиент его уже
+     * знает, а метку HLC наружу отдавать незачем. У второго экрана
+     * листания нет: телефон отвечает на просьбу целым окном, и
+     * подмешивать его к дописанному сверху было бы нечем.
+     */
+    fun loadOlderMessages(chatId: ByteArray)
     fun searchMessages(chatId: ByteArray?, query: String)
     fun clearSearch()
     fun sendMessage(chatId: ByteArray, text: String)
@@ -65,6 +89,9 @@ interface ChatsApi {
     fun requestScrollToMessage(msgIdHex: String?)
     fun consumeScrollRequest()
 }
+
+/** Сколько сообщений тянуть за раз назад: экран прокручивают, а не листают. */
+private const val PAGE = 50
 
 class ChatsModel(
     private val session: SessionContext,
@@ -97,6 +124,13 @@ class ChatsModel(
     private val _pendingScrollToMsgId = MutableStateFlow<String?>(null)
     override val pendingScrollToMsgId = _pendingScrollToMsgId.asStateFlow()
     private val messageLoads = ConcurrentHashMap<String, Job>()
+    private val olderLoads = ConcurrentHashMap<String, Job>()
+
+    private val _olderLoading = MutableStateFlow<Set<String>>(emptySet())
+    override val olderLoading = _olderLoading.asStateFlow()
+
+    private val _historyAtStart = MutableStateFlow<Set<String>>(emptySet())
+    override val historyAtStart = _historyAtStart.asStateFlow()
     private var searchJob: Job? = null
 
     /** Тот же чат строкой: им пользуются события, где имени чата нет. */
@@ -154,6 +188,44 @@ class ChatsModel(
         // что и у файловых задач.
         messageLoads.put(chatIdHex, load)?.cancel()
         load.start()
+    }
+
+    override fun loadOlderMessages(chatId: ByteArray) {
+        val hex = chatId.toHexString()
+        // У второго экрана окна листаются целиком — там это и не нужно.
+        if (session.isCompanion) return
+        if (hex in _historyAtStart.value) return
+        // Одна подгрузка на чат: экран зовёт нас на каждую прокрутку.
+        if (olderLoads.containsKey(hex)) return
+
+        val anchor = _messages.value[hex]?.firstOrNull() ?: return
+        _olderLoading.update { it + hex }
+
+        val load = session.scope.launch(Dispatchers.IO) {
+            try {
+                val older = session.core.client().messagesBefore(chatId, anchor.msgId, PAGE.toUInt())
+                withContext(Dispatchers.Main) {
+                    if (older.isEmpty()) {
+                        _historyAtStart.update { it + hex }
+                    } else {
+                        _messages.update { all ->
+                            val current = all[hex].orEmpty()
+                            // Сверху и без повторов: окно могло наложиться
+                            // на то, что уже показано.
+                            val known = current.mapTo(HashSet()) { it.msgId.toHexString() }
+                            val fresh = older.filterNot { known.contains(it.msgId.toHexString()) }
+                            all + (hex to (fresh + current))
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to load older messages", e)
+            } finally {
+                olderLoads.remove(hex)
+                withContext(Dispatchers.Main) { _olderLoading.update { it - hex } }
+            }
+        }
+        olderLoads[hex] = load
     }
 
     override fun searchMessages(chatId: ByteArray?, query: String) {
@@ -520,6 +592,10 @@ class ChatsModel(
         searchJob = null
         messageLoads.values.forEach { it.cancel() }
         messageLoads.clear()
+        olderLoads.values.forEach { it.cancel() }
+        olderLoads.clear()
+        _olderLoading.value = emptySet()
+        _historyAtStart.value = emptySet()
         _messages.value = emptyMap()
         _messageStatuses.value = emptyMap()
         _unreadCounts.value = emptyMap()

@@ -40,6 +40,7 @@ class ChannelInputTest {
         seedsKnown = 1u,
         awaitingBlocks = 0u,
         rotationOverdue = false,
+        waiting = null,
         signal = org.ratatosk.core.FfiChannelSignal.FINE,
     )
 

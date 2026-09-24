@@ -553,4 +553,10 @@
     <string name="voice_pause">Пауза</string>
     <string name="voice_release_to_send">отпустите — отправится, уведите палец — нет</string>
     <string name="voice_release_to_discard">отпустите — запись не отправится</string>
+    <string name="history_at_start">Начало переписки</string>
+    <string name="channel_preview">Посмотреть канал</string>
+    <string name="channel_preview_failed">Не удалось спросить о канале</string>
+    <string name="channel_preview_pow">Каждое слово стоит работы: %1$d бит</string>
+    <string name="channel_subscribe_anyway">Подписаться, не глядя</string>
+    <string name="channel_opening">Открываем канал…</string>
 </resources>

@@ -771,9 +771,17 @@ internal object IntegrityCheckingUniffiLib {
     }
     external fun uniffi_ratatosk_ffi_checksum_func_admitter_grant_notice(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_channel_preview_notice(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_channel_refusal_text(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_channel_signal_text(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_channel_slow_path_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_channel_waiting_offers_a_notification(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_channel_waiting_text(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_chunk_bytes(
     ): Int
@@ -1008,6 +1016,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_pair_device(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_pause_file(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_preview_channel(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_preview_of(
     ): Int
@@ -1392,6 +1402,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_pause_file(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_preview_channel(`ptr`: Long,`uri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_preview_of(`ptr`: Long,`fileId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_pull_older_history(`ptr`: Long,`chatId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1610,9 +1622,17 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_func_admitter_grant_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_channel_preview_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_channel_refusal_text(`reason`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_channel_signal_text(`signal`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_channel_slow_path_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_channel_waiting_offers_a_notification(`waiting`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_ratatosk_ffi_fn_func_channel_waiting_text(`waiting`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_chunk_bytes(uniffi_out_err: UniffiRustCallStatus, 
     ): Int
@@ -1830,10 +1850,22 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_admitter_grant_notice() != 8868) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_channel_preview_notice() != 60449) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_channel_refusal_text() != 26785) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_channel_signal_text() != 58662) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_channel_slow_path_notice() != 31900) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_channel_waiting_offers_a_notification() != 60415) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_channel_waiting_text() != 19542) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_chunk_bytes() != 36065) {
@@ -2185,6 +2217,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_pause_file() != 49813) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_preview_channel() != 43884) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_preview_of() != 30601) {
@@ -6563,6 +6598,36 @@ public interface RatatoskClientInterface {
     fun `pauseFile`(`fileId`: kotlin.ByteArray)
     
     /**
+     * Показывает канал по ссылке **до** подписки (фаза 2, §10.3, шаг 5).
+     *
+     * # Что она делает
+     *
+     * Спрашивает документ у владельца по адресам из ссылки и, проверив
+     * подпись его ключом **из ссылки** и версию, отдаёт название,
+     * породу и цену слова событием [`FfiEvent::ChannelPreviewed`].
+     * В базе не заводится ничего, кроме пути к владельцу: согласие —
+     * это [`RatatoskClient::subscribe_to_channel`] с той же ссылкой.
+     *
+     * # Цену надо показать **до** вызова
+     *
+     * [`channel_preview_notice`] (§15): владелец узнает, что кто-то
+     * интересуется каналом, — даже если человек потом откажется.
+     * Отменить это задним числом нечем.
+     *
+     * # Ответа может и не быть
+     *
+     * И это не ошибка: §10.5 велит ждать и не считать молчание тупиком.
+     * Рисовать надо ожидание, а не отказ.
+     *
+     * # Errors
+     *
+     * [`FfiChannelRefusal::BadLink`] — ссылка не разобралась;
+     * [`FfiChannelRefusal::AlreadySubscribed`] — канал уже наш,
+     * и показывать нечего: документ у нас свежее обещанного ссылкой.
+     */
+    fun `previewChannel`(`uri`: kotlin.String)
+    
+    /**
      * Превью вложения, если оно есть (§10.3).
      *
      * Отдельным вызовом, как и аватарка: до 32 КиБ на файл, и тащить их
@@ -8754,6 +8819,48 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         it,
         
         FfiConverterByteArray.lower(`fileId`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Показывает канал по ссылке **до** подписки (фаза 2, §10.3, шаг 5).
+     *
+     * # Что она делает
+     *
+     * Спрашивает документ у владельца по адресам из ссылки и, проверив
+     * подпись его ключом **из ссылки** и версию, отдаёт название,
+     * породу и цену слова событием [`FfiEvent::ChannelPreviewed`].
+     * В базе не заводится ничего, кроме пути к владельцу: согласие —
+     * это [`RatatoskClient::subscribe_to_channel`] с той же ссылкой.
+     *
+     * # Цену надо показать **до** вызова
+     *
+     * [`channel_preview_notice`] (§15): владелец узнает, что кто-то
+     * интересуется каналом, — даже если человек потом откажется.
+     * Отменить это задним числом нечем.
+     *
+     * # Ответа может и не быть
+     *
+     * И это не ошибка: §10.5 велит ждать и не считать молчание тупиком.
+     * Рисовать надо ожидание, а не отказ.
+     *
+     * # Errors
+     *
+     * [`FfiChannelRefusal::BadLink`] — ссылка не разобралась;
+     * [`FfiChannelRefusal::AlreadySubscribed`] — канал уже наш,
+     * и показывать нечего: документ у нас свежее обещанного ссылкой.
+     */
+    @Throws(RatatoskException::class)override fun `previewChannel`(`uri`: kotlin.String)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_preview_channel(
+        it,
+        
+        FfiConverterString.lower(`uri`),_status)
 }
     }
     
@@ -12270,6 +12377,17 @@ data class FfiChannel (
     val `rotationOverdue`: kotlin.Boolean
     , 
     /**
+     * Что показывать, пока канал не открылся (§10.5).
+     *
+     * `null` — ждать нечего: канал открыт, либо это не канал.
+     * Отсчёт идёт от **первой** просьбы и повтором не двигается.
+     *
+     * Слова — [`channel_waiting_text`], кнопка «сообщить, когда
+     * откроется» — [`channel_waiting_offers_a_notification`].
+     */
+    val `waiting`: FfiWaiting?
+    , 
+    /**
      * Чем объяснить тишину — один признак на экран (§15).
      *
      * Складывается из полей выше и ничего к ним не добавляет: клиенту
@@ -12311,6 +12429,7 @@ public object FfiConverterTypeFfiChannel: FfiConverterRustBuffer<FfiChannel> {
             FfiConverterUInt.read(buf),
             FfiConverterUInt.read(buf),
             FfiConverterBoolean.read(buf),
+            FfiConverterOptionalTypeFfiWaiting.read(buf),
             FfiConverterTypeFfiChannelSignal.read(buf),
         )
     }
@@ -12333,6 +12452,7 @@ public object FfiConverterTypeFfiChannel: FfiConverterRustBuffer<FfiChannel> {
             FfiConverterUInt.allocationSize(value.`seedsKnown`) +
             FfiConverterUInt.allocationSize(value.`awaitingBlocks`) +
             FfiConverterBoolean.allocationSize(value.`rotationOverdue`) +
+            FfiConverterOptionalTypeFfiWaiting.allocationSize(value.`waiting`) +
             FfiConverterTypeFfiChannelSignal.allocationSize(value.`signal`)
     )
 
@@ -12354,6 +12474,7 @@ public object FfiConverterTypeFfiChannel: FfiConverterRustBuffer<FfiChannel> {
             FfiConverterUInt.write(value.`seedsKnown`, buf)
             FfiConverterUInt.write(value.`awaitingBlocks`, buf)
             FfiConverterBoolean.write(value.`rotationOverdue`, buf)
+            FfiConverterOptionalTypeFfiWaiting.write(value.`waiting`, buf)
             FfiConverterTypeFfiChannelSignal.write(value.`signal`, buf)
     }
 }
@@ -17180,6 +17301,48 @@ sealed class FfiEvent {
     }
     
     /**
+     * Канал показан по ссылке — **до** подписки (фаза 2, §10.3, шаг 5).
+     *
+     * Приходит в ответ на [`RatatoskClient::preview_channel`]: документ
+     * приехал, подпись сошлась ключом из ссылки, версия не ниже
+     * обещанной. В базе при этом не завелось ничего — человек ещё
+     * не согласился, и согласие это [`RatatoskClient::subscribe_to_channel`]
+     * с той же ссылкой.
+     *
+     * **Неудача события не имеет.** Не достучались — §10.5 обещает
+     * ждать и не считать это тупиком; подделанная подпись и версия
+     * ниже обещанной выглядят на экране так же, и объяснить разницу
+     * человеку нечем. Клиенту рисовать ожидание, а не ошибку.
+     */
+    data class ChannelPreviewed(
+        /**
+         * Чат.
+         */
+        val `chatId`: kotlin.ByteArray, 
+        /**
+         * Как канал называется.
+         */
+        val `title`: kotlin.String, 
+        /**
+         * Порода (§6.1): `true` — открытый.
+         */
+        val `open`: kotlin.Boolean, 
+        /**
+         * Версия документа.
+         */
+        val `version`: kotlin.ULong, 
+        /**
+         * Цена слова в битах работы (§11). Ноль — не требуется.
+         */
+        val `powBits`: kotlin.UInt) : FfiEvent()
+        
+    {
+        
+
+        companion object
+    }
+    
+    /**
      * У канала новая версия представления (фаза 2, §6.1).
      *
      * Отдельно от [`FfiEvent::GroupRenamed`]: у группы переименование —
@@ -17816,92 +17979,99 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            16 -> FfiEvent.ChannelChanged(
+            16 -> FfiEvent.ChannelPreviewed(
+                FfiConverterByteArray.read(buf),
+                FfiConverterString.read(buf),
+                FfiConverterBoolean.read(buf),
+                FfiConverterULong.read(buf),
+                FfiConverterUInt.read(buf),
+                )
+            17 -> FfiEvent.ChannelChanged(
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterString.read(buf),
                 )
-            17 -> FfiEvent.ChannelRequested(
+            18 -> FfiEvent.ChannelRequested(
                 FfiConverterByteArray.read(buf),
                 FfiConverterByteArray.read(buf),
                 )
-            18 -> FfiEvent.SeedingChanged(
+            19 -> FfiEvent.SeedingChanged(
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            19 -> FfiEvent.ChannelHistoryEnd(
+            20 -> FfiEvent.ChannelHistoryEnd(
                 FfiConverterByteArray.read(buf),
                 )
-            20 -> FfiEvent.SeedAnnounced(
+            21 -> FfiEvent.SeedAnnounced(
                 FfiConverterByteArray.read(buf),
                 FfiConverterByteArray.read(buf),
                 )
-            21 -> FfiEvent.ChannelUnsubscribed(
+            22 -> FfiEvent.ChannelUnsubscribed(
                 FfiConverterByteArray.read(buf),
                 )
-            22 -> FfiEvent.ChannelCreated(
+            23 -> FfiEvent.ChannelCreated(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 FfiConverterOptionalBoolean.read(buf),
                 )
-            23 -> FfiEvent.GroupRenamed(
+            24 -> FfiEvent.GroupRenamed(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            24 -> FfiEvent.GroupMembershipChanged(
+            25 -> FfiEvent.GroupMembershipChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            25 -> FfiEvent.GroupAvatarChanged(
+            26 -> FfiEvent.GroupAvatarChanged(
                 FfiConverterByteArray.read(buf),
                 )
-            26 -> FfiEvent.FileWaitsForChannel(
+            27 -> FfiEvent.FileWaitsForChannel(
                 FfiConverterByteArray.read(buf),
                 FfiConverterTypeFfiFileWaitReason.read(buf),
                 )
-            27 -> FfiEvent.FileProgress(
+            28 -> FfiEvent.FileProgress(
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            28 -> FfiEvent.FileSending(
+            29 -> FfiEvent.FileSending(
                 FfiConverterByteArray.read(buf),
                 FfiConverterByteArray.read(buf),
                 FfiConverterULong.read(buf),
                 FfiConverterULong.read(buf),
                 )
-            29 -> FfiEvent.FileGone(
+            30 -> FfiEvent.FileGone(
                 FfiConverterByteArray.read(buf),
                 )
-            30 -> FfiEvent.HonestNotice(
+            31 -> FfiEvent.HonestNotice(
                 FfiConverterString.read(buf),
                 )
-            31 -> FfiEvent.CommandRefused(
+            32 -> FfiEvent.CommandRefused(
                 FfiConverterString.read(buf),
                 )
-            32 -> FfiEvent.MailAccountReady(
+            33 -> FfiEvent.MailAccountReady(
                 FfiConverterString.read(buf),
                 )
-            33 -> FfiEvent.MailAccountFailed(
+            34 -> FfiEvent.MailAccountFailed(
                 FfiConverterString.read(buf),
                 )
-            34 -> FfiEvent.MailLoginFailed(
+            35 -> FfiEvent.MailLoginFailed(
                 FfiConverterString.read(buf),
                 )
-            35 -> FfiEvent.MailLimits(
+            36 -> FfiEvent.MailLimits(
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterOptionalULong.read(buf),
                 FfiConverterBoolean.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
-            36 -> FfiEvent.PairingReady(
+            37 -> FfiEvent.PairingReady(
                 FfiConverterByteArray.read(buf),
                 FfiConverterString.read(buf),
                 )
-            37 -> FfiEvent.PairingRevoked(
+            38 -> FfiEvent.PairingRevoked(
                 FfiConverterByteArray.read(buf),
                 )
-            38 -> FfiEvent.DeviceLink(
+            39 -> FfiEvent.DeviceLink(
                 FfiConverterByteArray.read(buf),
                 FfiConverterBoolean.read(buf),
                 )
@@ -18027,6 +18197,17 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 4UL
                 + FfiConverterByteArray.allocationSize(value.`chatId`)
                 + FfiConverterBoolean.allocationSize(value.`awaiting`)
+            )
+        }
+        is FfiEvent.ChannelPreviewed -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterByteArray.allocationSize(value.`chatId`)
+                + FfiConverterString.allocationSize(value.`title`)
+                + FfiConverterBoolean.allocationSize(value.`open`)
+                + FfiConverterULong.allocationSize(value.`version`)
+                + FfiConverterUInt.allocationSize(value.`powBits`)
             )
         }
         is FfiEvent.ChannelChanged -> {
@@ -18303,79 +18484,88 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 FfiConverterBoolean.write(value.`awaiting`, buf)
                 Unit
             }
-            is FfiEvent.ChannelChanged -> {
+            is FfiEvent.ChannelPreviewed -> {
                 buf.putInt(16)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                FfiConverterString.write(value.`title`, buf)
+                FfiConverterBoolean.write(value.`open`, buf)
+                FfiConverterULong.write(value.`version`, buf)
+                FfiConverterUInt.write(value.`powBits`, buf)
+                Unit
+            }
+            is FfiEvent.ChannelChanged -> {
+                buf.putInt(17)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterULong.write(value.`version`, buf)
                 FfiConverterString.write(value.`title`, buf)
                 Unit
             }
             is FfiEvent.ChannelRequested -> {
-                buf.putInt(17)
+                buf.putInt(18)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterByteArray.write(value.`who`, buf)
                 Unit
             }
             is FfiEvent.SeedingChanged -> {
-                buf.putInt(18)
+                buf.putInt(19)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterBoolean.write(value.`announced`, buf)
                 Unit
             }
             is FfiEvent.ChannelHistoryEnd -> {
-                buf.putInt(19)
+                buf.putInt(20)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
             is FfiEvent.SeedAnnounced -> {
-                buf.putInt(20)
+                buf.putInt(21)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterByteArray.write(value.`who`, buf)
                 Unit
             }
             is FfiEvent.ChannelUnsubscribed -> {
-                buf.putInt(21)
+                buf.putInt(22)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
             is FfiEvent.ChannelCreated -> {
-                buf.putInt(22)
+                buf.putInt(23)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterString.write(value.`title`, buf)
                 FfiConverterOptionalBoolean.write(value.`open`, buf)
                 Unit
             }
             is FfiEvent.GroupRenamed -> {
-                buf.putInt(23)
+                buf.putInt(24)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 FfiConverterString.write(value.`title`, buf)
                 Unit
             }
             is FfiEvent.GroupMembershipChanged -> {
-                buf.putInt(24)
-                FfiConverterByteArray.write(value.`chatId`, buf)
-                Unit
-            }
-            is FfiEvent.GroupAvatarChanged -> {
                 buf.putInt(25)
                 FfiConverterByteArray.write(value.`chatId`, buf)
                 Unit
             }
-            is FfiEvent.FileWaitsForChannel -> {
+            is FfiEvent.GroupAvatarChanged -> {
                 buf.putInt(26)
+                FfiConverterByteArray.write(value.`chatId`, buf)
+                Unit
+            }
+            is FfiEvent.FileWaitsForChannel -> {
+                buf.putInt(27)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterTypeFfiFileWaitReason.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.FileProgress -> {
-                buf.putInt(27)
+                buf.putInt(28)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterULong.write(value.`received`, buf)
                 FfiConverterULong.write(value.`total`, buf)
                 Unit
             }
             is FfiEvent.FileSending -> {
-                buf.putInt(28)
+                buf.putInt(29)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 FfiConverterByteArray.write(value.`peerIk`, buf)
                 FfiConverterULong.write(value.`sent`, buf)
@@ -18383,37 +18573,37 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.FileGone -> {
-                buf.putInt(29)
+                buf.putInt(30)
                 FfiConverterByteArray.write(value.`fileId`, buf)
                 Unit
             }
             is FfiEvent.HonestNotice -> {
-                buf.putInt(30)
+                buf.putInt(31)
                 FfiConverterString.write(value.`text`, buf)
                 Unit
             }
             is FfiEvent.CommandRefused -> {
-                buf.putInt(31)
+                buf.putInt(32)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
             is FfiEvent.MailAccountReady -> {
-                buf.putInt(32)
+                buf.putInt(33)
                 FfiConverterString.write(value.`address`, buf)
                 Unit
             }
             is FfiEvent.MailAccountFailed -> {
-                buf.putInt(33)
-                FfiConverterString.write(value.`reason`, buf)
-                Unit
-            }
-            is FfiEvent.MailLoginFailed -> {
                 buf.putInt(34)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
-            is FfiEvent.MailLimits -> {
+            is FfiEvent.MailLoginFailed -> {
                 buf.putInt(35)
+                FfiConverterString.write(value.`reason`, buf)
+                Unit
+            }
+            is FfiEvent.MailLimits -> {
+                buf.putInt(36)
                 FfiConverterOptionalULong.write(value.`letterBytes`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxUsed`, buf)
                 FfiConverterOptionalULong.write(value.`mailboxLimit`, buf)
@@ -18422,18 +18612,18 @@ public object FfiConverterTypeFfiEvent : FfiConverterRustBuffer<FfiEvent>{
                 Unit
             }
             is FfiEvent.PairingReady -> {
-                buf.putInt(36)
+                buf.putInt(37)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterString.write(value.`uri`, buf)
                 Unit
             }
             is FfiEvent.PairingRevoked -> {
-                buf.putInt(37)
+                buf.putInt(38)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 Unit
             }
             is FfiEvent.DeviceLink -> {
-                buf.putInt(38)
+                buf.putInt(39)
                 FfiConverterByteArray.write(value.`deviceId`, buf)
                 FfiConverterBoolean.write(value.`connected`, buf)
                 Unit
@@ -18825,6 +19015,62 @@ public object FfiConverterTypeFfiTransport: FfiConverterRustBuffer<FfiTransport>
     override fun allocationSize(value: FfiTransport) = 4UL
 
     override fun write(value: FfiTransport, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
+ * Что показывать, пока канал не открылся (§10.5).
+ *
+ * Зеркало `channel::Waiting`. **Экран переключается раньше механизма**:
+ * §10.5 говорит это прямым текстом — «отметка 0:30 меняет только
+ * надпись». Расписание повторов живёт своей жизнью, и связывать их
+ * клиенту не нужно.
+ */
+
+enum class FfiWaiting {
+    
+    /**
+     * До полуминуты: «открываем канал».
+     */
+    OPENING,
+    /**
+     * От полуминуты до пяти минут: «дольше обычного».
+     */
+    LONGER,
+    /**
+     * От пяти минут до суток: «медленный путь, это часы».
+     */
+    SLOW_PATH,
+    /**
+     * Сутки прошли: «не отвечает», и ядро перестало стучать.
+     */
+    NO_ANSWER;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiWaiting: FfiConverterRustBuffer<FfiWaiting> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiWaiting.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiWaiting) = 4UL
+
+    override fun write(value: FfiWaiting, buf: ByteBuffer) {
         buf.putInt(value.ordinal + 1)
     }
 }
@@ -19519,6 +19765,38 @@ public object FfiConverterOptionalTypeFfiTransport: FfiConverterRustBuffer<FfiTr
         } else {
             buf.put(1)
             FfiConverterTypeFfiTransport.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeFfiWaiting: FfiConverterRustBuffer<FfiWaiting?> {
+    override fun read(buf: ByteBuffer): FfiWaiting? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeFfiWaiting.read(buf)
+    }
+
+    override fun allocationSize(value: FfiWaiting?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeFfiWaiting.allocationSize(value)
+        }
+    }
+
+    override fun write(value: FfiWaiting?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeFfiWaiting.write(value, buf)
         }
     }
 }
@@ -20276,6 +20554,22 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     
 
         /**
+         * Что стоит предпросмотр канала (§15, §10.3).
+         *
+         * Показывается **до** [`RatatoskClient::preview_channel`] — это
+         * единственный момент, когда человек ещё может отказаться бесплатно.
+         */ fun `channelPreviewNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_channel_preview_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
          * Точные слова к отказу канала (§15).
          *
          * На границе, а не в клиенте, по той же причине, что [`honest_notices`]:
@@ -20307,6 +20601,53 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     
         
         FfiConverterTypeFfiChannelSignal.lower(`signal`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Текст §15 про медленный путь — он же [`FfiWaiting::SlowPath`].
+         *
+         * Отдельным именем, потому что §15 называет его отдельно; строка
+         * берётся оттуда же, где живёт состояние, и второй её копии нет.
+         */ fun `channelSlowPathNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_channel_slow_path_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Показывать ли кнопку «сообщить, когда откроется» (§10.5).
+         *
+         * Появляется вместе с медленным путём: ждать часами, глядя в экран,
+         * никто не станет.
+         */ fun `channelWaitingOffersANotification`(`waiting`: FfiWaiting): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_channel_waiting_offers_a_notification(
+    
+        
+        FfiConverterTypeFfiWaiting.lower(`waiting`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Слова к состоянию ожидания (§15, §10.5).
+         */ fun `channelWaitingText`(`waiting`: FfiWaiting): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_channel_waiting_text(
+    
+        
+        FfiConverterTypeFfiWaiting.lower(`waiting`),_status)
 }
     )
     }
