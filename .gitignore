@@ -19,6 +19,7 @@ local.properties
 app/keystore/
 *.jks
 *.keystore
+keystore.properties
 
 # Бинарники ядра. Их собирает задача `buildRustCore` из ratatosk-core —
 # в репозитории они были бы копией чужого артефакта, и тяжёлой: сотня

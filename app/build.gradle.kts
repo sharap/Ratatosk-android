@@ -1,6 +1,21 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+}
+
+// Ключ подписи описан в `keystore.properties` рядом с настройками проекта.
+// В репозитории этого файла нет и быть не должно: в нём пароли. Образец —
+// `keystore.properties.example`.
+//
+// Файла нет — release подписывается отладочным ключом, как и раньше: иначе
+// собрать приложение не смог бы никто, кроме владельца ключа. Чем это
+// плохо, сказано ниже у самой подписи.
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val hasReleaseKey = keystorePropertiesFile.exists()
+val keystoreProperties = Properties().apply {
+    if (hasReleaseKey) keystorePropertiesFile.inputStream().use { load(it) }
 }
 
 android {
@@ -17,37 +32,66 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // ВРЕМЕННО, НА ВРЕМЯ РАЗРАБОТКИ.
-    //
-    // Настоящего release-ключа у проекта ещё нет, а отладочная сборка
-    // тяжела: без R8 и без ужатия ресурсов. Поэтому release собирается
-    // как release (ужатый), но подписывается **отладочным** ключом —
-    // тем самым, которым подписаны debug-сборки.
-    //
-    // Что это даёт: ужатый APK ставится поверх отладочного без удаления
-    // (подпись одна и та же), и никакого ключа заводить не надо.
-    //
-    // Чем за это платим — вслух, потому что для мессенджера это не мелочь:
-    //
-    //  * отладочный ключ **общий для всех**. Его пароль (`android`)
-    //    и псевдоним (`androiddebugkey`) записаны в документации Android,
-    //    так что подделать подпись такой сборки может кто угодно. Для
-    //    приложения, где подпись — единственное, чем система отличает
-    //    обновление от подмены, это означает: раздавать такой APK нельзя;
-    //  * в Google Play он не уйдёт: подписанное отладочным ключом
-    //    там не принимают;
-    //  * ключ лежит в `~/.android/debug.keystore`, то есть у каждого
-    //    свой. Собранное на одной машине не обновится поверх собранного
-    //    на другой.
-    //
-    // Когда появится настоящий ключ: вернуть сюда `signingConfigs`
-    // с ним (хранилище и пароли — мимо репозитория, через
-    // `~/.gradle/gradle.properties` или переменные окружения) и заменить
-    // строку подписи в `release` ниже. Больше менять нечего.
+    signingConfigs {
+        // Конфигурация заводится, только когда есть чем её заполнить:
+        // пустая `release`-подпись — это APK, который не поставится, а
+        // узнаётся это в самом конце сборки.
+        if (hasReleaseKey) {
+            create("release") {
+                // Недостающее поле — это остановка сборки, а не подстановка
+                // умолчания. Пропущенный пароль иначе обернулся бы невнятным
+                // отказом где-то в подписывальщике.
+                fun required(name: String): String =
+                    keystoreProperties.getProperty(name)?.takeIf { it.isNotBlank() }
+                        ?: throw GradleException(
+                            "keystore.properties: не задано `$name` " +
+                                "(образец — keystore.properties.example)"
+                        )
+
+                val store = required("storeFile").let { path ->
+                    val named = File(path)
+                    // Относительный путь считаем от корня проекта, а не от
+                    // текущего каталога: иначе сборка зависела бы от того,
+                    // откуда её запустили.
+                    if (named.isAbsolute) named else rootProject.file(path)
+                }
+                if (!store.isFile) {
+                    throw GradleException("keystore.properties: хранилище не найдено — $store")
+                }
+
+                storeFile = store
+                storePassword = required("storePassword")
+                keyAlias = required("keyAlias")
+                keyPassword = required("keyPassword")
+            }
+        }
+    }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            // Без своего ключа release подписывается **отладочным**, и это
+            // не мелочь, а прямое ограничение на раздачу:
+            //
+            //  * отладочный ключ общий для всех: пароль (`android`) и
+            //    псевдоним (`androiddebugkey`) записаны в документации
+            //    Android, так что подделать такую подпись может кто угодно.
+            //    Для мессенджера, где подпись — единственное, чем система
+            //    отличает обновление от подмены, это значит: раздавать
+            //    такой APK нельзя;
+            //  * в Google Play он не уйдёт — подписанное отладочным ключом
+            //    там не принимают;
+            //  * лежит он в `~/.android/debug.keystore`, то есть у каждого
+            //    свой: собранное на одной машине не обновится поверх
+            //    собранного на другой.
+            signingConfig = if (hasReleaseKey) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.warn(
+                    "Ratatosk: keystore.properties нет — release подписывается " +
+                        "отладочным ключом. Такую сборку раздавать нельзя."
+                )
+                signingConfigs.getByName("debug")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
