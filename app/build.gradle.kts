@@ -26,8 +26,11 @@ android {
         applicationId = "chat.ratatosk.android"
         minSdk = 28
         targetSdk = 37
+        // Код версии растёт с каждой выкладкой — иначе обновление не
+        // встанет поверх установленного. Имя версии человеческое: до 1.0
+        // приложению ещё идти.
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
