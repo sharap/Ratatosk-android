@@ -48,7 +48,15 @@ android {
                                 "(образец — keystore.properties.example)"
                         )
 
-                val store = required("storeFile").let { path ->
+                val store = required("storeFile").let { raw ->
+                    // `~` разворачивает оболочка, а не Java: без этого путь
+                    // из привычной записи превращается в каталог с именем
+                    // «~» внутри проекта.
+                    val path = when {
+                        raw == "~" -> System.getProperty("user.home")
+                        raw.startsWith("~/") -> System.getProperty("user.home") + raw.substring(1)
+                        else -> raw
+                    }
                     val named = File(path)
                     // Относительный путь считаем от корня проекта, а не от
                     // текущего каталога: иначе сборка зависела бы от того,
@@ -63,6 +71,14 @@ android {
                 storePassword = required("storePassword")
                 keyAlias = required("keyAlias")
                 keyPassword = required("keyPassword")
+
+                // Схема v3 доступна с Android 9, а ниже мы и не идём
+                // (`minSdk 28`). Она умеет то, чего не умеет v2: сменить
+                // ключ, не теряя обновляемость уже установленного. Ключ
+                // мессенджера когда-нибудь придётся менять, и решать это
+                // надо до первой раздачи, а не после.
+                enableV2Signing = true
+                enableV3Signing = true
             }
         }
     }
