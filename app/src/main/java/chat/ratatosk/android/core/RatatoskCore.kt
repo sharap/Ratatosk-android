@@ -123,6 +123,15 @@ object RatatoskCore : EventObserver, CompanionObserver {
             if (loggingStarted) return
             loggingStarted = true
         }
+        // Чего в этой сборке нет — первой строкой журнала. Разбирая чужой
+        // журнал, знать это надо раньше всего: «ступень молчит» и «ступени
+        // здесь нет» выглядят одинаково, а чинятся по-разному.
+        if (!BuiltTransports.complete) {
+            android.util.Log.i(
+                "RatatoskCore",
+                "build without transports: ${BuiltTransports.missing.joinToString(", ")}"
+            )
+        }
         try {
             if (toFile) {
                 val file = coreLogFile(context)
@@ -421,6 +430,11 @@ object RatatoskCore : EventObserver, CompanionObserver {
      * @return вручено ли радио (уже стоявшее — тоже да).
      */
     fun ensureBtRadio(context: Context): Boolean {
+        // Сборка без эфира: радио ядру не вручаем вовсе. Ступень тогда
+        // честно объявляется потерянной, а §5.4 идёт дальше по лестнице —
+        // ровно то же, что при выключенном переключателе, только спросить
+        // его человеку негде, потому что и переключателя нет.
+        if (!BuiltTransports.bt) return false
         val live = client ?: return false
         return try {
             val bridge = live.bluetooth()

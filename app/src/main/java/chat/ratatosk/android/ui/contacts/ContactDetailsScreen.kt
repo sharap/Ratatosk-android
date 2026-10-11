@@ -32,6 +32,7 @@ import chat.ratatosk.android.ui.theme.successColor
 import chat.ratatosk.android.util.nearbyLabelRes
 import chat.ratatosk.android.util.nearby
 import chat.ratatosk.android.R
+import chat.ratatosk.android.core.BuiltTransports
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.components.Avatar
 import chat.ratatosk.android.util.formatDateTime
@@ -273,11 +274,18 @@ fun ContactDetailsScreen(
                                     }
                                 }
 
-                                if (contact.onion != null || contact.chatmail != null || contact.ygg?.isNotEmpty() == true) {
+                                // Адрес ступени, которой в сборке нет, показывать незачем:
+                                // дойти по нему мы всё равно не можем, а выглядит он
+                                // как обещание.
+                                val onion = contact.onion?.takeIf { BuiltTransports.tor }
+                                val chatmail = contact.chatmail?.takeIf { BuiltTransports.mail }
+                                val ygg = contact.ygg?.takeIf { it.isNotEmpty() && BuiltTransports.ygg }
+
+                                if (onion != null || chatmail != null || ygg != null) {
                                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                                 }
 
-                                contact.onion?.let { onion ->
+                                onion?.let { onion ->
                                     Text(
                                         text = stringResource(R.string.onion_address),
                                         style = MaterialTheme.typography.labelMedium,
@@ -291,7 +299,7 @@ fun ContactDetailsScreen(
                                     }
                                 }
 
-                                contact.chatmail?.let { chatmail ->
+                                chatmail?.let { chatmail ->
                                     Text(
                                         text = stringResource(R.string.mail_address),
                                         style = MaterialTheme.typography.labelMedium,
@@ -305,7 +313,7 @@ fun ContactDetailsScreen(
                                     }
                                 }
 
-                                contact.ygg?.takeIf { it.isNotEmpty() }?.let { yggBytes ->
+                                ygg?.let { yggBytes ->
                                     val yggHex = yggBytes.toHexString()
                                     Text(
                                         text = stringResource(R.string.ygg_address),

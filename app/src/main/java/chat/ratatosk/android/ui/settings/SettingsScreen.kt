@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import chat.ratatosk.android.core.BuiltTransports
 import chat.ratatosk.android.ui.theme.successColor
 import chat.ratatosk.android.util.FileUtils
 import chat.ratatosk.android.R
@@ -86,6 +87,9 @@ fun SettingsScreen(
     // Причину считаем здесь: секция транспортов ViewModel не видит,
     // а обе возможные причины знает приложение, а не ядро.
     val btNotReadyReason = when {
+        // В сборке без эфира адаптер не опрашиваем вовсе: причину
+        // показывать негде, а дёргать Bluetooth незачем.
+        !BuiltTransports.bt -> ""
         !viewModel.btAdapterEnabled() -> stringResource(R.string.bt_adapter_off)
         viewModel.btMissingPermissions().isNotEmpty() -> stringResource(R.string.bt_no_permissions)
         else -> stringResource(R.string.bt_not_up)
@@ -1280,316 +1284,326 @@ fun SettingsTransportsSection(
         onToggle = onToggleLan
     )
 
-    // Bluetooth
-    TransportItem(
-        title = stringResource(R.string.bt_transport),
-        description = stringResource(R.string.bt_desc),
-        enabled = transportsEnabled[FfiTransport.BT] ?: false,
-        ready = transportsReady[FfiTransport.BT] ?: false,
-        onToggle = onToggleBt,
-        statusContent = {
-            // Состояний три, а не два (FFI.md): выключено человеком;
-            // включено, но радио не вручено — беда приложения, не сети;
-            // включено, радио есть, а ступень не поднялась — и тогда надо
-            // назвать причину. Причину ядро словами наружу не отдаёт,
-            // но обе возможные приложение знает про себя само.
-            if (transportsEnabled[FfiTransport.BT] == true) {
-                val ready = transportsReady[FfiTransport.BT] ?: false
-                Column(modifier = Modifier.padding(top = 8.dp)) {
-                    when {
-                        !btHasRadio -> {
-                            Text(
-                                text = stringResource(R.string.bt_no_radio),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            OutlinedButton(
-                                onClick = onGrantBtPermissions,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(stringResource(R.string.bt_grant))
+    if (BuiltTransports.bt) {
+        // Bluetooth
+        TransportItem(
+            title = stringResource(R.string.bt_transport),
+            description = stringResource(R.string.bt_desc),
+            enabled = transportsEnabled[FfiTransport.BT] ?: false,
+            ready = transportsReady[FfiTransport.BT] ?: false,
+            onToggle = onToggleBt,
+            statusContent = {
+                // Состояний три, а не два (FFI.md): выключено человеком;
+                // включено, но радио не вручено — беда приложения, не сети;
+                // включено, радио есть, а ступень не поднялась — и тогда надо
+                // назвать причину. Причину ядро словами наружу не отдаёт,
+                // но обе возможные приложение знает про себя само.
+                if (transportsEnabled[FfiTransport.BT] == true) {
+                    val ready = transportsReady[FfiTransport.BT] ?: false
+                    Column(modifier = Modifier.padding(top = 8.dp)) {
+                        when {
+                            !btHasRadio -> {
+                                Text(
+                                    text = stringResource(R.string.bt_no_radio),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                OutlinedButton(
+                                    onClick = onGrantBtPermissions,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(stringResource(R.string.bt_grant))
+                                }
+                            }
+                            !ready -> {
+                                Text(
+                                    text = btNotReadyReason,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
                         }
-                        !ready -> {
-                            Text(
-                                text = btNotReadyReason,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
                     }
                 }
             }
-        }
-    )
+        )
+    }
 
-    // Yggdrasil
-    TransportItem(
-        title = stringResource(R.string.ygg_transport),
-        description = stringResource(R.string.ygg_desc),
-        enabled = yggMode != FfiYggMode.OFF,
-        ready = transportsReady[FfiTransport.YGG] ?: false,
-        // Включаем тот режим, что был до выключения: внешний демон, выключенный
-        // на минуту, возвращался встроенным узлом — и человек этого не просил.
-        onToggle = { enabled ->
-            if (!enabled) onSelectYggMode(FfiYggMode.OFF)
-            else onSelectYggMode(lastYggMode)
-        },
-        statusContent = {
-            Column(modifier = Modifier.padding(top = 4.dp)) {
-                @OptIn(ExperimentalLayoutApi::class)
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    FilterChip(
-                        selected = yggMode == FfiYggMode.OFF,
-                        onClick = { onSelectYggMode(FfiYggMode.OFF) },
-                        label = { Text(stringResource(R.string.ygg_mode_off)) }
-                    )
-                    FilterChip(
-                        selected = yggMode == FfiYggMode.EMBEDDED,
-                        onClick = { onSelectYggMode(FfiYggMode.EMBEDDED) },
-                        label = { Text(stringResource(R.string.ygg_mode_embedded)) }
-                    )
-                    FilterChip(
-                        selected = yggMode == FfiYggMode.EXTERNAL,
-                        onClick = { onSelectYggMode(FfiYggMode.EXTERNAL) },
-                        label = { Text(stringResource(R.string.ygg_mode_external)) }
-                    )
-                }
-
-                if (yggMode == FfiYggMode.EMBEDDED) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    val keyText = if (!yggKey.isNullOrBlank()) yggKey else stringResource(R.string.ygg_key_not_configured)
-                    Text(
-                        text = stringResource(R.string.ygg_key_status, keyText),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = successColor
-                    )
-                    if (!yggAddress.isNullOrBlank()) {
-                        Text(
-                            text = stringResource(R.string.ygg_address_status, yggAddress),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.ygg_peers_status, yggPeers.size),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (yggPeers.isEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                    if (yggPeers.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.ygg_no_peers_warning),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
-                    Row(modifier = Modifier.padding(top = 8.dp)) {
-                        OutlinedButton(onClick = onShowYggPeersSetup, modifier = Modifier.fillMaxWidth()) {
-                            Text(stringResource(R.string.setup_ygg_peers))
-                        }
-                    }
-                } else if (yggMode == FfiYggMode.EXTERNAL) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    val keyText = if (!yggKey.isNullOrBlank()) yggKey else stringResource(R.string.ygg_key_not_configured)
-                    Text(
-                        text = stringResource(R.string.ygg_key_status, keyText),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (yggKey.isNullOrBlank()) MaterialTheme.colorScheme.outline else successColor
-                    )
-                    if (!yggAddress.isNullOrBlank()) {
-                        Text(
-                            text = stringResource(R.string.ygg_address_status, yggAddress),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(top = 2.dp)
-                        )
-                    }
-                    Row(modifier = Modifier.padding(top = 8.dp)) {
-                        OutlinedButton(onClick = onShowYggSetup, modifier = Modifier.fillMaxWidth()) {
-                            Text(stringResource(R.string.setup_ygg))
-                        }
-                    }
-                }
-            }
-        }
-    )
-
-    // Tor / Onion
-    TransportItem(
-        title = stringResource(R.string.tor_transport),
-        description = stringResource(R.string.tor_desc),
-        enabled = transportsEnabled[FfiTransport.ONION] ?: false,
-        ready = transportsReady[FfiTransport.ONION] ?: false,
-        onToggle = onToggleTor,
-        statusContent = {
-            if (transportsEnabled[FfiTransport.ONION] == true && !(transportsReady[FfiTransport.ONION] ?: false)) {
-                torStatus?.let {
-                    Column(modifier = Modifier.padding(top = 4.dp)) {
-                        LinearProgressIndicator(
-                            progress = { it.fraction },
-                            modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp))
-                        )
-                        Text(
-                            text = if (it.blocked != null) stringResource(R.string.tor_blocked, it.blocked!!) else stringResource(R.string.tor_bootstrap, (it.fraction * 100).toInt()),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (it.blocked != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                        )
-                        Text(text = it.note, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
-                    }
-                }
-            }
-        }
-    )
-
-    // Mail
-    TransportItem(
-        title = stringResource(R.string.mail_transport),
-        description = stringResource(R.string.mail_desc),
-        enabled = transportsEnabled[FfiTransport.MAIL] ?: false,
-        ready = transportsReady[FfiTransport.MAIL] ?: false,
-        onToggle = onToggleMail,
-        statusContent = {
-            mailStatus?.let { status ->
+    if (BuiltTransports.ygg) {
+        // Yggdrasil
+        TransportItem(
+            title = stringResource(R.string.ygg_transport),
+            description = stringResource(R.string.ygg_desc),
+            enabled = yggMode != FfiYggMode.OFF,
+            ready = transportsReady[FfiTransport.YGG] ?: false,
+            // Включаем тот режим, что был до выключения: внешний демон, выключенный
+            // на минуту, возвращался встроенным узлом — и человек этого не просил.
+            onToggle = { enabled ->
+                if (!enabled) onSelectYggMode(FfiYggMode.OFF)
+                else onSelectYggMode(lastYggMode)
+            },
+            statusContent = {
                 Column(modifier = Modifier.padding(top = 4.dp)) {
-                    val statusText = when (status.state) {
-                        FfiMailState.OFF -> stringResource(R.string.limit_never)
-                        FfiMailState.NO_ACCOUNT -> stringResource(R.string.mail_not_configured)
-                        FfiMailState.CONNECTING -> stringResource(R.string.mail_connecting)
-                        FfiMailState.READY -> if (status.viaTor) stringResource(R.string.mail_ready_tor, status.address ?: "") else stringResource(R.string.mail_ready, status.address ?: "")
-                        FfiMailState.FAILED -> stringResource(R.string.mail_failed, status.detail ?: "Unknown error")
+                    @OptIn(ExperimentalLayoutApi::class)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        FilterChip(
+                            selected = yggMode == FfiYggMode.OFF,
+                            onClick = { onSelectYggMode(FfiYggMode.OFF) },
+                            label = { Text(stringResource(R.string.ygg_mode_off)) }
+                        )
+                        FilterChip(
+                            selected = yggMode == FfiYggMode.EMBEDDED,
+                            onClick = { onSelectYggMode(FfiYggMode.EMBEDDED) },
+                            label = { Text(stringResource(R.string.ygg_mode_embedded)) }
+                        )
+                        FilterChip(
+                            selected = yggMode == FfiYggMode.EXTERNAL,
+                            onClick = { onSelectYggMode(FfiYggMode.EXTERNAL) },
+                            label = { Text(stringResource(R.string.ygg_mode_external)) }
+                        )
                     }
-                    Text(
-                        text = statusText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (status.state == FfiMailState.FAILED) MaterialTheme.colorScheme.error else if (status.state == FfiMailState.READY) successColor else MaterialTheme.colorScheme.outline
-                    )
-                    
-                    if (status.state == FfiMailState.READY) {
-                        status.mailboxUsedBytes?.let { used ->
-                            val limit = status.mailboxLimitBytes
-                            val storageText = if (limit != null) {
-                                stringResource(R.string.mailbox_storage, chat.ratatosk.android.util.FileUtils.formatFileSize(used), chat.ratatosk.android.util.FileUtils.formatFileSize(limit))
-                            } else {
-                                stringResource(R.string.mailbox_usage, chat.ratatosk.android.util.FileUtils.formatFileSize(used))
-                            }
+
+                    if (yggMode == FfiYggMode.EMBEDDED) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        val keyText = if (!yggKey.isNullOrBlank()) yggKey else stringResource(R.string.ygg_key_not_configured)
+                        Text(
+                            text = stringResource(R.string.ygg_key_status, keyText),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = successColor
+                        )
+                        if (!yggAddress.isNullOrBlank()) {
                             Text(
-                                text = storageText,
+                                text = stringResource(R.string.ygg_address_status, yggAddress),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (status.mailboxCrowded) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(top = 2.dp)
                             )
                         }
-                    }
-                    
-                    Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(onClick = onShowMailSetup, modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.setup_mail))
-                        }
-                        OutlinedButton(onClick = onShowMailCreate, modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.create_mail))
-                        }
-                    }
-                    if (status.state != FfiMailState.NO_ACCOUNT) {
-                        TextButton(onClick = onClearMailAccount, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
-                            Text(stringResource(R.string.remove))
-                        }
-                    }
-                }
-            }
-        }
-    )
-
-    // Nostr
-    TransportItem(
-        title = stringResource(R.string.nostr_transport),
-        description = stringResource(R.string.nostr_desc),
-        enabled = transportsEnabled[FfiTransport.NOSTR] ?: false,
-        ready = transportsReady[FfiTransport.NOSTR] ?: false,
-        onToggle = onToggleNostr,
-        statusContent = {
-            if (transportsEnabled[FfiTransport.NOSTR] == true) {
-                Column(modifier = Modifier.padding(top = 4.dp)) {
-                    if (!nostrNpub.isNullOrBlank()) {
-                        val clipboard = LocalClipboardManager.current
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    clipboard.setText(AnnotatedString(nostrNpub))
-                                }
-                                .padding(vertical = 2.dp)
-                        ) {
-                            val npubShort = if (nostrNpub.length > 24) "${nostrNpub.take(12)}...${nostrNpub.takeLast(8)}" else nostrNpub
+                        Text(
+                            text = stringResource(R.string.ygg_peers_status, yggPeers.size),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (yggPeers.isEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                        if (yggPeers.isEmpty()) {
                             Text(
-                                text = stringResource(R.string.nostr_npub_status, npubShort),
+                                text = stringResource(R.string.ygg_no_peers_warning),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                        Row(modifier = Modifier.padding(top = 8.dp)) {
+                            OutlinedButton(onClick = onShowYggPeersSetup, modifier = Modifier.fillMaxWidth()) {
+                                Text(stringResource(R.string.setup_ygg_peers))
+                            }
+                        }
+                    } else if (yggMode == FfiYggMode.EXTERNAL) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        val keyText = if (!yggKey.isNullOrBlank()) yggKey else stringResource(R.string.ygg_key_not_configured)
+                        Text(
+                            text = stringResource(R.string.ygg_key_status, keyText),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (yggKey.isNullOrBlank()) MaterialTheme.colorScheme.outline else successColor
+                        )
+                        if (!yggAddress.isNullOrBlank()) {
+                            Text(
+                                text = stringResource(R.string.ygg_address_status, yggAddress),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "Copy Npub",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                modifier = Modifier.padding(top = 2.dp)
                             )
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.nostr_direct_label),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Switch(
-                            checked = nostrDirect,
-                            onCheckedChange = onToggleNostrDirect
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    if (nostrRelays.isEmpty()) {
-                        Text(
-                            text = stringResource(R.string.nostr_no_relays_warning),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    } else {
-                        val activeRelays = nostrRelaysAlive?.count { it.up } ?: 0
-                        Text(
-                            text = stringResource(R.string.ygg_peers_status, nostrRelays.size) + if (activeRelays > 0) " (активно: $activeRelays)" else "",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (activeRelays > 0) successColor else MaterialTheme.colorScheme.outline
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedButton(
-                        onClick = onShowNostrRelaysSetup,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(stringResource(R.string.setup_nostr_relays))
+                        Row(modifier = Modifier.padding(top = 8.dp)) {
+                            OutlinedButton(onClick = onShowYggSetup, modifier = Modifier.fillMaxWidth()) {
+                                Text(stringResource(R.string.setup_ygg))
+                            }
+                        }
                     }
                 }
             }
-        }
-    )
+        )
+    }
+
+    if (BuiltTransports.tor) {
+        // Tor / Onion
+        TransportItem(
+            title = stringResource(R.string.tor_transport),
+            description = stringResource(R.string.tor_desc),
+            enabled = transportsEnabled[FfiTransport.ONION] ?: false,
+            ready = transportsReady[FfiTransport.ONION] ?: false,
+            onToggle = onToggleTor,
+            statusContent = {
+                if (transportsEnabled[FfiTransport.ONION] == true && !(transportsReady[FfiTransport.ONION] ?: false)) {
+                    torStatus?.let {
+                        Column(modifier = Modifier.padding(top = 4.dp)) {
+                            LinearProgressIndicator(
+                                progress = { it.fraction },
+                                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp))
+                            )
+                            Text(
+                                text = if (it.blocked != null) stringResource(R.string.tor_blocked, it.blocked!!) else stringResource(R.string.tor_bootstrap, (it.fraction * 100).toInt()),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (it.blocked != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            )
+                            Text(text = it.note, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.outline)
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    if (BuiltTransports.mail) {
+        // Mail
+        TransportItem(
+            title = stringResource(R.string.mail_transport),
+            description = stringResource(R.string.mail_desc),
+            enabled = transportsEnabled[FfiTransport.MAIL] ?: false,
+            ready = transportsReady[FfiTransport.MAIL] ?: false,
+            onToggle = onToggleMail,
+            statusContent = {
+                mailStatus?.let { status ->
+                    Column(modifier = Modifier.padding(top = 4.dp)) {
+                        val statusText = when (status.state) {
+                            FfiMailState.OFF -> stringResource(R.string.limit_never)
+                            FfiMailState.NO_ACCOUNT -> stringResource(R.string.mail_not_configured)
+                            FfiMailState.CONNECTING -> stringResource(R.string.mail_connecting)
+                            FfiMailState.READY -> if (status.viaTor) stringResource(R.string.mail_ready_tor, status.address ?: "") else stringResource(R.string.mail_ready, status.address ?: "")
+                            FfiMailState.FAILED -> stringResource(R.string.mail_failed, status.detail ?: "Unknown error")
+                        }
+                        Text(
+                            text = statusText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (status.state == FfiMailState.FAILED) MaterialTheme.colorScheme.error else if (status.state == FfiMailState.READY) successColor else MaterialTheme.colorScheme.outline
+                        )
+                    
+                        if (status.state == FfiMailState.READY) {
+                            status.mailboxUsedBytes?.let { used ->
+                                val limit = status.mailboxLimitBytes
+                                val storageText = if (limit != null) {
+                                    stringResource(R.string.mailbox_storage, chat.ratatosk.android.util.FileUtils.formatFileSize(used), chat.ratatosk.android.util.FileUtils.formatFileSize(limit))
+                                } else {
+                                    stringResource(R.string.mailbox_usage, chat.ratatosk.android.util.FileUtils.formatFileSize(used))
+                                }
+                                Text(
+                                    text = storageText,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (status.mailboxCrowded) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
+                        }
+                    
+                        Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(onClick = onShowMailSetup, modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.setup_mail))
+                            }
+                            OutlinedButton(onClick = onShowMailCreate, modifier = Modifier.weight(1f)) {
+                                Text(stringResource(R.string.create_mail))
+                            }
+                        }
+                        if (status.state != FfiMailState.NO_ACCOUNT) {
+                            TextButton(onClick = onClearMailAccount, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                                Text(stringResource(R.string.remove))
+                            }
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    if (BuiltTransports.nostr) {
+        // Nostr
+        TransportItem(
+            title = stringResource(R.string.nostr_transport),
+            description = stringResource(R.string.nostr_desc),
+            enabled = transportsEnabled[FfiTransport.NOSTR] ?: false,
+            ready = transportsReady[FfiTransport.NOSTR] ?: false,
+            onToggle = onToggleNostr,
+            statusContent = {
+                if (transportsEnabled[FfiTransport.NOSTR] == true) {
+                    Column(modifier = Modifier.padding(top = 4.dp)) {
+                        if (!nostrNpub.isNullOrBlank()) {
+                            val clipboard = LocalClipboardManager.current
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        clipboard.setText(AnnotatedString(nostrNpub))
+                                    }
+                                    .padding(vertical = 2.dp)
+                            ) {
+                                val npubShort = if (nostrNpub.length > 24) "${nostrNpub.take(12)}...${nostrNpub.takeLast(8)}" else nostrNpub
+                                Text(
+                                    text = stringResource(R.string.nostr_npub_status, npubShort),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = "Copy Npub",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.nostr_direct_label),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Switch(
+                                checked = nostrDirect,
+                                onCheckedChange = onToggleNostrDirect
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        if (nostrRelays.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.nostr_no_relays_warning),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        } else {
+                            val activeRelays = nostrRelaysAlive?.count { it.up } ?: 0
+                            Text(
+                                text = stringResource(R.string.ygg_peers_status, nostrRelays.size) + if (activeRelays > 0) " (активно: $activeRelays)" else "",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (activeRelays > 0) successColor else MaterialTheme.colorScheme.outline
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = onShowNostrRelaysSetup,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.setup_nostr_relays))
+                        }
+                    }
+                }
+            }
+        )
+    }
 }
 
 /**

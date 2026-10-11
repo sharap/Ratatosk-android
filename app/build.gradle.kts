@@ -5,6 +5,60 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// Ступени доставки, которых в этой сборке не будет:
+//
+//     ./gradlew assembleRelease -Pratatosk.without=tor,nostr
+//
+// Список один на оба конца — и на признаки ядра, и на то, что видно
+// в настройках. Разводить их нельзя: ядро без признака ступень поднять
+// не может, но настройку сохраняет и честно отказывает, так что экран
+// выглядел бы рабочим, а ступень молчала бы (FFI.md). Пока решение
+// принимается здесь, такого расхождения не возникает.
+val excludedTransports: Set<String> =
+    (project.findProperty("ratatosk.without") as String?)
+        ?.split(',')
+        ?.map { it.trim().lowercase() }
+        ?.filter { it.isNotEmpty() }
+        ?.toSet()
+        .orEmpty()
+
+// Признак ядра на каждую ступень, которую можно убрать. Bluetooth здесь
+// нет намеренно: признак `bt` включает радио BlueZ, то есть Linux, а на
+// Android эфир даёт мост из приложения — убирается он не признаком,
+// а тем, что радио ядру не вручают.
+val transportFeatures = mapOf(
+    "tor" to "tor",
+    "mail" to "mail",
+    "ygg" to "ygg-node",
+    "nostr" to "nostr"
+)
+val removableTransports = transportFeatures.keys + "bt"
+
+run {
+    // Локальная сеть — опора лестницы §5.4 и единственная ступень, которой
+    // не нужно ни адреса, ни настройки. Признака сборки у неё нет, и
+    // приложение без неё осталось бы без ближнего круга вовсе.
+    if ("lan" in excludedTransports) {
+        throw GradleException("ratatosk.without: локальную сеть убрать нельзя — это опора §5.4")
+    }
+    val unknown = excludedTransports - removableTransports
+    if (unknown.isNotEmpty()) {
+        throw GradleException(
+            "ratatosk.without: не знаю таких ступеней — ${unknown.sorted().joinToString(", ")}. " +
+                "Убрать можно: ${removableTransports.sorted().joinToString(", ")}"
+        )
+    }
+    if (excludedTransports.isNotEmpty()) {
+        logger.lifecycle(
+            "Ratatosk: сборка без ступеней — ${excludedTransports.sorted().joinToString(", ")}"
+        )
+    }
+}
+
+/** Признаки, с которыми собирается ядро: всё, что не убрали. */
+val coreFeatures: List<String> =
+    transportFeatures.filterKeys { it !in excludedTransports }.values.sorted()
+
 // Ключ подписи описан в `keystore.properties` рядом с настройками проекта.
 // В репозитории этого файла нет и быть не должно: в нём пароли. Образец —
 // `keystore.properties.example`.
@@ -33,6 +87,14 @@ android {
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Что из ступеней вошло в сборку — чтобы интерфейс не показывал
+        // переключатель, за которым ничего нет.
+        buildConfigField("boolean", "TRANSPORT_TOR", (!excludedTransports.contains("tor")).toString())
+        buildConfigField("boolean", "TRANSPORT_MAIL", (!excludedTransports.contains("mail")).toString())
+        buildConfigField("boolean", "TRANSPORT_YGG", (!excludedTransports.contains("ygg")).toString())
+        buildConfigField("boolean", "TRANSPORT_NOSTR", (!excludedTransports.contains("nostr")).toString())
+        buildConfigField("boolean", "TRANSPORT_BT", (!excludedTransports.contains("bt")).toString())
     }
 
     signingConfigs {
@@ -197,6 +259,11 @@ dependencies {
 }
 
 // Rust / UniFFI Integration
+// Пустой `--features ""` cargo понимает иначе, чем отсутствие флага,
+// поэтому при пустом наборе флага просто нет.
+fun featureArgs(features: List<String>): List<String> =
+    if (features.isEmpty()) emptyList() else listOf("--features", features.joinToString(" "))
+
 val rustProjectDir = file("../../ratatosk-core")
 val generatedDir = file("src/main/java")
 val jniLibsDir = file("src/main/jniLibs")
@@ -204,22 +271,31 @@ val jniLibsDir = file("src/main/jniLibs")
 val buildRustCore = tasks.register<Exec>("buildRustCore") {
     workingDir = rustProjectDir
     // For emulator (x86_64) and modern devices (arm64-v8a)
+    // Набор признаков — часть входных данных задачи: собранное вчера
+    // с другим набором переиспользовать нельзя, иначе уберёшь ступень,
+    // а в `.so` останется прежняя.
     commandLine(
-        "cargo", "ndk",
-        "-t", "x86_64",
-        "-t", "arm64-v8a",
-        "-o", jniLibsDir.absolutePath,
-        "build", "--profile", "release-android", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail ygg-node nostr"
+        listOf(
+            "cargo", "ndk",
+            "-t", "x86_64",
+            "-t", "arm64-v8a",
+            "-o", jniLibsDir.absolutePath,
+            "build", "--profile", "release-android", "-p", "ratatosk-ffi", "--lib"
+        ) + featureArgs(coreFeatures)
     )
-    
+
+    inputs.property("features", coreFeatures)
     inputs.dir(rustProjectDir.resolve("crates"))
     outputs.dir(jniLibsDir)
 }
 
 val buildRustHost = tasks.register<Exec>("buildRustHost") {
     workingDir = rustProjectDir
-    commandLine("cargo", "build", "-p", "ratatosk-ffi", "--lib", "--features", "tor mail ygg-node nostr")
-    
+    commandLine(
+        listOf("cargo", "build", "-p", "ratatosk-ffi", "--lib") + featureArgs(coreFeatures)
+    )
+
+    inputs.property("features", coreFeatures)
     inputs.dir(rustProjectDir.resolve("crates"))
     outputs.file(rustProjectDir.resolve("target/debug/libratatosk_ffi.so"))
 }
