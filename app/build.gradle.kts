@@ -312,6 +312,11 @@ tasks.register<Exec>("generateUniFFIBindings") {
         "--language", "kotlin", "--out-dir", generatedDir.absolutePath
     )
 
+    // Набор признаков — вход и здесь, хотя сегодня поверхность FFI от него
+    // не зависит (проверено: биндинги с `tor` и без него совпадают байт
+    // в байт). Стоит одной функции уехать за признак, как Gradle отдал бы
+    // привязки из кэша от другого набора — и расхождение вышло бы молча.
+    inputs.property("features", coreFeatures)
     inputs.dir(rustProjectDir.resolve("crates/ffi"))
     outputs.dir(generatedDir)
 }

@@ -54,12 +54,14 @@ class SessionContext(
     /**
      * Слова к ошибке ядра.
      *
-     * У отказа канала свой текст — и только он: `RatatoskException.Channel`
-     * несёт причину перечислением, а её `message` выглядит как
-     * `reason=NO_RIGHT`. Показать такое человеку нельзя.
+     * У отказов, которые ядро отдаёт перечислением, свой текст — и только
+     * он: `message` у них выглядит как `reason=NO_RIGHT`, и показать такое
+     * человеку нельзя. Таких отказов два: канал (§15) и поход за публичным
+     * списком пиров меша (0.2.7).
      */
     fun errorText(e: Throwable, @StringRes fallback: Int? = null): String? = when {
         e is org.ratatosk.core.RatatoskException.Channel -> core.refusalText(e.reason)
+        e is org.ratatosk.core.RatatoskException.PeerList -> core.peerListRefusalText(e.reason)
         !e.message.isNullOrBlank() -> e.message
         fallback != null -> string(fallback)
         else -> null

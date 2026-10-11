@@ -87,6 +87,27 @@ class ModelsWithFakeBackendTest {
             calls += "client.previewChannel:$uri"
         }
 
+        override fun `fetchYggPeers`(
+            `region`: kotlin.String,
+            `country`: kotlin.String,
+        ): List<kotlin.String> {
+            calls += "client.fetchYggPeers:$region:$country"
+            return peerListAnswer()
+        }
+
+        override fun `yggPeerCountries`(`region`: kotlin.String): List<kotlin.String> {
+            calls += "client.yggPeerCountries:$region"
+            return peerListAnswer()
+        }
+
+        override fun `setYggPeers`(`peers`: List<kotlin.String>) {
+            calls += "client.setYggPeers:${peers.joinToString(",")}"
+        }
+
+        override fun `networkChanged`() {
+            calls += "client.networkChanged"
+        }
+
         override fun `messagesBefore`(
             `chatId`: kotlin.ByteArray,
             `before`: kotlin.ByteArray,
@@ -216,6 +237,9 @@ class ModelsWithFakeBackendTest {
     /** Что уже показано: окно, которое отдаёт `messages`. */
     private var currentPage: List<FfiMessage> = emptyList()
 
+    /** Чем ядро отвечает на поход за публичным списком пиров (0.2.7). */
+    private var peerListAnswer: () -> List<String> = { emptyList() }
+
     /** Что ядро думает об уведомлениях чата (§14). */
     private var notifyRecord = org.ratatosk.core.FfiNotify(
         silent = false,
@@ -317,6 +341,61 @@ class ModelsWithFakeBackendTest {
 
         waitUntil("ошибка показана") { s.error.value != null }
         assertTrue("отправлять было некуда: ${seen()}", seen().none { it.contains("sendText") })
+    }
+
+    /**
+     * Принесённый список — предложение, а не настройка (0.2.7).
+     *
+     * Порядок источника сохраняется: узлы там сгруппированы по
+     * владельцам, и перемешав их, экран лишил бы человека возможности
+     * выбрать двух разных операторов.
+     */
+    @Test
+    fun broughtPeerListIsNotASettingYet() {
+        val s = session(companion = false)
+        val transports = TransportsModel(s)
+        peerListAnswer = { listOf("tcp://b.example:9001", "tcp://a.example:9001") }
+
+        transports.fetchYggPeerList("europe", "germany")
+
+        waitUntil("список принесён") {
+            transports.yggPeerList.value is chat.ratatosk.android.ui.model.PeerListStep.Brought
+        }
+        val brought = transports.yggPeerList.value as chat.ratatosk.android.ui.model.PeerListStep.Brought
+        assertEquals(listOf("tcp://b.example:9001", "tcp://a.example:9001"), brought.items)
+        assertTrue(
+            "принесённое не должно было стать настройкой: ${seen()}",
+            seen().none { it.startsWith("client.setYggPeers") },
+        )
+    }
+
+    /**
+     * Отказ похода — ветка со словами ядра, а не полоса ошибки (0.2.7).
+     *
+     * Перечень стран необязателен: у источника предел запросов, и отказ
+     * там обычное дело. Уйди он в общую полосу ошибок, человек читал бы
+     * «что-то сломалось» там, где надо просто назвать страну самому.
+     */
+    @Test
+    fun peerListRefusalIsABranchWithTheWordsOfTheCore() {
+        val s = session(companion = false)
+        val transports = TransportsModel(s)
+        peerListAnswer = {
+            throw org.ratatosk.core.RatatoskException.PeerList(
+                org.ratatosk.core.FfiPeerListRefusal.INDEX_BUSY
+            )
+        }
+
+        transports.fetchYggPeerCountries("europe")
+
+        waitUntil("отказ разобран") {
+            transports.yggPeerCountries.value is chat.ratatosk.android.ui.model.PeerListStep.Refused
+        }
+        val refused =
+            transports.yggPeerCountries.value as chat.ratatosk.android.ui.model.PeerListStep.Refused
+        assertEquals(org.ratatosk.core.FfiPeerListRefusal.INDEX_BUSY, refused.reason)
+        assertEquals("отказ:INDEX_BUSY", refused.text)
+        assertEquals("полоса ошибок тут не при чём", null, s.error.value)
     }
 
     private fun clientModel(

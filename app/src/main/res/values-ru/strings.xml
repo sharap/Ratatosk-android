@@ -586,4 +586,20 @@
     <string name="video_play">Смотреть</string>
     <string name="video_failed">Не удалось записать видеосообщение</string>
     <string name="video_needs_permissions">Для видеосообщения нужны камера и микрофон</string>
+    <!-- Поиск соседей и публичный список пиров меша (0.2.7). -->
+    <string name="ygg_multicast_label">Искать соседей рядом</string>
+    <string name="ygg_multicast_desc">Мультикаст: узел сам найдёт соседей по мешу в вашей сети</string>
+    <string name="ygg_multicast_notice_title">Чем платят за поиск соседей</string>
+    <string name="ygg_peer_list_open">Принести публичный список</string>
+    <string name="ygg_peer_list_title">Публичные пиры</string>
+    <string name="ygg_peer_list_advice">Список — предложение: пока вы не выбрали, ничего не включается. Хватает двух-трёх близких пиров, и лучше у разных владельцев.</string>
+    <string name="ygg_peer_list_region">Область</string>
+    <string name="ygg_peer_list_country">Страна</string>
+    <string name="ygg_peer_list_country_hint">germany</string>
+    <string name="ygg_peer_list_fetch">Принести</string>
+    <string name="ygg_peer_list_going">Идём за списком — это не быстро</string>
+    <string name="ygg_peer_list_empty">Ответ пришёл, а адресов по этой стране в нём нет.</string>
+    <string name="ygg_peer_list_already">уже назначен</string>
+    <string name="ygg_peer_list_latency_note">Задержка видна после включения пира: до соединения её нечем измерить.</string>
+    <string name="ygg_peer_list_add">Добавить %1$d</string>
 </resources>

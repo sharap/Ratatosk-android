@@ -58,6 +58,12 @@ fun SettingsScreen(
     val yggAddress by viewModel.yggAddress.collectAsState()
     val yggPeers by viewModel.yggPeers.collectAsState()
     val yggPeersAlive by viewModel.yggPeersAlive.collectAsState()
+    val yggMulticast by viewModel.yggMulticast.collectAsState()
+    val yggMulticastSupported by viewModel.yggMulticastSupported.collectAsState()
+    // Слова ядра неизменны, а секция перерисовывается каждые две секунды:
+    // спрашивать их на каждой перерисовке незачем.
+    val yggMulticastNeedsLanOff = remember { viewModel.getYggMulticastNeedsLanOff() }
+    val yggMulticastUnsupported = remember { viewModel.getYggMulticastUnsupported() }
     
     val btHasRadio by viewModel.btHasRadio.collectAsState()
     val btContext = LocalContext.current
@@ -106,6 +112,8 @@ fun SettingsScreen(
     val nostrDirect by viewModel.nostrDirect.collectAsState()
     var showNostrWarning by remember { mutableStateOf(false) }
     var showNostrDirectWarning by remember { mutableStateOf(false) }
+    // Цена поиска соседей — до включения, а не после (0.2.7).
+    var showYggMulticastNotice by remember { mutableStateOf(false) }
     var showNostrRelaysSetup by remember { mutableStateOf(false) }
     
     val showName by viewModel.notificationsShowName.collectAsState()
@@ -119,6 +127,8 @@ fun SettingsScreen(
     var showMailCreate by remember { mutableStateOf(false) }
     var showYggSetup by remember { mutableStateOf(false) }
     var showYggPeersSetup by remember { mutableStateOf(false) }
+    // Публичный список пиров меша (0.2.7): приносим, выбирает человек.
+    var showYggPeerList by remember { mutableStateOf(false) }
     
     val chatTheme by viewModel.chatTheme.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -192,6 +202,10 @@ fun SettingsScreen(
                             yggKey = yggKey,
                             yggAddress = yggAddress,
                             yggPeers = yggPeers,
+                            yggMulticast = yggMulticast,
+                            yggMulticastSupported = yggMulticastSupported,
+                            yggMulticastNeedsLanOff = yggMulticastNeedsLanOff,
+                            yggMulticastUnsupported = yggMulticastUnsupported,
                             nostrRelays = nostrRelays,
                             nostrRelaysAlive = nostrRelaysAlive,
                             nostrNpub = nostrNpub,
@@ -209,6 +223,9 @@ fun SettingsScreen(
                                     pendingYggMode = mode
                                     showYggWarning = true
                                 }
+                            },
+                            onToggleYggMulticast = { on ->
+                                if (on) showYggMulticastNotice = true else viewModel.setYggMulticast(false)
                             },
                             onToggleTor = { viewModel.setTransportEnabled(FfiTransport.ONION, it) },
                             onToggleMail = { viewModel.setTransportEnabled(FfiTransport.MAIL, it) },
@@ -324,6 +341,10 @@ fun SettingsScreen(
                         yggKey = yggKey,
                         yggAddress = yggAddress,
                         yggPeers = yggPeers,
+                        yggMulticast = yggMulticast,
+                        yggMulticastSupported = yggMulticastSupported,
+                        yggMulticastNeedsLanOff = yggMulticastNeedsLanOff,
+                        yggMulticastUnsupported = yggMulticastUnsupported,
                         nostrRelays = nostrRelays,
                         nostrRelaysAlive = nostrRelaysAlive,
                         nostrNpub = nostrNpub,
@@ -341,6 +362,9 @@ fun SettingsScreen(
                                 pendingYggMode = mode
                                 showYggWarning = true
                             }
+                        },
+                        onToggleYggMulticast = { on ->
+                            if (on) showYggMulticastNotice = true else viewModel.setYggMulticast(false)
                         },
                         onToggleTor = { viewModel.setTransportEnabled(FfiTransport.ONION, it) },
                         onToggleMail = { viewModel.setTransportEnabled(FfiTransport.MAIL, it) },
@@ -829,6 +853,18 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(stringResource(R.string.add_peer))
                     }
+
+                    // Поход за публичным списком едет со **своим узлом**,
+                    // а не с Tor (0.2.7): пиры нужны ровно встроенному
+                    // узлу, а через Tor поход идёт, когда тот поднят.
+                    // Сюда попадают только из его настроек, так что
+                    // отдельного условия на сборку не нужно.
+                    OutlinedButton(
+                        onClick = { showYggPeerList = true },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    ) {
+                        Text(stringResource(R.string.ygg_peer_list_open))
+                    }
                 }
             },
             confirmButton = {
@@ -837,6 +873,31 @@ fun SettingsScreen(
                 }
             }
         )
+
+        if (showYggPeerList) {
+            val regions by viewModel.yggPeerRegions.collectAsState()
+            val countries by viewModel.yggPeerCountries.collectAsState()
+            val brought by viewModel.yggPeerList.collectAsState()
+            YggPeerListDialog(
+                regions = regions,
+                countries = countries,
+                peerList = brought,
+                known = yggPeers,
+                onFetchCountries = { viewModel.fetchYggPeerCountries(it) },
+                onFetchList = { region, country -> viewModel.fetchYggPeerList(region, country) },
+                onForget = { viewModel.forgetYggPeerList() },
+                // Вот здесь принесённое и становится настройкой — не раньше.
+                onAdd = { picked ->
+                    viewModel.setYggPeers(yggPeers + picked.filter { it !in yggPeers })
+                    viewModel.forgetYggPeerList()
+                    showYggPeerList = false
+                },
+                onDismiss = {
+                    viewModel.forgetYggPeerList()
+                    showYggPeerList = false
+                },
+            )
+        }
 
         if (showAddPeerDialog) {
             AlertDialog(
@@ -967,6 +1028,27 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showNostrWarning = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    if (showYggMulticastNotice) {
+        AlertDialog(
+            onDismissRequest = { showYggMulticastNotice = false },
+            title = { Text(stringResource(R.string.ygg_multicast_notice_title)) },
+            text = { Text(viewModel.getYggMulticastNotice()) },
+            confirmButton = {
+                Button(onClick = {
+                    viewModel.setYggMulticast(true)
+                    showYggMulticastNotice = false
+                }) {
+                    Text(stringResource(R.string.enable))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showYggMulticastNotice = false }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -1247,6 +1329,13 @@ fun SettingsTransportsSection(
     yggKey: String?,
     yggAddress: String?,
     yggPeers: List<String>,
+    yggMulticast: Boolean,
+    /** Бывает ли поиск соседей на этом устройстве вообще (0.2.7). */
+    yggMulticastSupported: Boolean,
+    /** Почему включённый поиск соседей молчит — слова ядра (0.2.7). */
+    yggMulticastNeedsLanOff: String,
+    /** Почему выбора про поиск соседей нет вовсе — слова ядра (0.2.7). */
+    yggMulticastUnsupported: String,
     nostrRelays: List<String>,
     nostrRelaysAlive: List<FfiNostrRelay>?,
     nostrNpub: String?,
@@ -1257,6 +1346,7 @@ fun SettingsTransportsSection(
     onToggleBt: (Boolean) -> Unit,
     onGrantBtPermissions: () -> Unit,
     onSelectYggMode: (FfiYggMode) -> Unit,
+    onToggleYggMulticast: (Boolean) -> Unit,
     onToggleTor: (Boolean) -> Unit,
     onToggleMail: (Boolean) -> Unit,
     onToggleNostr: (Boolean) -> Unit,
@@ -1397,6 +1487,56 @@ fun SettingsTransportsSection(
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(top = 2.dp)
                             )
+                        }
+                        // Поиск соседей мультикастом (0.2.7). Только
+                        // у встроенного узла: у внешнего демона это его
+                        // собственная настройка, и трогать её нам нечем.
+                        //
+                        // Состояний три, и путать их нельзя (FFI.md):
+                        // выбора нет вовсе; выбор есть и не действует;
+                        // выбор есть и действует. Человеку в них нужно
+                        // разное — назвать пиров руками против выключить
+                        // локальную сеть.
+                        if (!yggMulticastSupported) {
+                            // Переключателя нет: включённый и ничего
+                            // не делающий сказал бы, что меш настроен,
+                            // и пиров перестали бы называть.
+                            Text(
+                                text = yggMulticastUnsupported,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        } else {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.ygg_multicast_label),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.ygg_multicast_desc),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+                                Switch(checked = yggMulticast, onCheckedChange = onToggleYggMulticast)
+                            }
+                            // Выбор сохранён, а поиск молчит: вместе
+                            // со ступенью локальной сети он не работает.
+                            // Без этой строки экран показывал бы
+                            // включённый поиск, который ничего не ищет.
+                            if (yggMulticast && (transportsEnabled[FfiTransport.LAN] ?: false)) {
+                                Text(
+                                    text = yggMulticastNeedsLanOff,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(top = 2.dp)
+                                )
+                            }
                         }
                         Row(modifier = Modifier.padding(top = 8.dp)) {
                             OutlinedButton(onClick = onShowYggPeersSetup, modifier = Modifier.fillMaxWidth()) {

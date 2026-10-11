@@ -582,4 +582,20 @@
     <string name="video_play">Play</string>
     <string name="video_failed">Could not record the video message</string>
     <string name="video_needs_permissions">Camera and microphone are needed for a video message</string>
+    <!-- Mesh neighbour search and the public peer list (0.2.7). -->
+    <string name="ygg_multicast_label">Look for neighbours nearby</string>
+    <string name="ygg_multicast_desc">Multicast: the node finds mesh neighbours in your network itself</string>
+    <string name="ygg_multicast_notice_title">What looking for neighbours costs</string>
+    <string name="ygg_peer_list_open">Bring the public list</string>
+    <string name="ygg_peer_list_title">Public peers</string>
+    <string name="ygg_peer_list_advice">The list is a suggestion: nothing is switched on until you pick it. Two or three nearby peers are enough, and better from different owners.</string>
+    <string name="ygg_peer_list_region">Region</string>
+    <string name="ygg_peer_list_country">Country</string>
+    <string name="ygg_peer_list_country_hint">germany</string>
+    <string name="ygg_peer_list_fetch">Bring</string>
+    <string name="ygg_peer_list_going">Fetching the list — this takes a while</string>
+    <string name="ygg_peer_list_empty">The answer came back with no addresses for this country.</string>
+    <string name="ygg_peer_list_already">already a peer</string>
+    <string name="ygg_peer_list_latency_note">Latency shows up once the peer is on: there is nothing to measure before connecting.</string>
+    <string name="ygg_peer_list_add">Add %1$d</string>
 </resources>

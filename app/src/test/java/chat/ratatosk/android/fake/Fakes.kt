@@ -44,6 +44,7 @@ open class FakeClient : RatatoskClientInterface {
     override fun `editMessage`(`chatId`: kotlin.ByteArray, `msgId`: kotlin.ByteArray, `text`: kotlin.String): Unit = notCalled("editMessage")
     override fun `evictFromGroup`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray): Unit = notCalled("evictFromGroup")
     override fun `exportHistory`(`path`: kotlin.String, `scope`: FfiExportScope, `phrase`: kotlin.String?): FfiExported = notCalled("exportHistory")
+    override fun `fetchYggPeers`(`region`: kotlin.String, `country`: kotlin.String): List<kotlin.String> = notCalled("fetchYggPeers")
     override fun `fingerprint`(): kotlin.String = notCalled("fingerprint")
     override fun `forwardMessages`(`chatId`: kotlin.ByteArray, `msgIds`: List<kotlin.ByteArray>): Unit = notCalled("forwardMessages")
     override fun `givingLimits`(): FfiGivingLimits = notCalled("givingLimits")
@@ -104,6 +105,7 @@ open class FakeClient : RatatoskClientInterface {
     override fun `setTransportEnabled`(`transport`: FfiTransport, `enabled`: kotlin.Boolean): Unit = notCalled("setTransportEnabled")
     override fun `setYggKey`(`key`: kotlin.ByteArray): Unit = notCalled("setYggKey")
     override fun `setYggMode`(`mode`: FfiYggMode): Unit = notCalled("setYggMode")
+    override fun `setYggMulticast`(`on`: kotlin.Boolean): Unit = notCalled("setYggMulticast")
     override fun `setYggPeers`(`peers`: List<kotlin.String>): Unit = notCalled("setYggPeers")
     override fun `shareContact`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray): Unit = notCalled("shareContact")
     override fun `sharingLevel`(`chatId`: kotlin.ByteArray): FfiSharingLevel = notCalled("sharingLevel")
@@ -115,6 +117,10 @@ open class FakeClient : RatatoskClientInterface {
     override fun `unsubscribeFromChannel`(`chatId`: kotlin.ByteArray): Unit = notCalled("unsubscribeFromChannel")
     override fun `yggKey`(): kotlin.ByteArray = notCalled("yggKey")
     override fun `yggMode`(): FfiYggMode = notCalled("yggMode")
+    override fun `yggMulticast`(): kotlin.Boolean = notCalled("yggMulticast")
+    override fun `yggMulticastSupported`(): kotlin.Boolean = notCalled("yggMulticastSupported")
+    override fun `yggPeerCountries`(`region`: kotlin.String): List<kotlin.String> = notCalled("yggPeerCountries")
+    override fun `yggPeerRegions`(): List<kotlin.String> = notCalled("yggPeerRegions")
     override fun `yggPeers`(): List<kotlin.String> = notCalled("yggPeers")
     override fun `yggPeersAlive`(): List<FfiYggPeer>? = notCalled("yggPeersAlive")
 }
@@ -229,6 +235,9 @@ class FakeBackend(
 
     /** В проверках ядра нет, а текст отказа приходит из него. */
     override fun refusalText(reason: FfiChannelRefusal): String = "отказ:$reason"
+
+    override fun peerListRefusalText(reason: org.ratatosk.core.FfiPeerListRefusal): String =
+        "отказ:$reason"
 
     /** Тексты §15 живут в ядре; в проверках хватает их имени. */
     override fun channelNotice(which: chat.ratatosk.android.ui.model.ChannelNotice): String =

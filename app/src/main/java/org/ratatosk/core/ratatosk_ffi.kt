@@ -877,6 +877,12 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_ygg_address(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_ygg_multicast_needs_lan_off(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_ygg_multicast_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_ygg_multicast_unsupported(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_ygg_node_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_ygg_node_stop_notice(
@@ -970,6 +976,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_evict_from_group(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_export_history(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fetch_ygg_peers(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fingerprint(
     ): Int
@@ -1091,6 +1099,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_mode(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_multicast(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_peers(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_share_contact(
@@ -1112,6 +1122,14 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_key(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_mode(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_multicast(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_multicast_supported(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peer_countries(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peer_regions(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers(
     ): Int
@@ -1360,6 +1378,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_export_history(`ptr`: Long,`path`: RustBuffer.ByValue,`scope`: RustBuffer.ByValue,`phrase`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_fetch_ygg_peers(`ptr`: Long,`region`: RustBuffer.ByValue,`country`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_fingerprint(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_forward_messages(`ptr`: Long,`chatId`: RustBuffer.ByValue,`msgIds`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1480,6 +1500,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_mode(`ptr`: Long,`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_multicast(`ptr`: Long,`on`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_peers(`ptr`: Long,`peers`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_share_contact(`ptr`: Long,`chatId`: RustBuffer.ByValue,`peerIk`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1501,6 +1523,14 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_key(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_mode(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_multicast(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_multicast_supported(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peer_countries(`ptr`: Long,`region`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peer_regions(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peers(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1741,6 +1771,12 @@ internal object UniffiLib {
     external fun uniffi_ratatosk_ffi_fn_func_waiting_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_ygg_address(`key`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_ygg_multicast_needs_lan_off(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_ygg_multicast_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_ygg_multicast_unsupported(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_ygg_node_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -2029,6 +2065,15 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_ygg_address() != 26421) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_ygg_multicast_needs_lan_off() != 54695) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_ygg_multicast_notice() != 26885) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_ygg_multicast_unsupported() != 28648) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_ygg_node_notice() != 3656) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2168,6 +2213,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_export_history() != 10325) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fetch_ygg_peers() != 27147) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fingerprint() != 15731) {
@@ -2350,6 +2398,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_mode() != 22614) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_multicast() != 39594) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_set_ygg_peers() != 49761) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2381,6 +2432,18 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_mode() != 61540) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_multicast() != 54518) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_multicast_supported() != 499) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peer_countries() != 29947) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peer_regions() != 5131) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_ygg_peers() != 23128) {
@@ -6323,6 +6386,30 @@ public interface RatatoskClientInterface {
     fun `exportHistory`(`path`: kotlin.String, `scope`: FfiExportScope, `phrase`: kotlin.String?): FfiExported
     
     /**
+     * Приносит публичный список пиров названной страны (0.2.7).
+     *
+     * **Это не настройка.** Список приносится, чтобы человек посмотрел
+     * и выбрал; выбранное уезжает в ядро отдельным вызовом
+     * [`RatatoskClient::set_ygg_peers`]. Выбирать за него нельзя —
+     * пир видит источник и адресата его пакетов в меше (0.2.5).
+     *
+     * Порядок сохранён тот, что в файле: узлы там сгруппированы
+     * по владельцам, и перемешав их, экран лишил бы человека возможности
+     * выбрать двух **разных** операторов. Сами авторы сети советуют брать
+     * пиров географически близких и всего два-три.
+     *
+     * Задержку до выбранных покажет [`RatatoskClient::ygg_peers_alive`]
+     * после включения: мерить её до соединения нечем.
+     *
+     * # Цена, о которой надо сказать до нажатия
+     *
+     * Запрос говорит чужому серверу, что с этого адреса включают меш.
+     * Поэтому он идёт **только через Tor**, и в сборке без Tor похода
+     * нет вовсе — вернётся отказ, а не тихий прямой запрос.
+     */
+    fun `fetchYggPeers`(`region`: kotlin.String, `country`: kotlin.String): List<kotlin.String>
+    
+    /**
      * Отпечаток собственной идентичности (§3).
      */
     fun `fingerprint`(): kotlin.String
@@ -7241,6 +7328,27 @@ public interface RatatoskClientInterface {
     fun `setYggMode`(`mode`: FfiYggMode)
     
     /**
+     * Включает поиск соседей в своей сети мультикастом (0.2.7).
+     *
+     * Вторая половина автонастройки, и устроена она не как первая:
+     * публичный список человек выбирает руками, а здесь выбирать нечего —
+     * соседей называет сеть.
+     *
+     * **Покажите [`ygg_multicast_notice`] до нажатия.** Найденный сосед
+     * становится пиром и видит источник и адресата пакетов в меше —
+     * ровно как публичный узел. Дома это свои устройства, в чужой сети
+     * кто угодно, и решать это человеку, а не нам.
+     *
+     * **Выбор сохраняется, но действует не всегда.** Вместе со ступенью
+     * локальной сети мультикаст не живёт; когда так вышло, покажите
+     * [`ygg_multicast_needs_lan_off`] рядом с включённым переключателем —
+     * иначе экран показывает включённый поиск, который молчит.
+     * Локальную сеть ядро само не выключает: она работает и без меша,
+     * а мультикаст без неё — нет.
+     */
+    fun `setYggMulticast`(`on`: kotlin.Boolean)
+    
+    /**
      * Называет пиров встроенного узла: `tcp://host:port` и подобные.
      *
      * Список заменяется целиком. Зашитого списка нет сознательно: пир
@@ -7392,6 +7500,51 @@ public interface RatatoskClientInterface {
      * Текущий режим меша.
      */
     fun `yggMode`(): FfiYggMode
+    
+    /**
+     * Искать ли соседей мультикастом — **как выбрал человек** (0.2.7).
+     *
+     * Не «работает ли»: разрешён он только при выключенной локальной сети,
+     * а библиотека может и не поднять его вовсе. Для экрана это положение
+     * переключателя, а не состояние ступени.
+     */
+    fun `yggMulticast`(): kotlin.Boolean
+    
+    /**
+     * Бывает ли поиск соседей на этом устройстве вообще (0.2.7).
+     *
+     * `false` — **выбора нет**, и переключатель рисовать не надо: вместо
+     * него покажите [`ygg_multicast_unsupported`]. На Android это
+     * наблюдение с устройства — соседи не находятся, — а не вывод;
+     * отчего, не выяснено.
+     *
+     * Отличается от [`RatatoskClient::ygg_multicast`] тем, что это
+     * про платформу, а не про выбор, и от «не действует» (ступень
+     * локальной сети) тем, что здесь человеку надо другое: назвать
+     * пиров руками, а не выключать сеть.
+     */
+    fun `yggMulticastSupported`(): kotlin.Boolean
+    
+    /**
+     * Какие страны есть в области — **необязательный** поход (0.2.7).
+     *
+     * Удобство, а не основа: у чужого API предел в шестьдесят запросов
+     * в час на адрес, а через Tor адрес выхода общий на многих. Отказ
+     * здесь обычное дело, и он **не мешает**
+     * [`RatatoskClient::fetch_ygg_peers`]: знающий страну берёт её
+     * напрямую. Так и скажите человеку, получив отказ.
+     */
+    fun `yggPeerCountries`(`region`: kotlin.String): List<kotlin.String>
+    
+    /**
+     * Области, по которым разложен публичный список пиров (0.2.7).
+     *
+     * Имена каталогов чужого репозитория, а не узлы: зашитого списка
+     * пиров в сборке нет и не будет (0.2.5). Протухнуть этот перечень
+     * так, как протух бы список узлов, не может — каталог «europe»
+     * не выключают, а узел выключают каждый месяц.
+     */
+    fun `yggPeerRegions`(): List<kotlin.String>
     
     /**
      * Пиры встроенного узла, как их назвал человек.
@@ -8271,6 +8424,44 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         FfiConverterString.lower(`path`),
         FfiConverterTypeFfiExportScope.lower(`scope`),
         FfiConverterOptionalString.lower(`phrase`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Приносит публичный список пиров названной страны (0.2.7).
+     *
+     * **Это не настройка.** Список приносится, чтобы человек посмотрел
+     * и выбрал; выбранное уезжает в ядро отдельным вызовом
+     * [`RatatoskClient::set_ygg_peers`]. Выбирать за него нельзя —
+     * пир видит источник и адресата его пакетов в меше (0.2.5).
+     *
+     * Порядок сохранён тот, что в файле: узлы там сгруппированы
+     * по владельцам, и перемешав их, экран лишил бы человека возможности
+     * выбрать двух **разных** операторов. Сами авторы сети советуют брать
+     * пиров географически близких и всего два-три.
+     *
+     * Задержку до выбранных покажет [`RatatoskClient::ygg_peers_alive`]
+     * после включения: мерить её до соединения нечем.
+     *
+     * # Цена, о которой надо сказать до нажатия
+     *
+     * Запрос говорит чужому серверу, что с этого адреса включают меш.
+     * Поэтому он идёт **только через Tor**, и в сборке без Tor похода
+     * нет вовсе — вернётся отказ, а не тихий прямой запрос.
+     */
+    @Throws(RatatoskException::class)override fun `fetchYggPeers`(`region`: kotlin.String, `country`: kotlin.String): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_fetch_ygg_peers(
+        it,
+        
+        FfiConverterString.lower(`region`),
+        FfiConverterString.lower(`country`),_status)
 }
     }
     )
@@ -9959,6 +10150,39 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
 
     
     /**
+     * Включает поиск соседей в своей сети мультикастом (0.2.7).
+     *
+     * Вторая половина автонастройки, и устроена она не как первая:
+     * публичный список человек выбирает руками, а здесь выбирать нечего —
+     * соседей называет сеть.
+     *
+     * **Покажите [`ygg_multicast_notice`] до нажатия.** Найденный сосед
+     * становится пиром и видит источник и адресата пакетов в меше —
+     * ровно как публичный узел. Дома это свои устройства, в чужой сети
+     * кто угодно, и решать это человеку, а не нам.
+     *
+     * **Выбор сохраняется, но действует не всегда.** Вместе со ступенью
+     * локальной сети мультикаст не живёт; когда так вышло, покажите
+     * [`ygg_multicast_needs_lan_off`] рядом с включённым переключателем —
+     * иначе экран показывает включённый поиск, который молчит.
+     * Локальную сеть ядро само не выключает: она работает и без меша,
+     * а мультикаст без неё — нет.
+     */
+    @Throws(RatatoskException::class)override fun `setYggMulticast`(`on`: kotlin.Boolean)
+        = 
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_set_ygg_multicast(
+        it,
+        
+        FfiConverterBoolean.lower(`on`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * Называет пиров встроенного узла: `tcp://host:port` и подобные.
      *
      * Список заменяется целиком. Зашитого списка нет сознательно: пир
@@ -10238,6 +10462,98 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
     callWithHandle {
     uniffiRustCallWithError(RatatoskException) { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_mode(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Искать ли соседей мультикастом — **как выбрал человек** (0.2.7).
+     *
+     * Не «работает ли»: разрешён он только при выключенной локальной сети,
+     * а библиотека может и не поднять его вовсе. Для экрана это положение
+     * переключателя, а не состояние ступени.
+     */
+    @Throws(RatatoskException::class)override fun `yggMulticast`(): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_multicast(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Бывает ли поиск соседей на этом устройстве вообще (0.2.7).
+     *
+     * `false` — **выбора нет**, и переключатель рисовать не надо: вместо
+     * него покажите [`ygg_multicast_unsupported`]. На Android это
+     * наблюдение с устройства — соседи не находятся, — а не вывод;
+     * отчего, не выяснено.
+     *
+     * Отличается от [`RatatoskClient::ygg_multicast`] тем, что это
+     * про платформу, а не про выбор, и от «не действует» (ступень
+     * локальной сети) тем, что здесь человеку надо другое: назвать
+     * пиров руками, а не выключать сеть.
+     */override fun `yggMulticastSupported`(): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_multicast_supported(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Какие страны есть в области — **необязательный** поход (0.2.7).
+     *
+     * Удобство, а не основа: у чужого API предел в шестьдесят запросов
+     * в час на адрес, а через Tor адрес выхода общий на многих. Отказ
+     * здесь обычное дело, и он **не мешает**
+     * [`RatatoskClient::fetch_ygg_peers`]: знающий страну берёт её
+     * напрямую. Так и скажите человеку, получив отказ.
+     */
+    @Throws(RatatoskException::class)override fun `yggPeerCountries`(`region`: kotlin.String): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peer_countries(
+        it,
+        
+        FfiConverterString.lower(`region`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Области, по которым разложен публичный список пиров (0.2.7).
+     *
+     * Имена каталогов чужого репозитория, а не узлы: зашитого списка
+     * пиров в сборке нет и не будет (0.2.5). Протухнуть этот перечень
+     * так, как протух бы список узлов, не может — каталог «europe»
+     * не выключают, а узел выключают каждый месяц.
+     */override fun `yggPeerRegions`(): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_ygg_peer_regions(
         it,
         _status)
 }
@@ -19111,6 +19427,65 @@ public object FfiConverterTypeFfiMailState: FfiConverterRustBuffer<FfiMailState>
 
 
 /**
+ * Почему не приехал публичный список пиров меша (0.2.7).
+ *
+ * Зеркало `ratatosk_proto::ygg::PeerListError`. Своё перечисление здесь
+ * затем, что через UniFFI едет то, что рисуют, а не внутренний тип:
+ * метёлка `record_fields` стережёт, чтобы пары не разошлись.
+ */
+
+enum class FfiPeerListRefusal {
+    
+    /**
+     * Области или страны с таким именем нет.
+     */
+    NO_SUCH_LIST,
+    /**
+     * В сборке нет Tor, а иначе список не спрашивается.
+     */
+    NOT_IN_THIS_BUILD,
+    /**
+     * Источник не ответил. Повторить позже.
+     */
+    SOURCE_SILENT,
+    /**
+     * Предел запросов у перечня стран. Назвать страну самому.
+     */
+    INDEX_BUSY,
+    /**
+     * Ответ пришёл, адресов в нём нет: разметка источника могла измениться.
+     */
+    FORMAT_CHANGED;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiPeerListRefusal: FfiConverterRustBuffer<FfiPeerListRefusal> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiPeerListRefusal.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiPeerListRefusal) = 4UL
+
+    override fun write(value: FfiPeerListRefusal, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
  * Наше участие в раздаче канала — три состояния (§7.5.1).
  *
  * Своё перечисление по той же причине, что у меша: типы протокола
@@ -19480,6 +19855,28 @@ sealed class RatatoskException: kotlin.Exception() {
     }
     
     /**
+     * Поход за публичным списком пиров меша не удался (0.2.7).
+     *
+     * **Отдельно от [`RatatoskError::Internal`] по той же причине, что
+     * и отказы канала:** человеку есть что сделать с каждой из причин —
+     * выбрать другую область, назвать страну самому, повторить позже.
+     * Показанный внутренней ошибкой, такой отказ советовал бы
+     * переустановить работающее.
+     *
+     * Текст к причине — [`peer_list_refusal_text`]; писать свой не надо.
+     */
+    class PeerList(
+        
+        /**
+         * Что именно не дало списку приехать.
+         */
+        val `reason`: FfiPeerListRefusal
+        ) : RatatoskException() {
+        override val message
+            get() = "reason=${ `reason` }"
+    }
+    
+    /**
      * Внутренняя ошибка.
      */
     class Internal(
@@ -19519,7 +19916,10 @@ public object FfiConverterTypeRatatoskError : FfiConverterRustBuffer<RatatoskExc
             3 -> RatatoskException.Channel(
                 FfiConverterTypeFfiChannelRefusal.read(buf),
                 )
-            4 -> RatatoskException.Internal(
+            4 -> RatatoskException.PeerList(
+                FfiConverterTypeFfiPeerListRefusal.read(buf),
+                )
+            5 -> RatatoskException.Internal(
                 FfiConverterString.read(buf),
                 )
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
@@ -19541,6 +19941,11 @@ public object FfiConverterTypeRatatoskError : FfiConverterRustBuffer<RatatoskExc
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
                 + FfiConverterTypeFfiChannelRefusal.allocationSize(value.`reason`)
+            )
+            is RatatoskException.PeerList -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterTypeFfiPeerListRefusal.allocationSize(value.`reason`)
             )
             is RatatoskException.Internal -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
@@ -19566,8 +19971,13 @@ public object FfiConverterTypeRatatoskError : FfiConverterRustBuffer<RatatoskExc
                 FfiConverterTypeFfiChannelRefusal.write(value.`reason`, buf)
                 Unit
             }
-            is RatatoskException.Internal -> {
+            is RatatoskException.PeerList -> {
                 buf.putInt(4)
+                FfiConverterTypeFfiPeerListRefusal.write(value.`reason`, buf)
+                Unit
+            }
+            is RatatoskException.Internal -> {
+                buf.putInt(5)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
@@ -21803,6 +22213,58 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     
         
         FfiConverterByteArray.lower(`key`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Почему включённый поиск соседей молчит (0.2.7).
+         *
+         * Покажите рядом с включённым переключателем, когда ступень локальной
+         * сети тоже включена: вместе они не работают. Иначе экран показывает
+         * включённый поиск, который ничего не ищет.
+         */ fun `yggMulticastNeedsLanOff`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_ygg_multicast_needs_lan_off(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Чем платят за поиск соседей мультикастом (0.2.7).
+         *
+         * **Покажите до нажатия** [`RatatoskClient::set_ygg_multicast`]: найденный
+         * сосед становится пиром и видит источник и адресата пакетов в меше —
+         * ровно как публичный узел.
+         */ fun `yggMulticastNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_ygg_multicast_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Почему выбора про поиск соседей на этом устройстве нет (0.2.7).
+         *
+         * Покажите вместо переключателя, когда
+         * [`RatatoskClient::ygg_multicast_supported`] отвечает `false`.
+         * Это не то же, что [`ygg_multicast_needs_lan_off`]: там выбор есть
+         * и не действует, здесь его нет вовсе, и делать человеку надо другое.
+         */ fun `yggMulticastUnsupported`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_ygg_multicast_unsupported(
+    
+        _status)
 }
     )
     }

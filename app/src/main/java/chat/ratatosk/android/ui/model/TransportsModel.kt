@@ -21,6 +21,41 @@ import org.ratatosk.core.FfiYggMode
 import org.ratatosk.core.FfiYggPeer
 
 /**
+ * Поход за публичным списком пиров меша (0.2.7) — то, что видит экран.
+ *
+ * Отказ здесь **ветка, а не текст**: у каждой причины своё действие
+ * человека, и экран обязан предложить именно его. Текст к причине
+ * приносится рядом, чтобы показать его без второго обращения к ядру.
+ */
+sealed interface PeerListStep {
+    /** Ещё не ходили. */
+    data object Idle : PeerListStep
+
+    /**
+     * Идём, и это не быстро.
+     *
+     * Tor поход не требует: он идёт через него, когда тот поднят,
+     * и прямо — когда нет (0.2.7).
+     */
+    data object Going : PeerListStep
+
+    /**
+     * Принесли.
+     *
+     * Порядок **тот, что у источника**: узлы там сгруппированы по
+     * владельцам, и перемешав их, экран лишил бы человека возможности
+     * выбрать двух разных операторов.
+     */
+    data class Brought(val items: List<String>) : PeerListStep
+
+    /** Отказ: причина для ветки, текст для человека. */
+    data class Refused(
+        val reason: org.ratatosk.core.FfiPeerListRefusal,
+        val text: String,
+    ) : PeerListStep
+}
+
+/**
  * Ступени доставки: локальная сеть, Tor, почта, Yggdrasil, Nostr, Bluetooth.
  *
  * Всё это — возможности полного клиента: у второго экрана своих ступеней нет,
@@ -37,6 +72,33 @@ interface TransportsApi {
     val yggAddress: StateFlow<String?>
     val yggPeers: StateFlow<List<String>>
     val yggPeersAlive: StateFlow<List<FfiYggPeer>?>
+
+    /**
+     * Искать ли соседей мультикастом (0.2.7) — **выбор человека**,
+     * а не «работает ли»: вместе со ступенью локальной сети поиск
+     * не живёт, и тогда экран говорит это отдельной строкой.
+     */
+    val yggMulticast: StateFlow<Boolean>
+
+    /**
+     * Бывает ли поиск соседей на этом устройстве вообще (0.2.7).
+     *
+     * `false` — выбора нет, и переключатель рисовать нельзя: включённый
+     * и ничего не делающий, он сказал бы человеку, что меш настроен,
+     * и тот перестал бы называть пиров. Вместо переключателя — слова
+     * ядра [getYggMulticastUnsupported]. На Android ядро отвечает
+     * именно так.
+     */
+    val yggMulticastSupported: StateFlow<Boolean>
+
+    /** Области публичного списка — имена каталогов источника, не узлы. */
+    val yggPeerRegions: StateFlow<List<String>>
+
+    /** Перечень стран области: поход **необязательный**, отказ — норма. */
+    val yggPeerCountries: StateFlow<PeerListStep>
+
+    /** Принесённый список. Это ещё **не** настройка: выбирает человек. */
+    val yggPeerList: StateFlow<PeerListStep>
     val btHasRadio: StateFlow<Boolean>
     val nostrRelays: StateFlow<List<String>>
     val nostrRelaysAlive: StateFlow<List<FfiNostrRelay>?>
@@ -79,12 +141,31 @@ interface TransportsApi {
     fun setYggMode(mode: FfiYggMode)
     fun setYggKey(hex: String)
     fun setYggPeers(peers: List<String>)
+    fun setYggMulticast(on: Boolean)
+
+    /** Спросить, какие страны есть в области. Отказ — обычное дело. */
+    fun fetchYggPeerCountries(region: String)
+
+    /** Принести список названной страны. Включать принесённое — отдельно. */
+    fun fetchYggPeerList(region: String, country: String)
+
+    /** Окно закрыли: принесённое забываем, настройкой оно не стало. */
+    fun forgetYggPeerList()
     fun setNostrRelays(relays: List<String>)
     fun setNostrDirect(enabled: Boolean)
     /** Тексты ядра — их показывают **до** переключения, а не после. */
     fun getNostrWarning(): String
     fun getNostrDirectWarning(): String
     fun getNostrNoFilesNotice(): String
+
+    /** Чем платят за поиск соседей — показать **до** включения. */
+    fun getYggMulticastNotice(): String
+
+    /** Почему включённый поиск молчит — показать рядом с включённым. */
+    fun getYggMulticastNeedsLanOff(): String
+
+    /** Почему выбора нет вовсе — показать **вместо** переключателя. */
+    fun getYggMulticastUnsupported(): String
 }
 
 class TransportsModel(private val session: SessionContext) : TransportsApi {
@@ -108,6 +189,30 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
     override val yggPeers = _yggPeers.asStateFlow()
     private val _yggPeersAlive = MutableStateFlow<List<org.ratatosk.core.FfiYggPeer>?>(null)
     override val yggPeersAlive = _yggPeersAlive.asStateFlow()
+    private val _yggMulticast = MutableStateFlow(false)
+    override val yggMulticast = _yggMulticast.asStateFlow()
+    // Пока ядро не спросили, считаем, что выбора нет: рисовать
+    // переключатель, которого может не быть, хуже, чем не нарисовать.
+    private val _yggMulticastSupported = MutableStateFlow(false)
+    override val yggMulticastSupported = _yggMulticastSupported.asStateFlow()
+    private val _yggPeerRegions = MutableStateFlow<List<String>>(emptyList())
+    override val yggPeerRegions = _yggPeerRegions.asStateFlow()
+    private val _yggPeerCountries = MutableStateFlow<PeerListStep>(PeerListStep.Idle)
+    override val yggPeerCountries = _yggPeerCountries.asStateFlow()
+    private val _yggPeerList = MutableStateFlow<PeerListStep>(PeerListStep.Idle)
+    override val yggPeerList = _yggPeerList.asStateFlow()
+
+    /**
+     * Идущие походы, по одному на каждый.
+     *
+     * Нужны, чтобы ответ на прошлую просьбу не лёг поверх новой: вызов
+     * ядра блокирующий и длится до сорока пяти секунд, а человек за это
+     * время успевает нажать другую область. Отменённая задача своего
+     * ответа уже не покажет — сам поход в ядре этим не прерывается,
+     * но и показывать его некуда.
+     */
+    private var countriesJob: kotlinx.coroutines.Job? = null
+    private var peerListJob: kotlinx.coroutines.Job? = null
     private val _btHasRadio = MutableStateFlow(false)
     override val btHasRadio = _btHasRadio.asStateFlow()
     private val _nostrRelays = MutableStateFlow<List<String>>(emptyList())
@@ -202,6 +307,9 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
                 val ya = if (ykBytes.isNotEmpty()) org.ratatosk.core.yggAddress(ykBytes) else null
                 val yp = client.yggPeers()
                 val ypa = try { client.yggPeersAlive() } catch (e: Exception) { null }
+                val ymc = try { client.yggMulticast() } catch (e: Exception) { false }
+                val yms = try { client.yggMulticastSupported() } catch (e: Exception) { false }
+                val ypr = try { client.yggPeerRegions() } catch (e: Exception) { emptyList() }
                 val btRadio = session.core.hasBtRadio()
                 val nr = try { client.nostrRelays() } catch (e: Exception) { emptyList() }
                 val nra = try { client.nostrRelaysAlive() } catch (e: Exception) { null }
@@ -220,6 +328,9 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
                     _yggAddress.value = ya
                     _yggPeers.value = yp
                     _yggPeersAlive.value = ypa
+                    _yggMulticast.value = ymc
+                    _yggMulticastSupported.value = yms
+                    _yggPeerRegions.value = ypr
                     _btHasRadio.value = btRadio
                     _nostrRelays.value = nr
                     _nostrRelaysAlive.value = nra
@@ -360,6 +471,95 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
         }
     }
 
+    /**
+     * Включает или выключает поиск соседей мультикастом (0.2.7).
+     *
+     * Текст [getYggMulticastNotice] экран показывает **до** этого вызова:
+     * найденный сосед становится пиром и видит источник и адресата
+     * пакетов в меше — ровно как публичный узел.
+     *
+     * `networkChanged` здесь не зовётся: это настройка узла меша, а не
+     * смена сети под ним. Ядро само приводит узел в соответствие.
+     */
+    override fun setYggMulticast(on: Boolean) {
+        if (session.isCompanion) return
+        session.io("Failed to set Yggdrasil multicast", R.string.error_ygg_settings_failed) {
+            session.core.client().setYggMulticast(on)
+            refreshTransportStatus()
+        }
+    }
+
+    /**
+     * Какие страны есть в области — **необязательный** поход (0.2.7).
+     *
+     * У чужого API предел шестьдесят запросов в час на адрес, а когда
+     * поход идёт через Tor, адрес выхода общий на многих: отказ здесь
+     * обычное дело и походу за самим списком он не мешает. Поэтому отказ не уходит в общую
+     * полосу ошибок — он остаётся в этом окне, рядом с полем, куда
+     * страну можно назвать руками.
+     */
+    override fun fetchYggPeerCountries(region: String) {
+        if (session.isCompanion) return
+        countriesJob?.cancel()
+        _yggPeerCountries.value = PeerListStep.Going
+        countriesJob = session.scope.launch(Dispatchers.IO) {
+            val step = step("Failed to fetch mesh peer countries") {
+                session.core.client().yggPeerCountries(region)
+            }
+            withContext(Dispatchers.Main) { _yggPeerCountries.value = step }
+        }
+    }
+
+    /**
+     * Приносит публичный список пиров названной страны (0.2.7).
+     *
+     * **Это не настройка.** Принесённое человек смотрит и выбирает,
+     * а выбранное уезжает в ядро отдельным [setYggPeers] — выбрать
+     * за него нельзя: пир видит источник и адресата его пакетов.
+     */
+    override fun fetchYggPeerList(region: String, country: String) {
+        if (session.isCompanion) return
+        peerListJob?.cancel()
+        _yggPeerList.value = PeerListStep.Going
+        peerListJob = session.scope.launch(Dispatchers.IO) {
+            val step = step("Failed to fetch the public mesh peer list") {
+                session.core.client().fetchYggPeers(region, country)
+            }
+            withContext(Dispatchers.Main) { _yggPeerList.value = step }
+        }
+    }
+
+    override fun forgetYggPeerList() {
+        countriesJob?.cancel()
+        peerListJob?.cancel()
+        _yggPeerCountries.value = PeerListStep.Idle
+        _yggPeerList.value = PeerListStep.Idle
+    }
+
+    /**
+     * Общее у двух походов: принесли, отказали или сорвалось иначе.
+     *
+     * Отказ ядра отделён от прочих сбоев затем, что у него есть причина,
+     * с которой человеку есть что делать. Всё прочее — не отказ: записать
+     * его отказом значило бы советовать «попробуйте позже» там, где ждать
+     * нечего. Такое уходит в общую полосу ошибок, а окно возвращается
+     * к началу.
+     */
+    private suspend fun step(label: String, fetch: () -> List<String>): PeerListStep = try {
+        PeerListStep.Brought(fetch())
+    } catch (e: org.ratatosk.core.RatatoskException.PeerList) {
+        PeerListStep.Refused(e.reason, session.core.peerListRefusalText(e.reason))
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        // Человек нажал другую область, пока шёл этот поход: это не сбой,
+        // и говорить о нём нечего. Ответ показывать уже некуда.
+        throw e
+    } catch (e: Exception) {
+        android.util.Log.w("RatatoskVM", label, e)
+        val text = session.errorText(e, R.string.error_ygg_settings_failed)
+        withContext(Dispatchers.Main) { session._error.value = text }
+        PeerListStep.Idle
+    }
+
     override fun setNostrRelays(relays: List<String>) {
         if (session.isCompanion) return
         session.scope.launch(Dispatchers.IO) {
@@ -403,6 +603,15 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
 
     override fun getNostrNoFilesNotice(): String = try { org.ratatosk.core.nostrNoFilesNotice() } catch (e: Exception) { "" }
 
+    override fun getYggMulticastNotice(): String =
+        try { org.ratatosk.core.yggMulticastNotice() } catch (e: Exception) { "" }
+
+    override fun getYggMulticastNeedsLanOff(): String =
+        try { org.ratatosk.core.yggMulticastNeedsLanOff() } catch (e: Exception) { "" }
+
+    override fun getYggMulticastUnsupported(): String =
+        try { org.ratatosk.core.yggMulticastUnsupported() } catch (e: Exception) { "" }
+
     /** Состояние ступеней приходит событиями ядра. */
     fun onTorStatus(status: FfiTorStatus) {
         _torStatus.value = status
@@ -429,6 +638,11 @@ class TransportsModel(private val session: SessionContext) : TransportsApi {
         _yggAddress.value = null
         _yggPeers.value = emptyList()
         _yggPeersAlive.value = null
+        _yggMulticast.value = false
+        _yggMulticastSupported.value = false
+        _yggPeerRegions.value = emptyList()
+        _yggPeerCountries.value = PeerListStep.Idle
+        _yggPeerList.value = PeerListStep.Idle
         _nostrRelays.value = emptyList()
         _nostrRelaysAlive.value = null
         _nostrNpub.value = null
