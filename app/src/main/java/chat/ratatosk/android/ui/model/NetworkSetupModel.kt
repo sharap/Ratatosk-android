@@ -72,6 +72,15 @@ sealed interface NearbyRelays {
     data object Looking : NearbyRelays
 
     /**
+     * В своих краях годных реле не нашлось — ищем где угодно.
+     *
+     * Отдельное состояние, а не молчаливый второй заход: человек,
+     * которому минуту показывают «ищем», вправе знать, что первая
+     * попытка кончилась ничем.
+     */
+    data object LookingWider : NearbyRelays
+
+    /**
      * Нашли и предлагаем.
      *
      * **Это ещё не настройка.** Реле видит, кто с кем переписывается,
@@ -216,17 +225,50 @@ class NetworkSetupModel(
         }
         _nearbyRelays.value = NearbyRelays.Looking
         session.scope.launch(Dispatchers.IO) {
-            val step = try {
-                val found = session.core.client().fetchNostrRelays(code)
-                if (found.isEmpty()) NearbyRelays.NoCountry else NearbyRelays.Found(found)
-            } catch (e: org.ratatosk.core.RatatoskException.RelayList) {
-                NearbyRelays.Refused(session.core.relayListRefusalText(e.reason))
-            } catch (e: Exception) {
-                android.util.Log.w("RatatoskVM", "Failed to fetch nostr relays", e)
-                NearbyRelays.Refused(session.string(R.string.error_nostr_settings_failed))
+            // Сначала свои края: своя страна и соседи по области одним
+            // запросом. Порядок ответа — по замеру **телефона**, так что
+            // ближнее окажется первым само, где бы оно ни стояло.
+            var step = ask(PeerOrigins.nearbyCountries(code))
+            // Одного реле мало не потому, что число красивое: несколько
+            // реле человек называет, чтобы делить след (0.3.3), и одно
+            // этого не делает. Страна без годных реле — обычное дело:
+            // в Корее их пятнадцать, годится одно.
+            if (step.poor()) {
+                withContext(Dispatchers.Main) {
+                    _nearbyRelays.value = NearbyRelays.LookingWider
+                }
+                val wider = ask(emptyList())
+                // Широкий заход заменяет узкий, только если нашёл больше:
+                // одно близкое реле лучше, чем отказ «нигде ничего».
+                if (!wider.poor() || step !is NearbyRelays.Found) {
+                    step = wider
+                }
             }
             withContext(Dispatchers.Main) { _nearbyRelays.value = step }
         }
+    }
+
+    /** Нашлось ли столько, чтобы не искать шире. */
+    private fun NearbyRelays.poor(): Boolean =
+        this !is NearbyRelays.Found || relays.size < 2
+
+    /** Один заход к наблюдателю со списком стран; пустой — где угодно. */
+    private fun ask(countries: List<String>): NearbyRelays = try {
+        val found = session.core.client().fetchNostrRelays(countries)
+        if (found.isEmpty()) {
+            NearbyRelays.Refused(
+                session.core.relayListRefusalText(
+                    org.ratatosk.core.FfiRelayListRefusal.NOTHING_USABLE,
+                ),
+            )
+        } else {
+            NearbyRelays.Found(found)
+        }
+    } catch (e: org.ratatosk.core.RatatoskException.RelayList) {
+        NearbyRelays.Refused(session.core.relayListRefusalText(e.reason))
+    } catch (e: Exception) {
+        android.util.Log.w("RatatoskVM", "Failed to fetch nostr relays", e)
+        NearbyRelays.Refused(session.string(R.string.error_nostr_settings_failed))
     }
 
     /**

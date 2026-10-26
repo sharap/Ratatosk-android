@@ -101,9 +101,9 @@ class ModelsWithFakeBackendTest {
         }
 
         override fun `fetchNostrRelays`(
-            `country`: kotlin.String,
+            `countries`: List<kotlin.String>,
         ): List<org.ratatosk.core.FfiRelayCandidate> {
-            calls += "client.fetchNostrRelays:$country"
+            calls += "client.fetchNostrRelays:${countries.joinToString(",")}"
             return relayAnswer()
         }
 
@@ -508,7 +508,11 @@ class ModelsWithFakeBackendTest {
         waitUntil("реле предложены") {
             setup.nearbyRelays.value is chat.ratatosk.android.ui.model.NearbyRelays.Found
         }
-        assertTrue("страну спросили у ядра: ${seen()}", seen().contains("client.fetchNostrRelays:DE"))
+        // Спрашиваем не одну страну: страна без годных реле — обычное
+        // дело, и соседи по области идут тем же запросом.
+        val asked = seen().first { it.startsWith("client.fetchNostrRelays:") }
+        assertTrue("своя страна первая: $asked", asked.startsWith("client.fetchNostrRelays:DE,"))
+        assertTrue("соседи по области добавлены: $asked", asked.split(",").size > 10)
         assertTrue(
             "предложение не должно было ничего включить: ${seen()}",
             seen().none { it.startsWith("client.setNostrRelays") },
@@ -536,6 +540,42 @@ class ModelsWithFakeBackendTest {
         val rungAt = seen().indexOfFirst { it == "client.setTransportEnabled:NOSTR:true" }
         assertTrue("реле не назвали вовсе: ${seen()}", relaysAt >= 0)
         assertTrue("ступень включили раньше реле: ${seen()}", relaysAt < rungAt)
+    }
+
+    /**
+     * Нашлось одно — ищем где угодно (0.3, дополнение).
+     *
+     * Принесено с устройства: в Корее у наблюдателя пятнадцать реле,
+     * проверку проходят три, и все три одного владельца. Одно реле
+     * след не делит (0.3.3), и останавливаться на нём нельзя.
+     */
+    @Test
+    fun whenTheNeighbourhoodHasOnlyOneRelayTheSearchWidens() {
+        val s = session(companion = false)
+        val transports = TransportsModel(s)
+        val setup = chat.ratatosk.android.ui.model.NetworkSetupModel(s, transports) { "KR" }
+        var asked = 0
+        relayAnswer = {
+            asked += 1
+            if (asked == 1) {
+                listOf(org.ratatosk.core.FfiRelayCandidate("wss://one.example/", 257u, "KR"))
+            } else {
+                listOf(
+                    org.ratatosk.core.FfiRelayCandidate("wss://far.example/", 341u, "JP"),
+                    org.ratatosk.core.FfiRelayCandidate("wss://other.example/", 491u, "SG"),
+                )
+            }
+        }
+
+        setup.lookForNearbyRelays()
+
+        waitUntil("поиск расширился") {
+            (setup.nearbyRelays.value as? chat.ratatosk.android.ui.model.NearbyRelays.Found)
+                ?.relays?.size == 2
+        }
+        val queries = seen().filter { it.startsWith("client.fetchNostrRelays:") }
+        assertEquals("заходов должно быть два: $queries", 2, queries.size)
+        assertEquals("второй — без стран, где угодно", "client.fetchNostrRelays:", queries[1])
     }
 
     private fun clientModel(

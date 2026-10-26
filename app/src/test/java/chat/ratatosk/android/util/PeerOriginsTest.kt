@@ -163,6 +163,29 @@ class PeerOriginsTest {
     }
 
     /**
+     * Про реле спрашивают не только свою страну.
+     *
+     * Страна без годных реле — обычное дело: в Корее их пятнадцать,
+     * проверку проходят три, и все три одного владельца. Поэтому
+     * спрашивают свою и соседей по области, а что из этого ближе
+     * на самом деле, меряет уже телефон.
+     */
+    @Test
+    fun relaysAreAskedAboutTheWholeNeighbourhood() {
+        val korea = PeerOrigins.nearbyCountries("KR")
+        assertEquals("своя страна первая", "KR", korea.first())
+        assertTrue("соседи по области добавлены: $korea", korea.size > 10)
+        assertTrue("Япония рядом", korea.contains("JP"))
+        assertTrue("Сингапур рядом", korea.contains("SG"))
+        assertTrue("Германия не сосед Кореи", !korea.contains("DE"))
+        assertEquals("дважды одну страну не спрашиваем", korea.distinct(), korea)
+
+        // Код, которого нет в таблице: спросим хотя бы про него самого,
+        // а дальше расширит клиент — пустым списком «где угодно».
+        assertEquals(listOf("ZZ"), PeerOrigins.nearbyCountries("ZZ"))
+    }
+
+    /**
      * Область `other` не предлагается никому.
      *
      * Там лежат не страны, а оверлейные сети (`tor`, `i2p`, `lokinet`):

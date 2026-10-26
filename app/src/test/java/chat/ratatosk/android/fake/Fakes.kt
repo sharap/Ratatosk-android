@@ -44,7 +44,7 @@ open class FakeClient : RatatoskClientInterface {
     override fun `editMessage`(`chatId`: kotlin.ByteArray, `msgId`: kotlin.ByteArray, `text`: kotlin.String): Unit = notCalled("editMessage")
     override fun `evictFromGroup`(`chatId`: kotlin.ByteArray, `peerIk`: kotlin.ByteArray): Unit = notCalled("evictFromGroup")
     override fun `exportHistory`(`path`: kotlin.String, `scope`: FfiExportScope, `phrase`: kotlin.String?): FfiExported = notCalled("exportHistory")
-    override fun `fetchNostrRelays`(`country`: kotlin.String): List<FfiRelayCandidate> = notCalled("fetchNostrRelays")
+    override fun `fetchNostrRelays`(`countries`: List<kotlin.String>): List<FfiRelayCandidate> = notCalled("fetchNostrRelays")
     override fun `fetchYggPeers`(`region`: kotlin.String, `country`: kotlin.String): List<kotlin.String> = notCalled("fetchYggPeers")
     override fun `fingerprint`(): kotlin.String = notCalled("fingerprint")
     override fun `forwardMessages`(`chatId`: kotlin.ByteArray, `msgIds`: List<kotlin.ByteArray>): Unit = notCalled("forwardMessages")

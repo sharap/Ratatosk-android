@@ -161,6 +161,26 @@ object PeerOrigins {
         return slug.takeIf { it.isNotEmpty() }
     }
 
+    /**
+     * Страны, которые стоит спросить про реле: своя и соседи по области.
+     *
+     * Соседи нужны потому, что страна без реле — обычное дело, а не
+     * исключение. Принесено с устройства: в Корее наблюдатель знает
+     * пятнадцать реле, проверку проходят три, и все три одного
+     * владельца — после склейки остаётся одно. В соседних странах
+     * их больше, а какое из них ближе **на самом деле**, скажет замер
+     * с самого телефона.
+     *
+     * Своя страна стоит первой, но порядок здесь ничего не решает:
+     * ядро всё равно расставит найденное по своему замеру.
+     */
+    fun nearbyCountries(code: String): List<String> {
+        val upper = code.uppercase(Locale.ROOT)
+        val region = regionOf(upper) ?: return listOf(upper)
+        val mates = REGIONS.filterValues { it == region }.keys.sorted()
+        return (listOf(upper) + mates).distinct()
+    }
+
     /** Догадка целиком; `null` — страну телефон не называет или её нет в таблице. */
     fun guess(context: Context): PeerOrigin? {
         val code = countryCode(context) ?: return null

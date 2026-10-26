@@ -1386,7 +1386,7 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_export_history(`ptr`: Long,`path`: RustBuffer.ByValue,`scope`: RustBuffer.ByValue,`phrase`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_fetch_nostr_relays(`ptr`: Long,`country`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_fetch_nostr_relays(`ptr`: Long,`countries`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_fetch_ygg_peers(`ptr`: Long,`region`: RustBuffer.ByValue,`country`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -2240,7 +2240,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_export_history() != 10325) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fetch_nostr_relays() != 30703) {
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fetch_nostr_relays() != 40778) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fetch_ygg_peers() != 27147) {
@@ -6423,15 +6423,21 @@ public interface RatatoskClientInterface {
      * и зашитого списка реле у нас нет и не будет — предложи мы свой,
      * этот выбор сделали бы мы.
      *
-     * `country` — две заглавные латинские буквы, код страны. Его знает
-     * телефон (оператор, SIM, язык системы); негодный код — отказ
-     * `NoCountry`, а не тихий поход «куда-нибудь».
+     * `countries` — коды стран по две заглавные латинские буквы.
+     * **Список, а не одна страна**, и пустой список означает «где
+     * угодно»: страна, где годных реле нет вовсе, — обычное дело.
+     * В Корее наблюдатель знает пятнадцать реле, проверку проходят
+     * три, и все три одного владельца. Расширять поиск — дело клиента:
+     * он знает, что уже спрашивал, и может сказать об этом человеку.
      *
-     * Порядок — по замеру **наблюдателя**, и выдавать его за свою
-     * задержку нельзя: свою видно только после включения,
-     * в [`RatatoskClient::nostr_relays_alive`]. Реле в ответе — разных
-     * владельцев: два реле одного хозяина след не делят, сколько их
-     * ни называй (0.3.3).
+     * Порядок — по замеру **с этого устройства**: каждого кандидата
+     * ядро проверяет соединением, и время этого соединения и есть
+     * «поближе». Замер наблюдателя для этого не годится — он про
+     * расстояние до наблюдателя, и для человека в Корее корейские реле
+     * у него выходят медленнее европейских.
+     *
+     * Реле в ответе — разных владельцев: два реле одного хозяина след
+     * не делят, сколько их ни называй (0.3.3).
      *
      * # Цена, о которой надо сказать до нажатия
      *
@@ -6439,7 +6445,7 @@ public interface RatatoskClientInterface {
      * спрашивать, выбрали мы, — и он увидит, что с этого адреса ищут
      * реле. Поход идёт через Tor, когда тот поднят.
      */
-    fun `fetchNostrRelays`(`country`: kotlin.String): List<FfiRelayCandidate>
+    fun `fetchNostrRelays`(`countries`: List<kotlin.String>): List<FfiRelayCandidate>
     
     /**
      * Приносит публичный список пиров названной страны (0.2.7).
@@ -8497,15 +8503,21 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
      * и зашитого списка реле у нас нет и не будет — предложи мы свой,
      * этот выбор сделали бы мы.
      *
-     * `country` — две заглавные латинские буквы, код страны. Его знает
-     * телефон (оператор, SIM, язык системы); негодный код — отказ
-     * `NoCountry`, а не тихий поход «куда-нибудь».
+     * `countries` — коды стран по две заглавные латинские буквы.
+     * **Список, а не одна страна**, и пустой список означает «где
+     * угодно»: страна, где годных реле нет вовсе, — обычное дело.
+     * В Корее наблюдатель знает пятнадцать реле, проверку проходят
+     * три, и все три одного владельца. Расширять поиск — дело клиента:
+     * он знает, что уже спрашивал, и может сказать об этом человеку.
      *
-     * Порядок — по замеру **наблюдателя**, и выдавать его за свою
-     * задержку нельзя: свою видно только после включения,
-     * в [`RatatoskClient::nostr_relays_alive`]. Реле в ответе — разных
-     * владельцев: два реле одного хозяина след не делят, сколько их
-     * ни называй (0.3.3).
+     * Порядок — по замеру **с этого устройства**: каждого кандидата
+     * ядро проверяет соединением, и время этого соединения и есть
+     * «поближе». Замер наблюдателя для этого не годится — он про
+     * расстояние до наблюдателя, и для человека в Корее корейские реле
+     * у него выходят медленнее европейских.
+     *
+     * Реле в ответе — разных владельцев: два реле одного хозяина след
+     * не делят, сколько их ни называй (0.3.3).
      *
      * # Цена, о которой надо сказать до нажатия
      *
@@ -8513,14 +8525,14 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
      * спрашивать, выбрали мы, — и он увидит, что с этого адреса ищут
      * реле. Поход идёт через Tor, когда тот поднят.
      */
-    @Throws(RatatoskException::class)override fun `fetchNostrRelays`(`country`: kotlin.String): List<FfiRelayCandidate> {
+    @Throws(RatatoskException::class)override fun `fetchNostrRelays`(`countries`: List<kotlin.String>): List<FfiRelayCandidate> {
             return FfiConverterSequenceTypeFfiRelayCandidate.lift(
     callWithHandle {
     uniffiRustCallWithError(RatatoskException) { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_fetch_nostr_relays(
         it,
         
-        FfiConverterString.lower(`country`),_status)
+        FfiConverterSequenceString.lower(`countries`),_status)
 }
     }
     )
@@ -15922,11 +15934,13 @@ data class FfiRelayCandidate (
     val `url`: kotlin.String
     , 
     /**
-     * Задержка рукопожатия **по замеру наблюдателя**, мс; пусто — не мерил.
+     * За сколько миллисекунд реле ответило **этому устройству**, мс.
      *
-     * Не наша: мерил другой узел из другого места. Показывать её можно,
-     * выдавать за свою — нет; свою видно только после включения,
-     * в [`RatatoskClient::nostr_relays_alive`].
+     * Своя, а не чужая: ядро соединяется с каждым кандидатом, проверяя,
+     * пускают ли нас, и это же время ставит сюда. Замеры наблюдателя
+     * для «поближе» не годятся — он мерил из своего места.
+     *
+     * Пусто — не мерили.
      */
     val `rttMs`: kotlin.UInt?
     , 
@@ -19667,7 +19681,11 @@ enum class FfiRelayListRefusal {
      */
     SOURCE_SILENT,
     /**
-     * Ответ пришёл, годных реле в нём нет.
+     * Реле нашлись, но ни одно не годится: искать шире.
+     */
+    NOTHING_USABLE,
+    /**
+     * Ответ пришёл, а реле в нём нет вовсе.
      */
     FORMAT_CHANGED;
 

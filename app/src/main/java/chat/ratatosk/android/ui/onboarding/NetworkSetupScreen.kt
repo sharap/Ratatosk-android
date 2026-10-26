@@ -350,7 +350,7 @@ fun NetworkSetupScreen(
                                 modifier = Modifier.fillMaxWidth(),
                             ) { Text(stringResource(R.string.network_setup_relays_look)) }
 
-                            NearbyRelays.Looking -> Row(
+                            NearbyRelays.Looking, NearbyRelays.LookingWider -> Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(vertical = 4.dp),
                             ) {
@@ -360,7 +360,13 @@ fun NetworkSetupScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = stringResource(R.string.network_setup_relays_looking),
+                                    text = stringResource(
+                                        if (found is NearbyRelays.LookingWider) {
+                                            R.string.network_setup_relays_wider
+                                        } else {
+                                            R.string.network_setup_relays_looking
+                                        }
+                                    ),
                                     style = MaterialTheme.typography.bodySmall,
                                 )
                             }

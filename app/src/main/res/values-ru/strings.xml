@@ -647,10 +647,11 @@
     <!-- Подбор реле поближе (0.3, дополнение). -->
     <string name="network_setup_relays_look">Подобрать реле поближе</string>
     <string name="network_setup_relays_ask">Спросить</string>
-    <string name="network_setup_relays_looking">Спрашиваем, какие реле бывают, и проверяем каждое…</string>
+    <string name="network_setup_relays_looking">Спрашиваем про реле в ваших краях и проверяем каждое…</string>
+    <string name="network_setup_relays_wider">В ваших краях годных не нашлось — ищем шире…</string>
     <string name="network_setup_relays_found">Реле поближе, разных владельцев:</string>
-    <string name="network_setup_relay_line">%1$s — %2$d мс</string>
-    <string name="network_setup_relays_rtt_note">Задержку мерил наблюдатель из своего места, не мы: свою будет видно после включения. Каждое реле мы спросили — отвечает и не просит ни входа, ни денег. Возьмёт ли оно ваши сообщения, честно покажет первая отправка.</string>
+    <string name="network_setup_relay_line">%1$s — отвечает за %2$d мс</string>
+    <string name="network_setup_relays_rtt_note">Время — это ответ вашему телефону: каждое реле мы спросили сами. Они отвечают и не просят ни входа, ни денег. Возьмёт ли реле ваши сообщения, честно покажет первая отправка — если нет, оно само погаснет в списке.</string>
     <string name="network_setup_relays_turn_on">Включить nostr с этими реле</string>
     <string name="network_setup_relays_no_country">Телефон не называет страну — без неё не спросить, какие реле поближе. Назовите реле сами в настройках.</string>
 </resources>
