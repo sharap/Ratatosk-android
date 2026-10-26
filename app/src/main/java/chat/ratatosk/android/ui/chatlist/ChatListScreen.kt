@@ -36,6 +36,8 @@ fun ChatListScreen(
     viewModel: RatatoskViewModel,
     onChatClick: (ByteArray) -> Unit,
     onScanClick: () -> Unit,
+    /** Куда ведёт полоска состояния связи; по умолчанию никуда. */
+    onOpenTransports: () -> Unit = {},
     isTwoColumn: Boolean = false,
     gridState: LazyGridState = rememberLazyGridState(),
     showFab: Boolean = true
@@ -65,6 +67,19 @@ fun ChatListScreen(
         viewModel.refreshContacts()
     }
 
+    // Событием «ступень поднялась» ядро не отвечает, а готовность меняется
+    // сама: Tor поднимается десятки секунд, свой узел меша привязывается
+    // позже. Поэтому полоска состояния спрашивает ядро сама, пока экран
+    // открыт, — и перестаёт, когда он закрыт.
+    if (!isCompanionMode) {
+        LaunchedEffect(Unit) {
+            while (true) {
+                viewModel.refreshTransportStatus()
+                kotlinx.coroutines.delay(5000)
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             Column {
@@ -79,7 +94,36 @@ fun ChatListScreen(
                 
                 val torStatus by viewModel.torStatus.collectAsState()
                 val torEnabled by viewModel.torEnabled.collectAsState()
-                
+
+                // Состояние связи — первым, потому что это первый вопрос
+                // человека к экрану: дойдёт ли вообще. У второго экрана
+                // своих ступеней нет, и полоска ему не про что.
+                if (!isCompanionMode) {
+                    val transportsEnabled by viewModel.transportsEnabled.collectAsState()
+                    val transportsReady by viewModel.transportsReady.collectAsState()
+                    ConnectionStatusBar(
+                        state = ConnectionState(
+                            working = transportsReady.filterValues { it }.keys.toList(),
+                            enabled = transportsEnabled.filterValues { it }.keys.toList(),
+                            // Поднимается — это про включённый, но ещё
+                            // не поднятый Tor. Доли может не быть вовсе:
+                            // первые секунды ядро новостей не присылало,
+                            // и показывать в этот момент красное «ничего
+                            // не работает» было бы неправдой — ступень
+                            // поднимается, а не отказала.
+                            torRising = if (
+                                torEnabled &&
+                                transportsReady[org.ratatosk.core.FfiTransport.ONION] != true
+                            ) {
+                                torStatus?.fraction ?: 0f
+                            } else {
+                                null
+                            },
+                        ),
+                        onClick = onOpenTransports,
+                    )
+                }
+
                 if (torEnabled && torStatus != null && torStatus!!.fraction < 1.0f) {
                     LinearProgressIndicator(
                         progress = { torStatus!!.fraction },

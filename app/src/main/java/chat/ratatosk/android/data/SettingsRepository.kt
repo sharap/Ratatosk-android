@@ -120,6 +120,27 @@ class SettingsRepository(private val context: Context) {
     }
 
     /**
+     * Помощник настройки сети этому аккаунту уже предлагали.
+     *
+     * Признак про **предложение**, а не про результат: человек вправе
+     * пройти мимо, и спрашивать его об этом на каждом запуске значило бы
+     * не принять отказ. Позвать помощника снова можно из настроек.
+     *
+     * Ключ при аккаунте, а не общий: аккаунты на одном телефоне — разные
+     * люди (§3), и настройка сети у них своя.
+     */
+    fun networkSetupOffered(accountId: String): Flow<Boolean> =
+        context.dataStore.data.map {
+            it[booleanPreferencesKey(accountKey(accountId, "network_setup_offered"))] ?: false
+        }
+
+    suspend fun setNetworkSetupOffered(accountId: String, offered: Boolean) {
+        context.dataStore.edit {
+            it[booleanPreferencesKey(accountKey(accountId, "network_setup_offered"))] = offered
+        }
+    }
+
+    /**
      * Аккаунт привязан к этому телефону: его база открывается секретом
      * из Keystore. Признак нужен до открытия — чтобы знать, что секрет
      * обязателен, и не молчать, если его вдруг не стало.

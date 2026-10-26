@@ -31,12 +31,14 @@ fun MainScreen(
     onContactClick: (ByteArray) -> Unit,
     onScanClick: () -> Unit,
     onCropAvatar: () -> Unit,
-    onPairedDevicesClick: () -> Unit
+    onPairedDevicesClick: () -> Unit,
+    onNetworkSetupClick: () -> Unit = {}
 ) {
     AdaptiveMainScreen(
         viewModel = viewModel,
         onScanClick = onScanClick,
         onCropAvatar = onCropAvatar,
-        onPairedDevicesClick = onPairedDevicesClick
+        onPairedDevicesClick = onPairedDevicesClick,
+        onNetworkSetupClick = onNetworkSetupClick
     )
 }

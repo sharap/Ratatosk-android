@@ -133,7 +133,11 @@ class AppModels(
 
     val prefs: PrefsModel = PrefsModel(session) { companion.currentCompanionLabel }
 
+    /** Первый запуск: сеть настраивается без слов «yggdrasil» и «реле». */
+    val networkSetup: NetworkSetupModel = NetworkSetupModel(session, transports)
+
     fun resetAll() {
+        networkSetup.reset()
         accounts.reset()
         notify.reset()
         channels.reset()

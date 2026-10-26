@@ -117,6 +117,20 @@ class AccountsModel(
                 } else null
                 session.core.openAccount(account.id, pin, deviceKey, displayName)
 
+                // Почта у нового аккаунта выключается сразу, и это не «мы
+                // решили за человека». Ядро включает её с коробки (§5.4),
+                // а ящика у заведённого только что аккаунта нет — то есть
+                // ступень стоит в лестнице и в интерфейсе, не умея везти
+                // ничего. Заведёт ящик — включит её в настройках сам.
+                try {
+                    session.core.client().setTransportEnabled(
+                        org.ratatosk.core.FfiTransport.MAIL,
+                        false,
+                    )
+                } catch (e: Exception) {
+                    android.util.Log.w("RatatoskVM", "Failed to switch mail off", e)
+                }
+
                 session.settings.registerAccount(idHex, displayName)
                 
                 withContext(Dispatchers.Main) {

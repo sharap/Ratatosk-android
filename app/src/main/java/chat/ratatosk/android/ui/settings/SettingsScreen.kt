@@ -45,6 +45,8 @@ import org.ratatosk.core.*
 fun SettingsScreen(
     viewModel: RatatoskViewModel,
     onPairedDevicesClick: () -> Unit,
+    /** Позвать помощника настройки сети заново. */
+    onNetworkSetupClick: () -> Unit = {},
     isTwoColumn: Boolean = false
 ) {
     val context = LocalContext.current
@@ -193,6 +195,14 @@ fun SettingsScreen(
                     modifier = Modifier.weight(1f)
                 ) {
                     if (!isCompanionMode) {
+                        // Помощник — там же, где ступени, и выше них:
+                        // человек, не знающий, что такое меш, сюда и придёт.
+                        OutlinedButton(
+                            onClick = onNetworkSetupClick,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                        ) {
+                            Text(stringResource(R.string.network_setup_open))
+                        }
                         SettingsTransportsSection(
                             transportsEnabled = transportsEnabled,
                             transportsReady = transportsReady,
@@ -332,6 +342,12 @@ fun SettingsScreen(
                     .verticalScroll(scrollState)
             ) {
                 if (!isCompanionMode) {
+                    OutlinedButton(
+                        onClick = onNetworkSetupClick,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    ) {
+                        Text(stringResource(R.string.network_setup_open))
+                    }
                     SettingsTransportsSection(
                         transportsEnabled = transportsEnabled,
                         transportsReady = transportsReady,

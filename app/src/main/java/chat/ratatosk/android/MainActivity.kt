@@ -185,6 +185,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            val networkSetupOffered by appViewModel.networkSetup.setupOffered.collectAsState()
+            var networkSetupRequested by remember { mutableStateOf(false) }
+            val isCompanionNow by appViewModel.isCompanionMode.collectAsState()
+            // Второму экрану настраивать нечего: своих ступеней у него нет.
+            val networkSetupShown =
+                !isCompanionNow && (!networkSetupOffered || networkSetupRequested)
+
             RatatoskTheme(themeColor = chatTheme.themeColor) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     if (!isCoreReady) {
@@ -244,6 +251,16 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
+                    } else if (networkSetupShown) {
+                        // Первый запуск: сеть настраивается до того, как
+                        // человек напишет первое сообщение, — иначе он
+                        // напишет его в пустоту. Признак про **предложение**:
+                        // прошёл мимо — больше не зовём, кнопка остаётся
+                        // в настройках.
+                        chat.ratatosk.android.ui.onboarding.NetworkSetupScreen(
+                            viewModel = appViewModel,
+                            onDone = { networkSetupRequested = false },
+                        )
                     } else {
                         Box(modifier = Modifier.fillMaxSize()) {
                             NavHost(
@@ -268,7 +285,8 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onPairedDevicesClick = {
                                             navController.navigate("paired_devices")
-                                        }
+                                        },
+                                        onNetworkSetupClick = { networkSetupRequested = true }
                                     )
                                 }
                                 composable("paired_devices") {

@@ -45,6 +45,12 @@ class RatatoskViewModel private constructor(
 
     constructor(application: Application) : this(application, chat.ratatosk.android.ui.model.AppModels(application))
 
+    /**
+     * Помощник настройки сети: его зовёт один экран, и отдельного
+     * интерфейса для делегирования ему не нужно.
+     */
+    val networkSetup get() = models.networkSetup
+
     init {
         models.onAccountsChanged = { refreshAccounts() }
         models.onContactsChanged = { refreshContacts() }

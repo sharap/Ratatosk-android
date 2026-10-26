@@ -59,6 +59,8 @@ fun AdaptiveMainScreen(
     onScanClick: () -> Unit,
     onCropAvatar: () -> Unit,
     onPairedDevicesClick: () -> Unit,
+    /** Открыть помощника настройки сети: зовёт его экран настроек. */
+    onNetworkSetupClick: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
@@ -239,10 +241,15 @@ fun AdaptiveMainScreen(
                 key(selectedTab) {
                     MainTabContent(
                         currentTab = selectedTab,
+                        // Полоска связи над списком чатов ведёт туда, где
+                        // связь настраивается: человек, увидевший «ничего
+                        // не работает», ищет не сообщение, а место правки.
+                        onOpenTransports = { selectedTab = MainTab.SETTINGS },
                         viewModel = viewModel,
                         onScanClick = onScanClick,
                         onCropAvatar = onCropAvatar,
                         onPairedDevicesClick = handlePairedDevicesClick,
+                        onNetworkSetupClick = onNetworkSetupClick,
                         onChatClick = { chatId -> viewModel.setActiveChat(chatId) },
                         onContactClick = { contactId -> 
                             viewModel.setActiveContact(contactId)
@@ -264,6 +271,7 @@ fun AdaptiveMainScreen(
                     MainTab.SETTINGS -> SettingsScreen(
                         viewModel = viewModel,
                         onPairedDevicesClick = handlePairedDevicesClick,
+                        onNetworkSetupClick = onNetworkSetupClick,
                         isTwoColumn = true
                     )
                     MainTab.PROFILE -> ProfileScreen(
@@ -472,8 +480,11 @@ fun MainTabContent(
     onScanClick: () -> Unit,
     onCropAvatar: () -> Unit,
     onPairedDevicesClick: () -> Unit,
+    onNetworkSetupClick: () -> Unit = {},
     onChatClick: (ByteArray) -> Unit,
     onContactClick: (ByteArray) -> Unit,
+    /** Открыть настройки ступеней: зовёт полоска состояния связи. */
+    onOpenTransports: () -> Unit = {},
     isTwoColumn: Boolean = false,
     chatGridState: androidx.compose.foundation.lazy.grid.LazyGridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState(),
     contactsGridState: androidx.compose.foundation.lazy.grid.LazyGridState = androidx.compose.foundation.lazy.grid.rememberLazyGridState(),
@@ -485,6 +496,7 @@ fun MainTabContent(
                 viewModel = viewModel,
                 onChatClick = onChatClick,
                 onScanClick = onScanClick,
+                onOpenTransports = onOpenTransports,
                 isTwoColumn = isTwoColumn,
                 gridState = chatGridState,
                 showFab = showFab
@@ -500,6 +512,7 @@ fun MainTabContent(
             MainTab.SETTINGS -> SettingsScreen(
                 viewModel = viewModel,
                 onPairedDevicesClick = onPairedDevicesClick,
+                onNetworkSetupClick = onNetworkSetupClick,
                 isTwoColumn = isTwoColumn
             )
             MainTab.PROFILE -> ProfileScreen(

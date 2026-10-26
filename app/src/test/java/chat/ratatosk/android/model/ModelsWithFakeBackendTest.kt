@@ -104,6 +104,17 @@ class ModelsWithFakeBackendTest {
             calls += "client.setYggPeers:${peers.joinToString(",")}"
         }
 
+        override fun `setYggMode`(`mode`: org.ratatosk.core.FfiYggMode) {
+            calls += "client.setYggMode:$mode"
+        }
+
+        override fun `setTransportEnabled`(
+            `transport`: org.ratatosk.core.FfiTransport,
+            `enabled`: kotlin.Boolean,
+        ) {
+            calls += "client.setTransportEnabled:$transport:$enabled"
+        }
+
         override fun `networkChanged`() {
             calls += "client.networkChanged"
         }
@@ -396,6 +407,68 @@ class ModelsWithFakeBackendTest {
         assertEquals(org.ratatosk.core.FfiPeerListRefusal.INDEX_BUSY, refused.reason)
         assertEquals("отказ:INDEX_BUSY", refused.text)
         assertEquals("полоса ошибок тут не при чём", null, s.error.value)
+    }
+
+    /**
+     * Помощник предлагает узлы, а включает их человек (0.2.5).
+     *
+     * Из принесённого берутся **разные** владельцы: три строки одного
+     * оператора — это один узел и ни одного запасного.
+     */
+    @Test
+    fun theAssistantProposesNearbyNodesAndTurnsNothingOn() {
+        val s = session(companion = false)
+        val transports = TransportsModel(s)
+        val setup = chat.ratatosk.android.ui.model.NetworkSetupModel(s, transports)
+        peerListAnswer = {
+            listOf(
+                "tls://one.example:443",
+                "tcp://one.example:80",
+                "tcp://two.example:9001",
+                "tcp://three.example:9001",
+            )
+        }
+
+        setup.lookInCountry("europe", "germany")
+
+        waitUntil("узлы предложены") {
+            setup.nearby.value is chat.ratatosk.android.ui.model.NearbyPeers.Found
+        }
+        val found = setup.nearby.value as chat.ratatosk.android.ui.model.NearbyPeers.Found
+        assertEquals(
+            listOf("tls://one.example:443", "tcp://two.example:9001", "tcp://three.example:9001"),
+            found.peers,
+        )
+        assertTrue(
+            "предложение не должно было ничего включить: ${seen()}",
+            seen().none { it.startsWith("client.setYggPeers") || it.startsWith("client.setYggMode") },
+        )
+    }
+
+    /**
+     * Включение меша называет пиров **до** режима.
+     *
+     * Узел, поднятый без пиров, ни с кем не соединён, и ступень в этом
+     * состоянии честно отвечает «не работает» (0.2.5). Порядок обещан
+     * человеку, поэтому он и проверяется.
+     */
+    @Test
+    fun turningTheMeshOnNamesThePeersBeforeTheMode() {
+        val s = session(companion = false)
+        val transports = TransportsModel(s)
+        val setup = chat.ratatosk.android.ui.model.NetworkSetupModel(s, transports)
+
+        setup.turnOnMesh(listOf("tcp://one.example:9001", "tcp://two.example:9001"))
+
+        // Ждать надо **последнюю** команду, а не первую: иначе проверка
+        // смотрит на недоделанную работу и краснеет на своей же гонке.
+        waitUntil("ступень включена") {
+            seen().any { it == "client.setTransportEnabled:YGG:true" }
+        }
+        val peersAt = seen().indexOfFirst { it.startsWith("client.setYggPeers") }
+        val modeAt = seen().indexOfFirst { it.startsWith("client.setYggMode") }
+        assertTrue("пиров не назвали вовсе: ${seen()}", peersAt >= 0)
+        assertTrue("режим выставлен раньше пиров: ${seen()}", peersAt < modeAt)
     }
 
     private fun clientModel(
