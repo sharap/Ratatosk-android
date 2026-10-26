@@ -643,10 +643,10 @@
     <!-- Finding closer nostr relays (0.3, addendum). -->
     <string name="network_setup_relays_look">Find closer relays</string>
     <string name="network_setup_relays_ask">Ask</string>
-    <string name="network_setup_relays_looking">Asking which relays exist…</string>
+    <string name="network_setup_relays_looking">Asking which relays exist, and checking each one…</string>
     <string name="network_setup_relays_found">Closer relays, from different owners:</string>
     <string name="network_setup_relay_line">%1$s — %2$d ms</string>
-    <string name="network_setup_relays_rtt_note">The latency was measured by the watcher from where it sits, not by us. Yours shows up once the rung is on.</string>
+    <string name="network_setup_relays_rtt_note">The latency was measured by the watcher from where it sits, not by us: yours shows up once the rung is on. We asked every relay — it answers and demands neither a login nor money. Whether it takes your messages, the first send will show honestly.</string>
     <string name="network_setup_relays_turn_on">Switch nostr on with these relays</string>
     <string name="network_setup_relays_no_country">The phone does not name a country — without it there is no asking which relays are closer. Name the relays yourself in Settings.</string>
 </resources>
