@@ -58,6 +58,35 @@ sealed interface NearbyPeers {
 }
 
 /**
+ * Что помощник нашёл человеку из реле nostr (0.3, дополнение).
+ *
+ * Отдельно от [NearbyPeers], хотя состояния те же: источники разные,
+ * отказы разные, и общий тип означал бы ветку «а это про что» в каждом
+ * месте показа.
+ */
+sealed interface NearbyRelays {
+    /** Ещё не искали. */
+    data object Idle : NearbyRelays
+
+    /** Идём к наблюдателю: через Tor это десятки секунд. */
+    data object Looking : NearbyRelays
+
+    /**
+     * Нашли и предлагаем.
+     *
+     * **Это ещё не настройка.** Реле видит, кто с кем переписывается,
+     * и выбирает его человек (0.3.3).
+     */
+    data class Found(val relays: List<org.ratatosk.core.FfiRelayCandidate>) : NearbyRelays
+
+    /** Страну телефон не называет — спросить «кто поближе» не у кого. */
+    data object NoCountry : NearbyRelays
+
+    /** Отказ похода — словами ядра. */
+    data class Refused(val text: String) : NearbyRelays
+}
+
+/**
  * Первый запуск: сеть, настроенная без слов «yggdrasil» и «реле».
  *
  * # Почему узлов нет в сборке
@@ -76,9 +105,20 @@ sealed interface NearbyPeers {
 class NetworkSetupModel(
     private val session: SessionContext,
     private val transports: TransportsModel,
+    /**
+     * Откуда человек, по мнению телефона.
+     *
+     * Швом, а не прямым обращением к системе: в проверках телефона нет,
+     * а без страны обе ветки подбора — и узлы меша, и реле — остались бы
+     * непроверенными вовсе.
+     */
+    private val countryCode: () -> String? = { PeerOrigins.countryCode(session.app) },
 ) {
     private val _nearby = MutableStateFlow<NearbyPeers>(NearbyPeers.Idle)
     val nearby: StateFlow<NearbyPeers> = _nearby.asStateFlow()
+
+    private val _nearbyRelays = MutableStateFlow<NearbyRelays>(NearbyRelays.Idle)
+    val nearbyRelays: StateFlow<NearbyRelays> = _nearbyRelays.asStateFlow()
 
     /**
      * Предлагали ли уже настроить сеть этому аккаунту.
@@ -114,7 +154,7 @@ class NetworkSetupModel(
      */
     fun lookForNearbyPeers() {
         if (session.isCompanion) return
-        val code = PeerOrigins.countryCode(session.app)
+        val code = countryCode()
         val region = code?.let { PeerOrigins.regionOf(it) }
         if (code == null || region == null) {
             _nearby.value = NearbyPeers.NoRegion
@@ -160,14 +200,67 @@ class NetworkSetupModel(
         }
     }
 
+    /**
+     * Ищет реле поближе: страну берём у телефона, остальное знает ядро.
+     *
+     * Цену похода ([relaySourceNotice]) экран показывает **до** этого
+     * вызова: адрес наблюдателя лежит в сборке, и он увидит, что с этого
+     * адреса ищут реле.
+     */
+    fun lookForNearbyRelays() {
+        if (session.isCompanion) return
+        val code = countryCode()
+        if (code == null) {
+            _nearbyRelays.value = NearbyRelays.NoCountry
+            return
+        }
+        _nearbyRelays.value = NearbyRelays.Looking
+        session.scope.launch(Dispatchers.IO) {
+            val step = try {
+                val found = session.core.client().fetchNostrRelays(code)
+                if (found.isEmpty()) NearbyRelays.NoCountry else NearbyRelays.Found(found)
+            } catch (e: org.ratatosk.core.RatatoskException.RelayList) {
+                NearbyRelays.Refused(session.core.relayListRefusalText(e.reason))
+            } catch (e: Exception) {
+                android.util.Log.w("RatatoskVM", "Failed to fetch nostr relays", e)
+                NearbyRelays.Refused(session.string(R.string.error_nostr_settings_failed))
+            }
+            withContext(Dispatchers.Main) { _nearbyRelays.value = step }
+        }
+    }
+
+    /**
+     * Включает nostr с теми реле, которые человек подтвердил.
+     *
+     * Сначала реле, потом ступень, и одной корутиной: ступень без реле
+     * честно не работает (FFI.md), и показывать человеку эту секунду
+     * незачем.
+     */
+    fun turnOnNostr(relays: List<String>) {
+        if (session.isCompanion || relays.isEmpty()) return
+        session.io("Failed to turn nostr on", R.string.error_nostr_settings_failed) {
+            val client = session.core.client()
+            client.setNostrRelays(relays)
+            client.setTransportEnabled(org.ratatosk.core.FfiTransport.NOSTR, true)
+            client.networkChanged()
+            transports.refreshTransportStatus()
+        }
+    }
+
+    /** Цена похода за реле — слова ядра, показать до нажатия. */
+    fun relaySourceNotice(): String =
+        try { org.ratatosk.core.relaySourceNotice() } catch (e: Exception) { "" }
+
     /** Забыть принесённое: человек закрыл помощника, настройкой оно не стало. */
     fun forgetNearby() {
         _nearby.value = NearbyPeers.Idle
+        _nearbyRelays.value = NearbyRelays.Idle
     }
 
     /** Сессия закрыта: узлы, подобранные прошлому аккаунту, — не наши. */
     fun reset() {
         _nearby.value = NearbyPeers.Idle
+        _nearbyRelays.value = NearbyRelays.Idle
     }
 
     private fun look(region: String, guess: String?): NearbyPeers {

@@ -100,6 +100,17 @@ class ModelsWithFakeBackendTest {
             return peerListAnswer()
         }
 
+        override fun `fetchNostrRelays`(
+            `country`: kotlin.String,
+        ): List<org.ratatosk.core.FfiRelayCandidate> {
+            calls += "client.fetchNostrRelays:$country"
+            return relayAnswer()
+        }
+
+        override fun `setNostrRelays`(`relays`: List<kotlin.String>) {
+            calls += "client.setNostrRelays:${relays.joinToString(",")}"
+        }
+
         override fun `setYggPeers`(`peers`: List<kotlin.String>) {
             calls += "client.setYggPeers:${peers.joinToString(",")}"
         }
@@ -250,6 +261,9 @@ class ModelsWithFakeBackendTest {
 
     /** Чем ядро отвечает на поход за публичным списком пиров (0.2.7). */
     private var peerListAnswer: () -> List<String> = { emptyList() }
+
+    /** Чем ядро отвечает на поход за реле поближе (0.3, дополнение). */
+    private var relayAnswer: () -> List<org.ratatosk.core.FfiRelayCandidate> = { emptyList() }
 
     /** Что ядро думает об уведомлениях чата (§14). */
     private var notifyRecord = org.ratatosk.core.FfiNotify(
@@ -469,6 +483,59 @@ class ModelsWithFakeBackendTest {
         val modeAt = seen().indexOfFirst { it.startsWith("client.setYggMode") }
         assertTrue("пиров не назвали вовсе: ${seen()}", peersAt >= 0)
         assertTrue("режим выставлен раньше пиров: ${seen()}", peersAt < modeAt)
+    }
+
+    /**
+     * Реле тоже предлагаются, а не включаются (0.3.3).
+     *
+     * Страна приходит швом: в проверке телефона нет, а без неё ветка
+     * осталась бы непроверенной.
+     */
+    @Test
+    fun theAssistantProposesRelaysAndTurnsNothingOn() {
+        val s = session(companion = false)
+        val transports = TransportsModel(s)
+        val setup = chat.ratatosk.android.ui.model.NetworkSetupModel(s, transports) { "DE" }
+        relayAnswer = {
+            listOf(
+                org.ratatosk.core.FfiRelayCandidate("wss://one.example/", 70u, "DE"),
+                org.ratatosk.core.FfiRelayCandidate("wss://two.example/", 90u, "DE"),
+            )
+        }
+
+        setup.lookForNearbyRelays()
+
+        waitUntil("реле предложены") {
+            setup.nearbyRelays.value is chat.ratatosk.android.ui.model.NearbyRelays.Found
+        }
+        assertTrue("страну спросили у ядра: ${seen()}", seen().contains("client.fetchNostrRelays:DE"))
+        assertTrue(
+            "предложение не должно было ничего включить: ${seen()}",
+            seen().none { it.startsWith("client.setNostrRelays") },
+        )
+    }
+
+    /**
+     * Включение nostr называет реле **до** ступени.
+     *
+     * Ступень без реле честно не работает (FFI.md), и показывать
+     * человеку эту секунду незачем.
+     */
+    @Test
+    fun turningNostrOnNamesTheRelaysBeforeTheRung() {
+        val s = session(companion = false)
+        val transports = TransportsModel(s)
+        val setup = chat.ratatosk.android.ui.model.NetworkSetupModel(s, transports) { "DE" }
+
+        setup.turnOnNostr(listOf("wss://one.example/", "wss://two.example/"))
+
+        waitUntil("ступень включена") {
+            seen().any { it == "client.setTransportEnabled:NOSTR:true" }
+        }
+        val relaysAt = seen().indexOfFirst { it.startsWith("client.setNostrRelays") }
+        val rungAt = seen().indexOfFirst { it == "client.setTransportEnabled:NOSTR:true" }
+        assertTrue("реле не назвали вовсе: ${seen()}", relaysAt >= 0)
+        assertTrue("ступень включили раньше реле: ${seen()}", relaysAt < rungAt)
     }
 
     private fun clientModel(

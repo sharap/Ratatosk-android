@@ -644,4 +644,13 @@
     <string name="status_tor_rising">Tor поднимается, %1$d%%</string>
     <string name="status_nothing_enabled">Связь не настроена — нажмите, чтобы настроить</string>
     <string name="status_nothing_works">Ни одна ступень не работает</string>
+    <!-- Подбор реле поближе (0.3, дополнение). -->
+    <string name="network_setup_relays_look">Подобрать реле поближе</string>
+    <string name="network_setup_relays_ask">Спросить</string>
+    <string name="network_setup_relays_looking">Спрашиваем, какие реле бывают…</string>
+    <string name="network_setup_relays_found">Реле поближе, разных владельцев:</string>
+    <string name="network_setup_relay_line">%1$s — %2$d мс</string>
+    <string name="network_setup_relays_rtt_note">Задержку мерил наблюдатель из своего места, не мы. Свою будет видно после включения.</string>
+    <string name="network_setup_relays_turn_on">Включить nostr с этими реле</string>
+    <string name="network_setup_relays_no_country">Телефон не называет страну — без неё не спросить, какие реле поближе. Назовите реле сами в настройках.</string>
 </resources>

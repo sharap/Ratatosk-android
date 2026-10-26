@@ -62,6 +62,7 @@ class SessionContext(
     fun errorText(e: Throwable, @StringRes fallback: Int? = null): String? = when {
         e is org.ratatosk.core.RatatoskException.Channel -> core.refusalText(e.reason)
         e is org.ratatosk.core.RatatoskException.PeerList -> core.peerListRefusalText(e.reason)
+        e is org.ratatosk.core.RatatoskException.RelayList -> core.relayListRefusalText(e.reason)
         !e.message.isNullOrBlank() -> e.message
         fallback != null -> string(fallback)
         else -> null

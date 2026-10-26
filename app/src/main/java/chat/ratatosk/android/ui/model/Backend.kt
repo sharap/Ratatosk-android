@@ -103,22 +103,16 @@ interface Backend {
     /**
      * Слова к отказу похода за публичным списком пиров меша (0.2.7).
      *
-     * **Зеркало `ratatosk_core::honest::peer_list_refusal_text`.** Ядро
-     * обещает этот текст в `FFI.md` («своего не пишите»), но наружу через
-     * UniFFI его не вывело: у `channel_refusal_text` есть
-     * `#[uniffi::export]`, у этого — нет. Как появится, зеркало убрать
-     * и звать ядро, как зовётся [refusalText].
-     *
-     * **Зеркало уже разошлось один раз**: в ядре причину `NoTor`
-     * переименовали в `NotInThisBuild` и переписали текст, и правка сюда
-     * пришла руками. В следующий раз может и не прийти — цена названа,
-     * чтобы её было видно.
-     *
-     * Текст здесь, а не в ресурсах по языкам, ровно по той причине, по
-     * какой он здесь у отказа канала: на обоих клиентах он обязан быть
-     * один, и перевод разошёлся бы с тем, что показывает десктоп.
+     * Своего текста писать нельзя, как и у отказа канала: причины
+     * различаются действием человека, и на двух клиентах они обязаны
+     * звучать одинаково. Зеркало из пяти строк здесь когда-то было —
+     * ядро текст обещало, а наружу не выводило, — и успело разойтись
+     * с ядром на первой же правке причин. Теперь зовётся ядро.
      */
     fun peerListRefusalText(reason: org.ratatosk.core.FfiPeerListRefusal): String
+
+    /** Слова к отказу похода за реле (0.3, дополнение); свой не писать. */
+    fun relayListRefusalText(reason: org.ratatosk.core.FfiRelayListRefusal): String
 
     /** Текст §15 — слова ядра; свой писать нельзя. */
     fun channelNotice(which: ChannelNotice): String
@@ -198,22 +192,10 @@ object CoreBackend : Backend {
         org.ratatosk.core.channelRefusalText(reason)
 
     override fun peerListRefusalText(reason: org.ratatosk.core.FfiPeerListRefusal): String =
-        when (reason) {
-            org.ratatosk.core.FfiPeerListRefusal.NO_SUCH_LIST ->
-                "Такого списка нет. Выберите другую область или страну."
-            org.ratatosk.core.FfiPeerListRefusal.NOT_IN_THIS_BUILD ->
-                "В этой сборке нет своего узла меша, и настраивать ему нечего. " +
-                    "Если меш идёт через внешний демон, пиры называются в его " +
-                    "собственной настройке."
-            org.ratatosk.core.FfiPeerListRefusal.SOURCE_SILENT ->
-                "Источник списка не ответил. Попробуйте позже."
-            org.ratatosk.core.FfiPeerListRefusal.INDEX_BUSY ->
-                "Перечень стран сейчас не отдают — у источника предел запросов. " +
-                    "Назовите страну сами: список по ней принесётся обычным путём."
-            org.ratatosk.core.FfiPeerListRefusal.FORMAT_CHANGED ->
-                "Ответ пришёл, а адресов в нём нет: разметка списка у источника " +
-                    "могла измениться. Назовите пиров сами и сообщите нам."
-        }
+        org.ratatosk.core.peerListRefusalText(reason)
+
+    override fun relayListRefusalText(reason: org.ratatosk.core.FfiRelayListRefusal): String =
+        org.ratatosk.core.relayListRefusalText(reason)
 
     override fun channelNotice(which: ChannelNotice): String = when (which) {
         ChannelNotice.OPEN -> org.ratatosk.core.openChannelNotice()

@@ -859,9 +859,15 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_peek_archive(
     ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_peer_list_refusal_text(
+    ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_private_channel_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_quote_unavailable_notice(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_relay_list_refusal_text(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_func_relay_source_notice(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_func_retraction_notice(
     ): Int
@@ -976,6 +982,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_evict_from_group(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_export_history(
+    ): Int
+    external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fetch_nostr_relays(
     ): Int
     external fun uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fetch_ygg_peers(
     ): Int
@@ -1378,6 +1386,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_export_history(`ptr`: Long,`path`: RustBuffer.ByValue,`scope`: RustBuffer.ByValue,`phrase`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_fetch_nostr_relays(`ptr`: Long,`country`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_fetch_ygg_peers(`ptr`: Long,`region`: RustBuffer.ByValue,`country`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_method_ratatoskclient_fingerprint(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -1754,9 +1764,15 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_peek_archive(`archive`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_peer_list_refusal_text(`reason`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_private_channel_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_quote_unavailable_notice(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_relay_list_refusal_text(`reason`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_ratatosk_ffi_fn_func_relay_source_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_ratatosk_ffi_fn_func_retraction_notice(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -2038,10 +2054,19 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if (lib.uniffi_ratatosk_ffi_checksum_func_peek_archive() != 53342) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_peer_list_refusal_text() != 46815) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if (lib.uniffi_ratatosk_ffi_checksum_func_private_channel_notice() != 22064) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_quote_unavailable_notice() != 20199) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_relay_list_refusal_text() != 22815) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_func_relay_source_notice() != 43960) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_func_retraction_notice() != 33137) {
@@ -2213,6 +2238,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_export_history() != 10325) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fetch_nostr_relays() != 30703) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if (lib.uniffi_ratatosk_ffi_checksum_method_ratatoskclient_fetch_ygg_peers() != 27147) {
@@ -6386,6 +6414,34 @@ public interface RatatoskClientInterface {
     fun `exportHistory`(`path`: kotlin.String, `scope`: FfiExportScope, `phrase`: kotlin.String?): FfiExported
     
     /**
+     * Приносит реле названной страны, ближние — первыми (0.3, дополнение).
+     *
+     * **Это не настройка.** Реле приносятся, чтобы человек посмотрел
+     * и выбрал; выбранное уезжает отдельным
+     * [`RatatoskClient::set_nostr_relays`]. Выбирать за него нельзя:
+     * реле видит, какие ключи переписываются между собой и когда (0.3.3),
+     * и зашитого списка реле у нас нет и не будет — предложи мы свой,
+     * этот выбор сделали бы мы.
+     *
+     * `country` — две заглавные латинские буквы, код страны. Его знает
+     * телефон (оператор, SIM, язык системы); негодный код — отказ
+     * `NoCountry`, а не тихий поход «куда-нибудь».
+     *
+     * Порядок — по замеру **наблюдателя**, и выдавать его за свою
+     * задержку нельзя: свою видно только после включения,
+     * в [`RatatoskClient::nostr_relays_alive`]. Реле в ответе — разных
+     * владельцев: два реле одного хозяина след не делят, сколько их
+     * ни называй (0.3.3).
+     *
+     * # Цена, о которой надо сказать до нажатия
+     *
+     * [`relay_source_notice`]: адрес наблюдателя лежит в сборке — кого
+     * спрашивать, выбрали мы, — и он увидит, что с этого адреса ищут
+     * реле. Поход идёт через Tor, когда тот поднят.
+     */
+    fun `fetchNostrRelays`(`country`: kotlin.String): List<FfiRelayCandidate>
+    
+    /**
      * Приносит публичный список пиров названной страны (0.2.7).
      *
      * **Это не настройка.** Список приносится, чтобы человек посмотрел
@@ -8424,6 +8480,47 @@ open class RatatoskClient: Disposable, AutoCloseable, RatatoskClientInterface
         FfiConverterString.lower(`path`),
         FfiConverterTypeFfiExportScope.lower(`scope`),
         FfiConverterOptionalString.lower(`phrase`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Приносит реле названной страны, ближние — первыми (0.3, дополнение).
+     *
+     * **Это не настройка.** Реле приносятся, чтобы человек посмотрел
+     * и выбрал; выбранное уезжает отдельным
+     * [`RatatoskClient::set_nostr_relays`]. Выбирать за него нельзя:
+     * реле видит, какие ключи переписываются между собой и когда (0.3.3),
+     * и зашитого списка реле у нас нет и не будет — предложи мы свой,
+     * этот выбор сделали бы мы.
+     *
+     * `country` — две заглавные латинские буквы, код страны. Его знает
+     * телефон (оператор, SIM, язык системы); негодный код — отказ
+     * `NoCountry`, а не тихий поход «куда-нибудь».
+     *
+     * Порядок — по замеру **наблюдателя**, и выдавать его за свою
+     * задержку нельзя: свою видно только после включения,
+     * в [`RatatoskClient::nostr_relays_alive`]. Реле в ответе — разных
+     * владельцев: два реле одного хозяина след не делят, сколько их
+     * ни называй (0.3.3).
+     *
+     * # Цена, о которой надо сказать до нажатия
+     *
+     * [`relay_source_notice`]: адрес наблюдателя лежит в сборке — кого
+     * спрашивать, выбрали мы, — и он увидит, что с этого адреса ищут
+     * реле. Поход идёт через Tor, когда тот поднят.
+     */
+    @Throws(RatatoskException::class)override fun `fetchNostrRelays`(`country`: kotlin.String): List<FfiRelayCandidate> {
+            return FfiConverterSequenceTypeFfiRelayCandidate.lift(
+    callWithHandle {
+    uniffiRustCallWithError(RatatoskException) { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_method_ratatoskclient_fetch_nostr_relays(
+        it,
+        
+        FfiConverterString.lower(`country`),_status)
 }
     }
     )
@@ -15812,6 +15909,69 @@ public object FfiConverterTypeFfiReaction: FfiConverterRustBuffer<FfiReaction> {
 
 
 /**
+ * Реле, которое показал наблюдатель (0.3, дополнение).
+ *
+ * **Это ещё не настройка.** Выбранное человеком уезжает в ядро
+ * отдельным [`RatatoskClient::set_nostr_relays`]: реле видит, кто с кем
+ * переписывается, и выбирать его за человека нельзя (0.3.3, §14).
+ */
+data class FfiRelayCandidate (
+    /**
+     * Адрес реле: `wss://реле.пример`.
+     */
+    val `url`: kotlin.String
+    , 
+    /**
+     * Задержка рукопожатия **по замеру наблюдателя**, мс; пусто — не мерил.
+     *
+     * Не наша: мерил другой узел из другого места. Показывать её можно,
+     * выдавать за свою — нет; свою видно только после включения,
+     * в [`RatatoskClient::nostr_relays_alive`].
+     */
+    val `rttMs`: kotlin.UInt?
+    , 
+    /**
+     * Страна реле, как её назвал наблюдатель.
+     */
+    val `country`: kotlin.String?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiRelayCandidate: FfiConverterRustBuffer<FfiRelayCandidate> {
+    override fun read(buf: ByteBuffer): FfiRelayCandidate {
+        return FfiRelayCandidate(
+            FfiConverterString.read(buf),
+            FfiConverterOptionalUInt.read(buf),
+            FfiConverterOptionalString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: FfiRelayCandidate) = (
+            FfiConverterString.allocationSize(value.`url`) +
+            FfiConverterOptionalUInt.allocationSize(value.`rttMs`) +
+            FfiConverterOptionalString.allocationSize(value.`country`)
+    )
+
+    override fun write(value: FfiRelayCandidate, buf: ByteBuffer) {
+            FfiConverterString.write(value.`url`, buf)
+            FfiConverterOptionalUInt.write(value.`rttMs`, buf)
+            FfiConverterOptionalString.write(value.`country`, buf)
+    }
+}
+
+
+
+/**
  * Одна ступень лестницы §5.4 глазами конкретного контакта.
  *
  * Три признака, а не один «доступен», и это не подробность ради
@@ -19486,6 +19646,60 @@ public object FfiConverterTypeFfiPeerListRefusal: FfiConverterRustBuffer<FfiPeer
 
 
 /**
+ * Почему не вышло спросить, какие реле бывают (0.3, дополнение).
+ *
+ * Зеркало `ratatosk_proto::nostr::RelayListError`: через границу едет
+ * то, что рисуют, а не внутренний тип.
+ */
+
+enum class FfiRelayListRefusal {
+    
+    /**
+     * Ступени nostr в этой сборке нет.
+     */
+    NOT_IN_THIS_BUILD,
+    /**
+     * Страна не названа или названа негодно.
+     */
+    NO_COUNTRY,
+    /**
+     * Источник не ответил. Повторить позже.
+     */
+    SOURCE_SILENT,
+    /**
+     * Ответ пришёл, годных реле в нём нет.
+     */
+    FORMAT_CHANGED;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFfiRelayListRefusal: FfiConverterRustBuffer<FfiRelayListRefusal> {
+    override fun read(buf: ByteBuffer) = try {
+        FfiRelayListRefusal.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FfiRelayListRefusal) = 4UL
+
+    override fun write(value: FfiRelayListRefusal, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+/**
  * Наше участие в раздаче канала — три состояния (§7.5.1).
  *
  * Своё перечисление по той же причине, что у меша: типы протокола
@@ -19877,6 +20091,26 @@ sealed class RatatoskException: kotlin.Exception() {
     }
     
     /**
+     * Поход за реле поближе не удался (0.3, дополнение).
+     *
+     * Отдельно от [`RatatoskError::Internal`] по той же причине, что
+     * и отказ списка пиров: человеку есть что сделать с каждой
+     * из причин — назвать страну, повторить позже, назвать реле сами.
+     *
+     * Текст к причине — [`relay_list_refusal_text`].
+     */
+    class RelayList(
+        
+        /**
+         * Что именно не дало реле приехать.
+         */
+        val `reason`: FfiRelayListRefusal
+        ) : RatatoskException() {
+        override val message
+            get() = "reason=${ `reason` }"
+    }
+    
+    /**
      * Внутренняя ошибка.
      */
     class Internal(
@@ -19919,7 +20153,10 @@ public object FfiConverterTypeRatatoskError : FfiConverterRustBuffer<RatatoskExc
             4 -> RatatoskException.PeerList(
                 FfiConverterTypeFfiPeerListRefusal.read(buf),
                 )
-            5 -> RatatoskException.Internal(
+            5 -> RatatoskException.RelayList(
+                FfiConverterTypeFfiRelayListRefusal.read(buf),
+                )
+            6 -> RatatoskException.Internal(
                 FfiConverterString.read(buf),
                 )
             else -> throw RuntimeException("invalid error enum value, something is very wrong!!")
@@ -19946,6 +20183,11 @@ public object FfiConverterTypeRatatoskError : FfiConverterRustBuffer<RatatoskExc
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
                 4UL
                 + FfiConverterTypeFfiPeerListRefusal.allocationSize(value.`reason`)
+            )
+            is RatatoskException.RelayList -> (
+                // Add the size for the Int that specifies the variant plus the size needed for all fields
+                4UL
+                + FfiConverterTypeFfiRelayListRefusal.allocationSize(value.`reason`)
             )
             is RatatoskException.Internal -> (
                 // Add the size for the Int that specifies the variant plus the size needed for all fields
@@ -19976,8 +20218,13 @@ public object FfiConverterTypeRatatoskError : FfiConverterRustBuffer<RatatoskExc
                 FfiConverterTypeFfiPeerListRefusal.write(value.`reason`, buf)
                 Unit
             }
-            is RatatoskException.Internal -> {
+            is RatatoskException.RelayList -> {
                 buf.putInt(5)
+                FfiConverterTypeFfiRelayListRefusal.write(value.`reason`, buf)
+                Unit
+            }
+            is RatatoskException.Internal -> {
+                buf.putInt(6)
                 FfiConverterString.write(value.`reason`, buf)
                 Unit
             }
@@ -21184,6 +21431,34 @@ public object FfiConverterSequenceTypeFfiReaction: FfiConverterRustBuffer<List<F
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeFfiRelayCandidate: FfiConverterRustBuffer<List<FfiRelayCandidate>> {
+    override fun read(buf: ByteBuffer): List<FfiRelayCandidate> {
+        val len = buf.getInt()
+        return List<FfiRelayCandidate>(len) {
+            FfiConverterTypeFfiRelayCandidate.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<FfiRelayCandidate>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeFfiRelayCandidate.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<FfiRelayCandidate>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeFfiRelayCandidate.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeFfiRung: FfiConverterRustBuffer<List<FfiRung>> {
     override fun read(buf: ByteBuffer): List<FfiRung> {
         val len = buf.getInt()
@@ -22062,6 +22337,25 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
     
 
         /**
+         * Текст к причине отказа — один на оба клиента (0.2.7).
+         *
+         * Выведено наружу: `FFI.md` обещает этот текст клиенту («своего
+         * не пишите»), а экспорта у него не было, и клиент Android держал
+         * зеркало из пяти строк. Зеркало разошлось с ядром на первой же
+         * правке причин.
+         */ fun `peerListRefusalText`(`reason`: FfiPeerListRefusal): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_peer_list_refusal_text(
+    
+        
+        FfiConverterTypeFfiPeerListRefusal.lower(`reason`),_status)
+}
+    )
+    }
+    
+
+        /**
          * Что означает канал по приглашению (фаза 2, §15, §6.1, §10.4).
          *
          * Показывается **подписывающемуся** — при переходе по ссылке на такой
@@ -22096,6 +22390,33 @@ public object FfiConverterSequenceTypeFfiYggPeer: FfiConverterRustBuffer<List<Ff
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_ratatosk_ffi_fn_func_quote_unavailable_notice(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Текст к причине отказа похода за реле (0.3, дополнение).
+         */ fun `relayListRefusalText`(`reason`: FfiRelayListRefusal): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_relay_list_refusal_text(
+    
+        
+        FfiConverterTypeFfiRelayListRefusal.lower(`reason`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Чем платят за поход за реле; показать **до** нажатия.
+         */ fun `relaySourceNotice`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_ratatosk_ffi_fn_func_relay_source_notice(
     
         _status)
 }

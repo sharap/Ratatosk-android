@@ -21,6 +21,7 @@ import chat.ratatosk.android.R
 import chat.ratatosk.android.core.BuiltTransports
 import chat.ratatosk.android.ui.RatatoskViewModel
 import chat.ratatosk.android.ui.model.NearbyPeers
+import chat.ratatosk.android.ui.model.NearbyRelays
 import chat.ratatosk.android.ui.settings.YggPeerListDialog
 import org.ratatosk.core.FfiTransport
 import org.ratatosk.core.FfiYggMode
@@ -65,6 +66,7 @@ fun NetworkSetupScreen(
     val nostrRelays by viewModel.nostrRelays.collectAsState()
     val contacts by viewModel.contacts.collectAsState()
     val nearby by setup.nearby.collectAsState()
+    val nearbyRelays by setup.nearbyRelays.collectAsState()
 
     var showLanWarning by remember { mutableStateOf(false) }
     var showLanRationale by remember { mutableStateOf(false) }
@@ -72,6 +74,9 @@ fun NetworkSetupScreen(
     var showYggWarning by remember { mutableStateOf(false) }
     var showYggNodeNotice by remember { mutableStateOf(false) }
     var showNostrWarning by remember { mutableStateOf(false) }
+    // Цена похода за реле — до похода, а не после: адрес наблюдателя
+    // лежит в сборке, и он увидит, что с этого адреса ищут реле.
+    var showRelaySourceNotice by remember { mutableStateOf(false) }
     var showPeerPicker by remember { mutableStateOf(false) }
     // Узлы, которые человек подтвердил, но цена ещё не названа.
     var pendingPeers by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -333,12 +338,92 @@ fun NetworkSetupScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     val donor = contacts.firstOrNull { it.nostrRelays.isNotEmpty() }
-                    when {
-                        nostrEnabled && nostrRelays.isNotEmpty() -> Text(
+                    if (nostrEnabled && nostrRelays.isNotEmpty()) {
+                        Text(
                             text = stringResource(R.string.network_setup_nostr_on, nostrRelays.size),
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        donor != null -> {
+                    } else {
+                        when (val found = nearbyRelays) {
+                            NearbyRelays.Idle -> Button(
+                                onClick = { showRelaySourceNotice = true },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) { Text(stringResource(R.string.network_setup_relays_look)) }
+
+                            NearbyRelays.Looking -> Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 4.dp),
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = stringResource(R.string.network_setup_relays_looking),
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
+
+                            is NearbyRelays.Found -> {
+                                // Предлагаем три: несколько реле делят след
+                                // (0.3.3), а больше трёх не нужно — первые
+                                // три уезжают в карточку, и каждый адрес
+                                // в ней это плотность QR-кода.
+                                val picked = found.relays.take(3)
+                                Text(
+                                    text = stringResource(R.string.network_setup_relays_found),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                picked.forEach { candidate ->
+                                    Text(
+                                        text = candidate.rttMs?.let {
+                                            stringResource(
+                                                R.string.network_setup_relay_line,
+                                                candidate.url,
+                                                it.toInt(),
+                                            )
+                                        } ?: candidate.url,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                Text(
+                                    text = stringResource(R.string.network_setup_relays_rtt_note),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline,
+                                )
+                                Button(
+                                    onClick = {
+                                        pendingRelays = picked.map { it.url }
+                                        showNostrWarning = true
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text(stringResource(R.string.network_setup_relays_turn_on)) }
+                            }
+
+                            NearbyRelays.NoCountry -> Text(
+                                text = stringResource(R.string.network_setup_relays_no_country),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+
+                            is NearbyRelays.Refused -> {
+                                Text(
+                                    text = found.text,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                                OutlinedButton(
+                                    onClick = { setup.lookForNearbyRelays() },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) { Text(stringResource(R.string.retry)) }
+                            }
+                        }
+
+                        // Второй путь, и он лучше первого: реле, которые
+                        // назвал собеседник, выбрали не мы и не наблюдатель.
+                        if (donor != null) {
                             Text(
                                 text = stringResource(
                                     R.string.network_setup_nostr_from_contact,
@@ -353,7 +438,7 @@ fun NetworkSetupScreen(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            Button(
+                            OutlinedButton(
                                 onClick = {
                                     pendingRelays = donor.nostrRelays
                                     showNostrWarning = true
@@ -361,10 +446,6 @@ fun NetworkSetupScreen(
                                 modifier = Modifier.fillMaxWidth(),
                             ) { Text(stringResource(R.string.network_setup_nostr_take)) }
                         }
-                        else -> Text(
-                            text = stringResource(R.string.network_setup_nostr_wait),
-                            style = MaterialTheme.typography.bodySmall,
-                        )
                     }
                 }
             }
@@ -495,6 +576,25 @@ fun NetworkSetupScreen(
         )
     }
 
+    if (showRelaySourceNotice) {
+        AlertDialog(
+            onDismissRequest = { showRelaySourceNotice = false },
+            title = { Text(stringResource(R.string.network_setup_relays_look)) },
+            text = { Text(setup.relaySourceNotice()) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRelaySourceNotice = false
+                    setup.lookForNearbyRelays()
+                }) { Text(stringResource(R.string.network_setup_relays_ask)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRelaySourceNotice = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
     if (showNostrWarning) {
         AlertDialog(
             onDismissRequest = { showNostrWarning = false; pendingRelays = emptyList() },
@@ -503,8 +603,7 @@ fun NetworkSetupScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showNostrWarning = false
-                    viewModel.setNostrRelays(pendingRelays)
-                    viewModel.setTransportEnabled(FfiTransport.NOSTR, true)
+                    setup.turnOnNostr(pendingRelays)
                     pendingRelays = emptyList()
                 }) { Text(stringResource(R.string.enable)) }
             },
