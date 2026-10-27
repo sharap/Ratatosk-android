@@ -135,6 +135,10 @@ class RatatoskViewModel private constructor(
                 android.util.Log.w("RatatoskVM", "Failed to open registry", e)
                 _error.value = e.message?.takeIf { it.isNotBlank() }
                     ?: getApplication<Application>().getString(R.string.error_accounts_unavailable)
+                // Реестр не открылся — ждать больше нечего. Держать
+                // человека на заставке молча хуже, чем показать экран
+                // вместе с ошибкой, которая говорит, что случилось.
+                markAccountsKnown()
             }
         }
 

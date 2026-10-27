@@ -97,6 +97,10 @@ class MainActivity : ComponentActivity() {
             val isCoreReady by appViewModel.isInitialized.collectAsState()
             val accounts by appViewModel.availableAccounts.collectAsState()
             val companionLinks by appViewModel.companionLinks.collectAsState()
+            // Пустой список до первого ответа — не то же самое, что
+            // пустой список после него: см. ветку с заставкой ниже.
+            val accountsKnown by appViewModel.accountsKnown.collectAsState()
+            val companionLinksKnown by appViewModel.companionLinksKnown.collectAsState()
             val lastAccountId by appViewModel.lastAccountId.collectAsState()
             
             val currentError by appViewModel.error.collectAsState()
@@ -225,6 +229,13 @@ class MainActivity : ComponentActivity() {
                                         companionScanUri = null
                                     }
                                 )
+                            }
+                            !accountsKnown || !companionLinksKnown -> {
+                                // Ни личностей, ни связок мы ещё не
+                                // спрашивали. Онбординг на этом месте
+                                // предложил бы человеку с заведённой
+                                // личностью завести её заново.
+                                chat.ratatosk.android.ui.unlock.StartupScreen()
                             }
                             isCreatingNewAccount || (accounts.isEmpty() && companionLinks.isEmpty()) -> {
                                 OnboardingScreen(

@@ -650,4 +650,5 @@
     <string name="network_setup_relays_rtt_note">The time is the answer to your phone: we asked every relay ourselves. They answer and demand neither a login nor money. Whether a relay takes your messages the first send will show honestly — if it does not, it goes dark in the list by itself.</string>
     <string name="network_setup_relays_turn_on">Switch nostr on with these relays</string>
     <string name="network_setup_relays_no_country">The phone does not name a country — without it there is no asking which relays are closer. Name the relays yourself in Settings.</string>
+    <string name="startup_looking">Looking for your identities…</string>
 </resources>

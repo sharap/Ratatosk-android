@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -19,6 +20,8 @@ interface PrefsApi {
     val notificationsShowText: StateFlow<Boolean>
     val coreFileLog: StateFlow<Boolean>
     val companionLinks: StateFlow<List<CompanionLink>>
+    /** Настройки прочитаны: пустой список связок значит «их нет». */
+    val companionLinksKnown: StateFlow<Boolean>
     val lastAccountId: StateFlow<String?>
 
     fun updateChatTheme(updater: (ChatThemeData) -> ChatThemeData)
@@ -70,6 +73,17 @@ class PrefsModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList(),
     )
+
+    // До первого чтения настроек список связок тоже пуст, и отличить
+    // «ещё не читали» от «связок нет» нечем. Второй экран живёт только
+    // связкой, и ему это важно не меньше, чем телефону с личностью.
+    override val companionLinksKnown = session.settings.companionLinks
+        .map { true }
+        .stateIn(
+            scope = session.scope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false,
+        )
 
     override val lastAccountId = session.settings.lastAccountId.stateIn(
         scope = session.scope,

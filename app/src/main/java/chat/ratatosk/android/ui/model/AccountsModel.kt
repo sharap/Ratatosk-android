@@ -24,8 +24,20 @@ interface AccountsApi {
     /** Без PIN открыть не вышло — теперь его надо спросить. */
     val pinRequired: StateFlow<Boolean>
     val accountExists: StateFlow<Boolean>
+    /**
+     * Реестр спрошен: пустой список значит «личностей нет».
+     *
+     * До первого ответа он тоже пуст, и отличить одно от другого
+     * нечем — а на этой развилке стоит экран «Создать личность».
+     * Человеку с заведённой личностью предлагать завести её заново
+     * нельзя: на медленном телефоне реестр открывается секундами,
+     * и предложение успевают прочитать.
+     */
+    val accountsKnown: StateFlow<Boolean>
 
     fun refreshAccounts()
+    /** Реестр не открылся: ждать больше нечего, показываем как есть. */
+    fun markAccountsKnown()
     fun wipeAccount(id: ByteArray)
     fun findHiddenAccount(pin: String, onFound: (ByteArray) -> Unit, onNotFound: () -> Unit)
     /**
@@ -64,9 +76,21 @@ class AccountsModel(
     override val pinRequired: StateFlow<Boolean> = _pinRequired.asStateFlow()
     private val _accountExists = MutableStateFlow(false)
     override val accountExists: StateFlow<Boolean> = _accountExists.asStateFlow()
+    private val _accountsKnown = MutableStateFlow(false)
+    override val accountsKnown: StateFlow<Boolean> = _accountsKnown.asStateFlow()
 
     override fun refreshAccounts() {
-        _availableAccounts.value = session.core.listAccounts()
+        try {
+            _availableAccounts.value = session.core.listAccounts()
+        } finally {
+            // Спросили — и это главное: дальше пустой список честно
+            // значит «личностей нет», даже если реестр ответил отказом.
+            _accountsKnown.value = true
+        }
+    }
+
+    override fun markAccountsKnown() {
+        _accountsKnown.value = true
     }
 
     override fun wipeAccount(id: ByteArray) {

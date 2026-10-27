@@ -654,4 +654,5 @@
     <string name="network_setup_relays_rtt_note">Время — это ответ вашему телефону: каждое реле мы спросили сами. Они отвечают и не просят ни входа, ни денег. Возьмёт ли реле ваши сообщения, честно покажет первая отправка — если нет, оно само погаснет в списке.</string>
     <string name="network_setup_relays_turn_on">Включить nostr с этими реле</string>
     <string name="network_setup_relays_no_country">Телефон не называет страну — без неё не спросить, какие реле поближе. Назовите реле сами в настройках.</string>
+    <string name="startup_looking">Ищем ваши личности…</string>
 </resources>

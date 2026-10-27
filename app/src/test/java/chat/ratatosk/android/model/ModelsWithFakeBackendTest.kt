@@ -752,6 +752,64 @@ class ModelsWithFakeBackendTest {
     }
 
     /**
+     * Пустой список личностей до ответа реестра не значит «их нет».
+     *
+     * На этой развилке стоит онбординг, и пустота, принятая за ответ,
+     * предлагает человеку с заведённой личностью завести её заново.
+     * Проверка ломается, если убрать признак: без него «не спрашивали»
+     * и «личностей нет» выглядят одинаково.
+     */
+    @Test
+    fun anEmptyAccountListMeansNothingUntilTheRegistryAnswers() {
+        val accounts = accountsModel()
+
+        assertTrue("реестр ещё не спрашивали", !accounts.accountsKnown.value)
+        assertTrue("и ответа нет", accounts.availableAccounts.value.isEmpty())
+
+        accounts.refreshAccounts()
+
+        assertTrue("спросили — теперь знаем", accounts.accountsKnown.value)
+    }
+
+    /** Реестр с отказом: открыть нечего. */
+    private inner class ClosedRegistry : chat.ratatosk.android.ui.model.Backend by backend {
+        override fun listAccounts(): List<org.ratatosk.core.FfiAccount> =
+            throw IllegalStateException("реестр не открылся")
+    }
+
+    /**
+     * Отказ реестра тоже заканчивает ожидание.
+     *
+     * Иначе человек остаётся на заставке навсегда: ответа не будет
+     * никогда, а экрана, который сказал бы почему, он не увидит.
+     */
+    @Test
+    fun aRefusingRegistryStillEndsTheWait() {
+        val s = session(companion = false)
+        val accounts = chat.ratatosk.android.ui.model.AccountsModel(
+            SessionContext(
+                app = app,
+                scope = scope,
+                settings = s.settings,
+                core = ClosedRegistry(),
+                secrets = secrets,
+                strings = { "строка:$it" },
+            ),
+            onOpened = {},
+            startSession = {},
+        )
+
+        try {
+            accounts.refreshAccounts()
+            throw AssertionError("реестр должен был отказать")
+        } catch (expected: IllegalStateException) {
+            // Отказ уходит наверх — там его покажут человеку.
+        }
+
+        assertTrue("ждать больше нечего", accounts.accountsKnown.value)
+    }
+
+    /**
      * Секрет заводится **до** открытия базы.
      *
      * Наоборот нельзя: база, заведённая ключом, который не удалось
